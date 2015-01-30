@@ -236,17 +236,8 @@ typedef struct _tag_keyrouter
    Atom atomLongPressEnable;
    Atom atomNotiWindow;
 
-   Ecore_Event_Handler *e_client_message_handler;
-   Ecore_Event_Handler *e_window_property_handler;
-   Ecore_Event_Handler *e_client_stack_handler;
-   Ecore_Event_Handler *e_client_remove_handler;
-   Ecore_Event_Handler *e_window_create_handler;
-   Ecore_Event_Handler *e_window_destroy_handler;
-   Ecore_Event_Handler *e_window_configure_handler;
-   Ecore_Event_Handler *e_window_stack_handler;
-   Ecore_Event_Handler *e_event_generic_handler;
-   Ecore_Event_Handler *e_event_any_handler;
-   Ecore_Timer         *e_longpress_timer;
+   Eina_List   *handlers; /* list of ecore event handlers */
+   Ecore_Timer *e_longpress_timer;
 } KeyRouter;
 
 static int _e_keyrouter_init();

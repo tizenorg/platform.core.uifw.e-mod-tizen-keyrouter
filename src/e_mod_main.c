@@ -14,16 +14,16 @@ e_modapi_init(E_Module *m)
 {
    if (!_e_keyrouter_init()) return NULL;
 
-   krt.e_event_generic_handler = ecore_event_handler_add(ECORE_X_EVENT_GENERIC, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_event_generic, NULL);
-   krt.e_event_any_handler = ecore_event_handler_add(ECORE_X_EVENT_ANY, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_event_any, NULL);
-   krt.e_window_property_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_PROPERTY, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_property, NULL);
-   krt.e_client_stack_handler = ecore_event_handler_add(E_EVENT_CLIENT_STACK, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_e_client_stack, NULL);
-   krt.e_client_remove_handler = ecore_event_handler_add(E_EVENT_CLIENT_REMOVE, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_e_client_remove, NULL);
-   krt.e_window_create_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_CREATE, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_create, NULL);
-   krt.e_window_destroy_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_DESTROY, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_destroy, NULL);
-   krt.e_window_configure_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_CONFIGURE,(Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_configure, NULL);
-   krt.e_window_stack_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_STACK, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_stack, NULL);
-   krt.e_client_message_handler = ecore_event_handler_add(ECORE_X_EVENT_CLIENT_MESSAGE, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_client_message, NULL);
+   E_LIST_HANDLER_APPEND(krt.handlers, ECORE_X_EVENT_GENERIC,          _e_keyrouter_cb_event_generic,    NULL);
+   E_LIST_HANDLER_APPEND(krt.handlers, ECORE_X_EVENT_ANY,              _e_keyrouter_cb_event_any,        NULL);
+   E_LIST_HANDLER_APPEND(krt.handlers, ECORE_X_EVENT_WINDOW_PROPERTY,  _e_keyrouter_cb_window_property,  NULL);
+   E_LIST_HANDLER_APPEND(krt.handlers, E_EVENT_CLIENT_STACK,           _e_keyrouter_cb_e_client_stack,   NULL);
+   E_LIST_HANDLER_APPEND(krt.handlers, E_EVENT_CLIENT_REMOVE,          _e_keyrouter_cb_e_client_remove,  NULL);
+   E_LIST_HANDLER_APPEND(krt.handlers, ECORE_X_EVENT_WINDOW_CREATE,    _e_keyrouter_cb_window_create,    NULL);
+   E_LIST_HANDLER_APPEND(krt.handlers, ECORE_X_EVENT_WINDOW_DESTROY,   _e_keyrouter_cb_window_destroy,   NULL);
+   E_LIST_HANDLER_APPEND(krt.handlers, ECORE_X_EVENT_WINDOW_CONFIGURE, _e_keyrouter_cb_window_configure, NULL);
+   E_LIST_HANDLER_APPEND(krt.handlers, ECORE_X_EVENT_WINDOW_STACK,     _e_keyrouter_cb_window_stack,     NULL);
+   E_LIST_HANDLER_APPEND(krt.handlers, ECORE_X_EVENT_CLIENT_MESSAGE,   _e_keyrouter_cb_client_message,   NULL);
 
    return m;
 }
@@ -31,25 +31,10 @@ e_modapi_init(E_Module *m)
 EAPI int
 e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
-   ecore_event_handler_del(krt.e_event_generic_handler);
-   ecore_event_handler_del(krt.e_event_any_handler);
-   ecore_event_handler_del(krt.e_window_property_handler);
-   ecore_event_handler_del(krt.e_client_stack_handler);
-   ecore_event_handler_del(krt.e_client_remove_handler);
-   ecore_event_handler_del(krt.e_window_create_handler);
-   ecore_event_handler_del(krt.e_window_destroy_handler);
-   ecore_event_handler_del(krt.e_window_configure_handler);
-   ecore_event_handler_del(krt.e_window_stack_handler);
+   Ecore_Event_Handler *h = NULL;
 
-   krt.e_window_stack_handler = NULL;
-   krt.e_window_configure_handler = NULL;
-   krt.e_window_destroy_handler = NULL;
-   krt.e_window_create_handler = NULL;
-   krt.e_window_property_handler = NULL;
-   krt.e_client_stack_handler = NULL;
-   krt.e_client_remove_handler = NULL;
-   krt.e_event_generic_handler = NULL;
-   krt.e_event_any_handler = NULL;
+   EINA_LIST_FREE(krt.handlers, h)
+     ecore_event_handler_del(h);
 
    if (krt.e_longpress_timer)
      ecore_timer_del(krt.e_longpress_timer);
