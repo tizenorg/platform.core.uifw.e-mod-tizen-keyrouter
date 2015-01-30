@@ -7,23 +7,23 @@
 
 EAPI E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Keyrouter Module of Window Manager" };
 
-KeyRouter keyrouter;
+KeyRouter krt;
 
 EAPI void *
 e_modapi_init(E_Module *m)
 {
    if (!_e_keyrouter_init()) return NULL;
 
-   keyrouter.e_event_generic_handler = ecore_event_handler_add(ECORE_X_EVENT_GENERIC, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_event_generic, NULL);
-   keyrouter.e_event_any_handler = ecore_event_handler_add(ECORE_X_EVENT_ANY, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_event_any, NULL);
-   keyrouter.e_window_property_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_PROPERTY, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_property, NULL);
-   keyrouter.e_client_stack_handler = ecore_event_handler_add(E_EVENT_CLIENT_STACK, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_e_client_stack, NULL);
-   keyrouter.e_client_remove_handler = ecore_event_handler_add(E_EVENT_CLIENT_REMOVE, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_e_client_remove, NULL);
-   keyrouter.e_window_create_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_CREATE, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_create, NULL);
-   keyrouter.e_window_destroy_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_DESTROY, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_destroy, NULL);
-   keyrouter.e_window_configure_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_CONFIGURE,(Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_configure, NULL);
-   keyrouter.e_window_stack_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_STACK, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_stack, NULL);
-   keyrouter.e_client_message_handler = ecore_event_handler_add(ECORE_X_EVENT_CLIENT_MESSAGE, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_client_message, NULL);
+   krt.e_event_generic_handler = ecore_event_handler_add(ECORE_X_EVENT_GENERIC, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_event_generic, NULL);
+   krt.e_event_any_handler = ecore_event_handler_add(ECORE_X_EVENT_ANY, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_event_any, NULL);
+   krt.e_window_property_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_PROPERTY, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_property, NULL);
+   krt.e_client_stack_handler = ecore_event_handler_add(E_EVENT_CLIENT_STACK, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_e_client_stack, NULL);
+   krt.e_client_remove_handler = ecore_event_handler_add(E_EVENT_CLIENT_REMOVE, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_e_client_remove, NULL);
+   krt.e_window_create_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_CREATE, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_create, NULL);
+   krt.e_window_destroy_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_DESTROY, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_destroy, NULL);
+   krt.e_window_configure_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_CONFIGURE,(Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_configure, NULL);
+   krt.e_window_stack_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_STACK, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_stack, NULL);
+   krt.e_client_message_handler = ecore_event_handler_add(ECORE_X_EVENT_CLIENT_MESSAGE, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_client_message, NULL);
 
    return m;
 }
@@ -31,30 +31,30 @@ e_modapi_init(E_Module *m)
 EAPI int
 e_modapi_shutdown(E_Module *m EINA_UNUSED)
 {
-   ecore_event_handler_del(keyrouter.e_event_generic_handler);
-   ecore_event_handler_del(keyrouter.e_event_any_handler);
-   ecore_event_handler_del(keyrouter.e_window_property_handler);
-   ecore_event_handler_del(keyrouter.e_client_stack_handler);
-   ecore_event_handler_del(keyrouter.e_client_remove_handler);
-   ecore_event_handler_del(keyrouter.e_window_create_handler);
-   ecore_event_handler_del(keyrouter.e_window_destroy_handler);
-   ecore_event_handler_del(keyrouter.e_window_configure_handler);
-   ecore_event_handler_del(keyrouter.e_window_stack_handler);
+   ecore_event_handler_del(krt.e_event_generic_handler);
+   ecore_event_handler_del(krt.e_event_any_handler);
+   ecore_event_handler_del(krt.e_window_property_handler);
+   ecore_event_handler_del(krt.e_client_stack_handler);
+   ecore_event_handler_del(krt.e_client_remove_handler);
+   ecore_event_handler_del(krt.e_window_create_handler);
+   ecore_event_handler_del(krt.e_window_destroy_handler);
+   ecore_event_handler_del(krt.e_window_configure_handler);
+   ecore_event_handler_del(krt.e_window_stack_handler);
 
-   keyrouter.e_window_stack_handler = NULL;
-   keyrouter.e_window_configure_handler = NULL;
-   keyrouter.e_window_destroy_handler = NULL;
-   keyrouter.e_window_create_handler = NULL;
-   keyrouter.e_window_property_handler = NULL;
-   keyrouter.e_client_stack_handler = NULL;
-   keyrouter.e_client_remove_handler = NULL;
-   keyrouter.e_event_generic_handler = NULL;
-   keyrouter.e_event_any_handler = NULL;
+   krt.e_window_stack_handler = NULL;
+   krt.e_window_configure_handler = NULL;
+   krt.e_window_destroy_handler = NULL;
+   krt.e_window_create_handler = NULL;
+   krt.e_window_property_handler = NULL;
+   krt.e_client_stack_handler = NULL;
+   krt.e_client_remove_handler = NULL;
+   krt.e_event_generic_handler = NULL;
+   krt.e_event_any_handler = NULL;
 
-   if (keyrouter.e_longpress_timer)
-     ecore_timer_del(keyrouter.e_longpress_timer);
+   if (krt.e_longpress_timer)
+     ecore_timer_del(krt.e_longpress_timer);
 
-   keyrouter.e_longpress_timer = NULL;
+   krt.e_longpress_timer = NULL;
 
    _e_keyrouter_fini();
 
@@ -80,80 +80,80 @@ _e_keyrouter_x_input_init(void)
    int res = 0;
 #endif/* _F_REMAP_MOUSE_BUTTON_TO_HWKEY_ */
 
-   if (!XQueryExtension(keyrouter.disp,
+   if (!XQueryExtension(krt.disp,
                         "XInputExtension",
-                        &keyrouter.xi2_opcode,
+                        &krt.xi2_opcode,
                         &event,
                         &error))
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][%s] XInput Extension isn't supported.\n",
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][%s] XInput Extension isn't supported.\n",
              __FUNCTION__);
-        keyrouter.xi2_opcode = -1;
+        krt.xi2_opcode = -1;
         return;
      }
 
-   if (XIQueryVersion(keyrouter.disp, &maj, &min) == BadRequest)
+   if (XIQueryVersion(krt.disp, &maj, &min) == BadRequest)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][%s] Failed to query XI version.\n",
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][%s] Failed to query XI version.\n",
              __FUNCTION__);
-        keyrouter.xi2_opcode = -1;
+        krt.xi2_opcode = -1;
         return;
      }
 
-   memset(&keyrouter.eventmask, 0L, sizeof(XIEventMask));
-   keyrouter.eventmask.deviceid = XIAllDevices;
-   keyrouter.eventmask.mask_len = XIMaskLen(XI_RawMotion);
-   keyrouter.eventmask.mask= calloc(keyrouter.eventmask.mask_len, sizeof(char));
+   memset(&krt.eventmask, 0L, sizeof(XIEventMask));
+   krt.eventmask.deviceid = XIAllDevices;
+   krt.eventmask.mask_len = XIMaskLen(XI_RawMotion);
+   krt.eventmask.mask = calloc(krt.eventmask.mask_len, sizeof(char));
 
-   XISetMask(keyrouter.eventmask.mask, XI_HierarchyChanged);
+   XISetMask(krt.eventmask.mask, XI_HierarchyChanged);
 
 #ifdef _F_REMAP_MOUSE_BUTTON_TO_HWKEY_
-   XISetMask(keyrouter.eventmask.mask, XI_ButtonPress);
-   XISetMask(keyrouter.eventmask.mask, XI_ButtonRelease);
+   XISetMask(krt.eventmask.mask, XI_ButtonPress);
+   XISetMask(krt.eventmask.mask, XI_ButtonRelease);
 
-   res = XIGrabButton(keyrouter.disp,
+   res = XIGrabButton(krt.disp,
                       XIAllDevices,
                       2,
-                      keyrouter.rootWin,
+                      krt.rootWin,
                       NULL,
                       GrabModeAsync,
                       GrabModeAsync,
                       False,
-                      &keyrouter.eventmask,
+                      &krt.eventmask,
                       nmods,
                       modifiers);
    if (res < 0)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][%s] Failed to XIGrabButton(2), res=%d\n",
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][%s] Failed to XIGrabButton(2), res=%d\n",
              __FUNCTION__, res);
      }
 
-   res = XIGrabButton(keyrouter.disp,
+   res = XIGrabButton(krt.disp,
                       XIAllDevices,
                       3,
-                      keyrouter.rootWin,
+                      krt.rootWin,
                       NULL,
                       GrabModeAsync,
                       GrabModeAsync,
                       False,
-                      &keyrouter.eventmask,
+                      &krt.eventmask,
                       nmods,
                       modifiers);
    if (res < 0)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][%s] Failed to XIGrabButton(3), res=%d\n",
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][%s] Failed to XIGrabButton(3), res=%d\n",
              __FUNCTION__, res);
      }
 #endif /* _F_REMAP_MOUSE_BUTTON_TO_HWKEY_ */
 
    /* select XI events for a part */
-   XISelectEvents(keyrouter.disp,
-                  keyrouter.rootWin,
-                  &keyrouter.eventmask,
+   XISelectEvents(krt.disp,
+                  krt.rootWin,
+                  &krt.eventmask,
                   1);
 }
 
@@ -164,24 +164,24 @@ _e_keyrouter_cb_event_any(void *data, int ev_type, void *event)
    XDeviceKeyEvent *xdevkey = (XDeviceKeyEvent *)ev;
    int type = ev->xcookie.type;
 
-   if (type == keyrouter.DeviceKeyPress)
+   if (type == krt.DeviceKeyPress)
      {
         ev->type = KeyPress;
-        keyrouter.first_press_flag++;
+        krt.first_press_flag++;
      }
-   else if (type == keyrouter.DeviceKeyRelease)
+   else if (type == krt.DeviceKeyRelease)
      {
         ev->type = KeyRelease;
-        keyrouter.first_press_flag--;
+        krt.first_press_flag--;
      }
    else
      return 1;
 
-   ev->xany.display = keyrouter.disp;
+   ev->xany.display = krt.disp;
    ev->xkey.keycode = xdevkey->keycode;
    ev->xkey.time = xdevkey->time;
    ev->xkey.state = 0;
-   ev->xkey.root = keyrouter.rootWin;
+   ev->xkey.root = krt.rootWin;
    ev->xkey.send_event = 1;
    ev->xkey.subwindow = None;
 
@@ -204,7 +204,7 @@ LongPressRecognize(int keycode)
    longpress_info *d;
    Ecore_Timer *t;
 
-   EINA_LIST_FOREACH(keyrouter.longpress_list, l, d)
+   EINA_LIST_FOREACH(krt.longpress_list, l, d)
      {
         if (d->keycode != keycode) continue;
 
@@ -216,17 +216,17 @@ LongPressRecognize(int keycode)
         t = ecore_timer_add((double)info->longpress_timeout/1000.0,
                             LongPressEventDeliver, info);
 
-        keyrouter.pressinfo->longpress_timeout = d->longpress_timeout;
-        keyrouter.timer_flag = 1;
-        keyrouter.e_longpress_timer = t;
+        krt.pressinfo->longpress_timeout = d->longpress_timeout;
+        krt.timer_flag = 1;
+        krt.e_longpress_timer = t;
 
         break;
      }
 
-   if (!keyrouter.e_longpress_timer)
+   if (!krt.e_longpress_timer)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][%s] Failed to add Long_Press_Timer \n",
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][%s] Failed to add Long_Press_Timer \n",
              __FUNCTION__);
 
         free(info);
@@ -253,14 +253,14 @@ LongPressEventDeliver(void *data)
    menu_keycode = ecore_x_keysym_keycode_get(KEY_MENU);
    back_keycode = ecore_x_keysym_keycode_get(KEY_BACK);
 
-   sym_long = XkbKeycodeToKeysym(keyrouter.disp, lpinfo->keycode, col, 0);
-   sym_menu = XkbKeycodeToKeysym(keyrouter.disp, menu_keycode, col, 0);
-   sym_back = XkbKeycodeToKeysym(keyrouter.disp, back_keycode, col, 0);
+   sym_long = XkbKeycodeToKeysym(krt.disp, lpinfo->keycode, col, 0);
+   sym_menu = XkbKeycodeToKeysym(krt.disp, menu_keycode, col, 0);
+   sym_back = XkbKeycodeToKeysym(krt.disp, back_keycode, col, 0);
 
    if (sym_long == sym_menu)
-     atom = keyrouter.atomMenuLongPress;
+     atom = krt.atomMenuLongPress;
    else if (sym_long == sym_back)
-     atom = keyrouter.atomBackLongPress;
+     atom = krt.atomBackLongPress;
 
    if (atom)
      {
@@ -275,15 +275,15 @@ LongPressEventDeliver(void *data)
      }
 
    /* Delete timer & Clear flag */
-   keyrouter.short_press_flag = 0;
-   keyrouter.timer_flag = 0;
-   ecore_timer_del(keyrouter.e_longpress_timer);
-   keyrouter.e_longpress_timer = NULL;
+   krt.short_press_flag = 0;
+   krt.timer_flag = 0;
+   ecore_timer_del(krt.e_longpress_timer);
+   krt.e_longpress_timer = NULL;
 
    key_data = malloc(sizeof(key_event_info));
    key_data->ev_type = KeyRelease;
    key_data->keycode = lpinfo->keycode;
-   keyrouter.ignored_key_list = eina_list_append(keyrouter.ignored_key_list, key_data);
+   krt.ignored_key_list = eina_list_append(krt.ignored_key_list, key_data);
    free(lpinfo);
 
    return ret_val;
@@ -292,15 +292,15 @@ LongPressEventDeliver(void *data)
 static Eina_Bool
 ShortPressEventDeliver(longpress_info *kevinfo)
 {
-   keyrouter.timer_flag = 0;
-   keyrouter.short_press_flag = 1;
-   ecore_timer_del(keyrouter.e_longpress_timer);
-   keyrouter.e_longpress_timer = NULL;
+   krt.timer_flag = 0;
+   krt.short_press_flag = 1;
+   ecore_timer_del(krt.e_longpress_timer);
+   krt.e_longpress_timer = NULL;
    XEvent xev;
 
    xev.xkey.state = 0;
-   xev.xkey.display = keyrouter.disp;
-   xev.xkey.root = keyrouter.rootWin;
+   xev.xkey.display = krt.disp;
+   xev.xkey.root = krt.rootWin;
    xev.xkey.window= kevinfo->longpress_window;
    xev.xkey.keycode = kevinfo->keycode;
    xev.xkey.time = kevinfo->evtime;
@@ -308,8 +308,8 @@ ShortPressEventDeliver(longpress_info *kevinfo)
    xev.xkey.send_event = 1;
    xev.xkey.subwindow = None;
 
-   free(keyrouter.pressinfo);
-   keyrouter.pressinfo = NULL;
+   free(krt.pressinfo);
+   krt.pressinfo = NULL;
    _e_keyrouter_hwkey_event_handler(&xev);
 
    return EINA_TRUE;
@@ -321,20 +321,20 @@ _e_keyrouter_cancel_key(XEvent *xev, int keycode)
    keylist_node *tmp_ptr;
    keylist_node* ptr;
 
-   SECURE_SLOGD("[keyrouter] Begin of cancel process of a keycode(%d)!\n", keycode);
+   SECURE_SLOGD("[krt] Begin of cancel process of a keycode(%d)!\n", keycode);
 
-   for (ptr = keyrouter.HardKeys[keycode].pressed_win_ptr; (NULL != ptr); )
+   for (ptr = krt.HardKeys[keycode].pressed_win_ptr; (NULL != ptr); )
      {
         xev->xkey.window = ptr->wid;
 
         /* Send Cancel KeyPress */
         xev->xkey.type = KeyPress;
-        xev->xkey.keycode = keyrouter.cancel_key.keycode;
+        xev->xkey.keycode = krt.cancel_key.keycode;
 
-        SECURE_SLOGD("[keyrouter] Deliver KeyPress (keycode:%d) to window (0x%x) !\n",
+        SECURE_SLOGD("[krt] Deliver KeyPress (keycode:%d) to window (0x%x) !\n",
                      xev->xkey.keycode, (int)xev->xkey.window);
 
-        XSendEvent(keyrouter.disp,
+        XSendEvent(krt.disp,
                    xev->xkey.window,
                    False,
                    KeyPressMask | KeyReleaseMask,
@@ -344,10 +344,10 @@ _e_keyrouter_cancel_key(XEvent *xev, int keycode)
         xev->xkey.type = KeyRelease;
         xev->xkey.keycode = keycode;
 
-        SECURE_SLOGD("[keyrouter] Deliver KeyRelease (keycode:%d) to window (0x%x) !\n",
+        SECURE_SLOGD("[krt] Deliver KeyRelease (keycode:%d) to window (0x%x) !\n",
                      xev->xkey.keycode, (int)xev->xkey.window);
 
-        XSendEvent(keyrouter.disp,
+        XSendEvent(krt.disp,
                    xev->xkey.window,
                    False,
                    KeyPressMask | KeyReleaseMask,
@@ -355,12 +355,12 @@ _e_keyrouter_cancel_key(XEvent *xev, int keycode)
 
         /* Cancel KeyRelease */
         xev->xkey.type = KeyRelease;
-        xev->xkey.keycode = keyrouter.cancel_key.keycode;
+        xev->xkey.keycode = krt.cancel_key.keycode;
 
-        SECURE_SLOGD("[keyrouter] Deliver KeyRelease (keycode:%d) to window (0x%x) !\n",
+        SECURE_SLOGD("[krt] Deliver KeyRelease (keycode:%d) to window (0x%x) !\n",
                      xev->xkey.keycode, (int)xev->xkey.window);
 
-        XSendEvent(keyrouter.disp,
+        XSendEvent(krt.disp,
                    xev->xkey.window,
                    False,
                    KeyPressMask | KeyReleaseMask,
@@ -371,9 +371,9 @@ _e_keyrouter_cancel_key(XEvent *xev, int keycode)
         free(tmp_ptr);
      }
 
-   SECURE_SLOGD("[keyrouter] End of cancel process of a keycode(%d)!\n", keycode);
+   SECURE_SLOGD("[krt] End of cancel process of a keycode(%d)!\n", keycode);
 
-   keyrouter.HardKeys[keycode].pressed_win_ptr = NULL;
+   krt.HardKeys[keycode].pressed_win_ptr = NULL;
 }
 
 static void
@@ -386,10 +386,10 @@ _e_keyrouter_hwkey_event_handler(XEvent *ev)
    /* KeyRelease handling for key composition */
    if (ev->type == KeyRelease)
      {
-        if ((keyrouter.longpress_enabled == 1) &&
-            (keyrouter.timer_flag == 1))
+        if ((krt.longpress_enabled == 1) &&
+            (krt.timer_flag == 1))
           {
-             result = ShortPressEventDeliver(keyrouter.pressinfo);
+             result = ShortPressEventDeliver(krt.pressinfo);
              if (result == False)
                return;
           }
@@ -402,51 +402,51 @@ _e_keyrouter_hwkey_event_handler(XEvent *ev)
    /* KeyPress handling for key composition */
    else if (ev->type == KeyPress)
      {
-        SECURE_SLOGD("\n[keyrouter][%s] KeyPress (keycode:%d)\n",
+        SECURE_SLOGD("\n[krt][%s] KeyPress (keycode:%d)\n",
                      __FUNCTION__, ev->xkey.keycode);
 
-        if ((keyrouter.longpress_enabled == 1) &&
-            (keyrouter.short_press_flag == 0) &&
-            (keyrouter.timer_flag == 0) &&
-            (keyrouter.first_press_flag == 1))
+        if ((krt.longpress_enabled == 1) &&
+            (krt.short_press_flag == 0) &&
+            (krt.timer_flag == 0) &&
+            (krt.first_press_flag == 1))
           {
-             if (keyrouter.HardKeys[ev->xkey.keycode].longpress == True)
+             if (krt.HardKeys[ev->xkey.keycode].longpress == True)
                {
-                  keyrouter.pressinfo = malloc(sizeof(longpress_info));
-                  keyrouter.pressinfo->keycode = ev->xkey.keycode;
-                  keyrouter.pressinfo->longpress_window = ev->xkey.window;
-                  keyrouter.pressinfo->evtime = ev->xkey.time;
+                  krt.pressinfo = malloc(sizeof(longpress_info));
+                  krt.pressinfo->keycode = ev->xkey.keycode;
+                  krt.pressinfo->longpress_window = ev->xkey.window;
+                  krt.pressinfo->evtime = ev->xkey.time;
                   LongPressRecognize(ev->xkey.keycode);
                   return;
                }
           }
-        if ((keyrouter.longpress_enabled == 1) &&
-            (keyrouter.short_press_flag == 0) &&
-            (keyrouter.timer_flag == 1))
+        if ((krt.longpress_enabled == 1) &&
+            (krt.short_press_flag == 0) &&
+            (krt.timer_flag == 1))
           {
-             ShortPressEventDeliver(keyrouter.pressinfo);
+             ShortPressEventDeliver(krt.pressinfo);
              /* Two key Press... if modkey???? */
           }
-        keyrouter.short_press_flag = 0;
-        keyrouter.pressinfo = NULL;
+        krt.short_press_flag = 0;
+        krt.pressinfo = NULL;
 
-        if (!keyrouter.modkey_set)
+        if (!krt.modkey_set)
           {
              for (i = 0; i < NUM_KEY_COMPOSITION_ACTIONS; i++)
                {
-                  if (!keyrouter.modkey[i].set)
+                  if (!krt.modkey[i].set)
                     {
                        /* check modifier key */
-                       keyrouter.modkey[i].idx_mod = IsModKey(ev, i);
+                       krt.modkey[i].idx_mod = IsModKey(ev, i);
 
-                       if (keyrouter.modkey[i].idx_mod)
+                       if (krt.modkey[i].idx_mod)
                          {
-                            SECURE_SLOGD("\n[keyrouter][%s][%d] Modifier Key ! (keycode=%d)\n",
+                            SECURE_SLOGD("\n[krt][%s][%d] Modifier Key ! (keycode=%d)\n",
                                          __FUNCTION__, i, ev->xkey.keycode);
 
-                            keyrouter.modkey[i].set = 1;
-                            keyrouter.modkey_set = 1;
-                            keyrouter.modkey[i].time = ev->xkey.time;
+                            krt.modkey[i].set = 1;
+                            krt.modkey_set = 1;
+                            krt.modkey[i].time = ev->xkey.time;
                          }
                     }
                }
@@ -459,33 +459,33 @@ _e_keyrouter_hwkey_event_handler(XEvent *ev)
           {
              for (i = 0; i < NUM_KEY_COMPOSITION_ACTIONS; i++)
                {
-                  keyrouter.modkey[i].composited = IsKeyComposited(ev, i);
+                  krt.modkey[i].composited = IsKeyComposited(ev, i);
 
-                  if (keyrouter.modkey[i].composited)
+                  if (krt.modkey[i].composited)
                     {
-                       SECURE_SLOGD("\n[keyrouter][%s][%d] Composition Key ! (keycode=%d)\n",
+                       SECURE_SLOGD("\n[krt][%s][%d] Composition Key ! (keycode=%d)\n",
                                     __FUNCTION__, i, ev->xkey.keycode);
 
-                       _e_keyrouter_cancel_key(ev, keyrouter.modkey[i].keys[keyrouter.modkey[i].idx_mod-1].keycode);
+                       _e_keyrouter_cancel_key(ev, krt.modkey[i].keys[krt.modkey[i].idx_mod-1].keycode);
 
                        /* Do Action : ex> send ClientMessage to root window */
                        DoKeyCompositionAction(i, 1);
 
-                       if (keyrouter.modkey[i].press_only)
+                       if (krt.modkey[i].press_only)
                          {
                             /* Put Modifier/composited keys' release in ignored_key_list to ignore them */
                             key_data = malloc(sizeof(key_event_info));
                             key_data->ev_type = KeyRelease;
-                            key_data->keycode = keyrouter.modkey[i].keys[0].keycode;
-                            keyrouter.ignored_key_list = eina_list_append(keyrouter.ignored_key_list, key_data);
-                            SECURE_SLOGD("[keyrouter][%s] ignored key added (keycode=%d, type=%d)\n",
+                            key_data->keycode = krt.modkey[i].keys[0].keycode;
+                            krt.ignored_key_list = eina_list_append(krt.ignored_key_list, key_data);
+                            SECURE_SLOGD("[krt][%s] ignored key added (keycode=%d, type=%d)\n",
                                          __FUNCTION__, key_data->keycode, key_data->ev_type);
 
                             key_data = malloc(sizeof(key_event_info));
                             key_data->ev_type = KeyRelease;
-                            key_data->keycode = keyrouter.modkey[i].keys[1].keycode;
-                            keyrouter.ignored_key_list = eina_list_append(keyrouter.ignored_key_list, key_data);
-                            SECURE_SLOGD("[keyrouter][%s] ignored key added (keycode=%d, type=%d)\n",
+                            key_data->keycode = krt.modkey[i].keys[1].keycode;
+                            krt.ignored_key_list = eina_list_append(krt.ignored_key_list, key_data);
+                            SECURE_SLOGD("[krt][%s] ignored key added (keycode=%d, type=%d)\n",
                                          __FUNCTION__, key_data->keycode, key_data->ev_type);
                          }
                        else /* need to be waited for keys */
@@ -493,18 +493,18 @@ _e_keyrouter_hwkey_event_handler(XEvent *ev)
                             /* Put Modifier/composited keys' release in waiting_key_list to check them */
                             key_data = malloc(sizeof(key_event_info));
                             key_data->ev_type = KeyRelease;
-                            key_data->keycode = keyrouter.modkey[i].keys[0].keycode;
+                            key_data->keycode = krt.modkey[i].keys[0].keycode;
                             key_data->modkey_index = i;
-                            keyrouter.waiting_key_list = eina_list_append(keyrouter.waiting_key_list, key_data);
-                            SECURE_SLOGD("[keyrouter][%s] waiting key added (keycode=%d, type=%d)\n",
+                            krt.waiting_key_list = eina_list_append(krt.waiting_key_list, key_data);
+                            SECURE_SLOGD("[krt][%s] waiting key added (keycode=%d, type=%d)\n",
                                          __FUNCTION__, key_data->keycode, key_data->ev_type);
 
                             key_data = malloc(sizeof(key_event_info));
                             key_data->ev_type = KeyRelease;
-                            key_data->keycode = keyrouter.modkey[i].keys[1].keycode;
+                            key_data->keycode = krt.modkey[i].keys[1].keycode;
                             key_data->modkey_index = i;
-                            keyrouter.waiting_key_list = eina_list_append(keyrouter.waiting_key_list, key_data);
-                            SECURE_SLOGD("[keyrouter][%s] waiting key added (keycode=%d, type=%d)\n",
+                            krt.waiting_key_list = eina_list_append(krt.waiting_key_list, key_data);
+                            SECURE_SLOGD("[krt][%s] waiting key added (keycode=%d, type=%d)\n",
                                          __FUNCTION__, key_data->keycode, key_data->ev_type);
                          }
 
@@ -535,18 +535,18 @@ _e_keyrouter_cb_event_generic(void *data, int ev_type, void *event)
    static int back_keycode = 0;
 #endif /* _F_REMAP_MOUSE_BUTTON_TO_HWKEY_ */
 
-   if (e->extension != keyrouter.xi2_opcode)
+   if (e->extension != krt.xi2_opcode)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][%s] Invalid event !(extension:%d, evtype:%d)\n",
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][%s] Invalid event !(extension:%d, evtype:%d)\n",
              __FUNCTION__, e->extension, e->evtype);
         return 1;
      }
 
    if ((!evData) || (evData->send_event))
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][%s] Generic event data is not available or the event "
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][%s] Generic event data is not available or the event "
              "was sent via XSendEvent (and will be ignored) !\n",
              __FUNCTION__);
         return 1;
@@ -579,8 +579,8 @@ _e_keyrouter_cb_event_generic(void *data, int ev_type, void *event)
          if (!keycode)
            break;
 
-         xev.xkey.display = keyrouter.disp;
-         xev.xkey.root = keyrouter.rootWin;
+         xev.xkey.display = krt.disp;
+         xev.xkey.root = krt.rootWin;
          xev.xkey.keycode = keycode;
          xev.xkey.time = evData->time;
          xev.xkey.type = (XI_ButtonPress==e->evtype) ? KeyPress : KeyRelease;
@@ -589,9 +589,9 @@ _e_keyrouter_cb_event_generic(void *data, int ev_type, void *event)
          xev.xkey.subwindow = None;
 
          if (xev.xkey.type == KeyPress)
-           keyrouter.first_press_flag++;
+           krt.first_press_flag++;
          else if (xev.xkey.type == KeyRelease)
-           keyrouter.first_press_flag--;
+           krt.first_press_flag--;
 
          if (!_e_keyrouter_is_waiting_key_list_empty(&xev))
            return 1;
@@ -607,15 +607,15 @@ _e_keyrouter_cb_event_generic(void *data, int ev_type, void *event)
       case XI_KeyRelease:
          xev.type = e->evtype;
          xev.xkey.keycode = evData->detail;
-         xev.xany.display = keyrouter.disp;
+         xev.xany.display = krt.disp;
          xev.xkey.time = evData->time;
          xev.xkey.state = 0;
          xev.xkey.send_event = 1;
          xev.xkey.subwindow = None;
-         xev.xkey.root = keyrouter.rootWin;
+         xev.xkey.root = krt.rootWin;
 
-         if (xev.type == XI_KeyPress) keyrouter.first_press_flag++;
-         else if (xev.type == XI_KeyRelease) keyrouter.first_press_flag--;
+         if (xev.type == XI_KeyPress) krt.first_press_flag++;
+         else if (xev.type == XI_KeyRelease) krt.first_press_flag--;
 
          if (!_e_keyrouter_is_waiting_key_list_empty(&xev))
            return 1;
@@ -640,20 +640,20 @@ _e_keyrouter_cb_window_create(void *data, int ev_type, void *ev)
    unsigned int *prop_data = NULL;
 
    /* Check if current window is TOP-level window or not */
-   if ((!e) || (keyrouter.rootWin != e->parent) || (!e->win))
+   if ((!e) || (krt.rootWin != e->parent) || (!e->win))
      return 1;
 
    /* Setting PropertyChangeMask and SubstructureNotifyMask
     * for TOP-level window (e->win)
     */
    ecore_x_window_attributes_get(e->win, &att);
-   XSelectInput(keyrouter.disp, e->win,
+   XSelectInput(krt.disp, e->win,
                 att.event_mask.mine | PropertyChangeMask | StructureNotifyMask);
    ecore_x_sync();
 
    /* Get the window property using the atom */
    ret = ecore_x_window_prop_property_get(e->win,
-                                          keyrouter.atomGrabKey,
+                                          krt.atomGrabKey,
                                           ECORE_X_ATOM_CARDINAL,
                                           32,
                                           (unsigned char **)&prop_data,
@@ -688,11 +688,11 @@ _e_keyrouter_cb_window_property(void *data, int ev_type, void *ev)
    unsigned int long_enable_data = 0;
    int i, keycode, grab_mode;
 
-   if ((e->atom == keyrouter.atomDeviceStatus) &&
-       (e->win == keyrouter.rootWin))
+   if ((e->atom == krt.atomDeviceStatus) &&
+       (e->win == krt.rootWin))
      {
         res = ecore_x_window_prop_card32_get(e->win,
-                                             keyrouter.atomDeviceStatus,
+                                             krt.atomDeviceStatus,
                                              &ret_val,
                                              1);
         if (res == 1)
@@ -700,11 +700,11 @@ _e_keyrouter_cb_window_property(void *data, int ev_type, void *ev)
         goto out;
      }
 
-   if ((e->atom == keyrouter.atomGrabStatus) &&
-       (e->win == keyrouter.rootWin))
+   if ((e->atom == krt.atomGrabStatus) &&
+       (e->win == krt.rootWin))
      {
         res = ecore_x_window_prop_card32_get(e->win,
-                                             keyrouter.atomGrabStatus,
+                                             krt.atomGrabStatus,
                                              &ret_val,
                                              1);
         if (res == 1)
@@ -712,21 +712,21 @@ _e_keyrouter_cb_window_property(void *data, int ev_type, void *ev)
         goto out;
      }
 
-   if ((e->atom == keyrouter.atomLongPressEnable) &&
-       (e->win == keyrouter.rootWin))
+   if ((e->atom == krt.atomLongPressEnable) &&
+       (e->win == krt.rootWin))
      {
         res = ecore_x_window_prop_card32_get(e->win,
-                                             keyrouter.atomLongPressEnable,
+                                             krt.atomLongPressEnable,
                                              &long_enable_data,
                                              1);
         if (res == 1)
-          keyrouter.longpress_enabled = long_enable_data;
+          krt.longpress_enabled = long_enable_data;
 
         goto out;
      }
 
    /* See the client window has interesting atom (_atomGrabKey) */
-   if (e->atom != keyrouter.atomGrabKey)
+   if (e->atom != krt.atomGrabKey)
      goto out;
 
    /* Get the window property using the atom */
@@ -768,7 +768,7 @@ _e_keyrouter_cb_e_client_stack(void *data, int ev_type, void *ev)
    if (!e->ec)
      return 1;
 
-   keyrouter.isWindowStackChanged = 1;
+   krt.isWindowStackChanged = 1;
    AdjustTopPositionDeliveryList(e_client_util_win_get(e->ec), 1);
 
    return 1;
@@ -782,7 +782,7 @@ _e_keyrouter_cb_e_client_remove(void *data, int ev_type, void *ev)
    if (!e->ec)
      return 1;
 
-   keyrouter.isWindowStackChanged = 1;
+   krt.isWindowStackChanged = 1;
    RemoveWindowDeliveryList(e_client_util_win_get(e->ec), 0, 1);
 
    return 1;
@@ -799,7 +799,7 @@ _e_keyrouter_cb_window_destroy(void *data, int ev_type, void *ev)
    if (ec)
      return 1;
 
-   keyrouter.isWindowStackChanged = 1;
+   krt.isWindowStackChanged = 1;
    RemoveWindowDeliveryList(e->win, 0, 1);
 
    return 1;
@@ -816,10 +816,10 @@ _e_keyrouter_cb_window_configure(void *data, int ev_type, void *ev)
    if (ec)
      return 1;
 
-   if (keyrouter.rootWin != e->event_win)
+   if (krt.rootWin != e->event_win)
      return 1;
 
-   keyrouter.isWindowStackChanged = 1;
+   krt.isWindowStackChanged = 1;
    AdjustTopPositionDeliveryList(e->win, !!e->abovewin);
 
    return 1;
@@ -842,7 +842,7 @@ _e_keyrouter_cb_client_message(void* data, int type, void* event)
    unsigned int enable = 1;
 
    ev = event;
-   if (ev->message_type != keyrouter.atomHWKeyEmulation) return 1;
+   if (ev->message_type != krt.atomHWKeyEmulation) return 1;
    if (ev->format == 8)
      {
         if (ev->data.b[0] == 'P')
@@ -857,7 +857,7 @@ _e_keyrouter_cb_client_message(void* data, int type, void* event)
           {
            case KeyPress:
            case KeyRelease:
-              keycode = XKeysymToKeycode(keyrouter.disp,
+              keycode = XKeysymToKeycode(krt.disp,
                                          XStringToKeysym(&ev->data.b[2]));
 
               _e_keyrouter_do_hardkey_emulation(NULL,
@@ -868,8 +868,8 @@ _e_keyrouter_cb_client_message(void* data, int type, void* event)
               break;
 
            default:
-              SLOG(LOG_DEBUG, "KEYROUTER",
-                   "[keyrouter][cb_client_message] Unknown event type ! (type=%d)\n",
+              SLOG(LOG_DEBUG, "krt",
+                   "[krt][cb_client_message] Unknown event type ! (type=%d)\n",
                    event_type);
               break;
           }
@@ -888,46 +888,46 @@ _e_keyrouter_cb_client_message(void* data, int type, void* event)
             (keycode) &&
             (longpress_timeout))
           {
-             if (keyrouter.HardKeys[keycode].longpress == False)
+             if (krt.HardKeys[keycode].longpress == False)
                {
-                  msgsym = XkbKeycodeToKeysym(keyrouter.disp,
+                  msgsym = XkbKeycodeToKeysym(krt.disp,
                                               (KeyCode)keycode,
                                               col,
                                               0);
 
                   for (i = MIN_KEYCODE; i < MAX_HARDKEYS; i++)
                     {
-                       if (XkbKeycodeToKeysym(keyrouter.disp,
+                       if (XkbKeycodeToKeysym(krt.disp,
                                               i,
                                               col,
                                               0) == msgsym)
                          {
-                            keyrouter.HardKeys[i].longpress = True;
+                            krt.HardKeys[i].longpress = True;
 
                             linfo = malloc(sizeof(longpress_info));
                             linfo->longpress_window = longpress_win;
                             linfo->keycode = i;
                             linfo->longpress_timeout = longpress_timeout;
 
-                            l = keyrouter.longpress_list;
+                            l = krt.longpress_list;
                             l = eina_list_append(l, linfo);
                          }
                     }
                }
              else
                {
-                  msgsym = XkbKeycodeToKeysym(keyrouter.disp,
+                  msgsym = XkbKeycodeToKeysym(krt.disp,
                                               (KeyCode)keycode,
                                               col,
                                               0);
                   for (i = MIN_KEYCODE; i < MAX_HARDKEYS; i++)
                     {
-                       if (XkbKeycodeToKeysym(keyrouter.disp,
+                       if (XkbKeycodeToKeysym(krt.disp,
                                               i,
                                               col,
                                               0) == msgsym)
                          {
-                            EINA_LIST_FOREACH(keyrouter.longpress_list, l, info)
+                            EINA_LIST_FOREACH(krt.longpress_list, l, info)
                               {
                                  if (info->keycode == i)
                                    {
@@ -940,9 +940,9 @@ _e_keyrouter_cb_client_message(void* data, int type, void* event)
                     }
                }
 
-             keyrouter.longpress_enabled = enable;
-             ecore_x_window_prop_card32_set(keyrouter.rootWin,
-                                            keyrouter.atomLongPressEnable,
+             krt.longpress_enabled = enable;
+             ecore_x_window_prop_card32_set(krt.rootWin,
+                                            krt.atomLongPressEnable,
                                             &enable,
                                             1);
           }
@@ -962,10 +962,10 @@ _e_keyrouter_cb_window_stack(void *data, int ev_type, void *ev)
    if (ec)
      return 1;
 
-   if (keyrouter.rootWin != e->event_win)
+   if (krt.rootWin != e->event_win)
      return 1;
 
-   keyrouter.isWindowStackChanged = 1;
+   krt.isWindowStackChanged = 1;
    AdjustTopPositionDeliveryList(e->win, !e->detail);
 
    return 1;
@@ -992,9 +992,9 @@ _e_keyrouter_do_bound_key_action(XEvent *xev)
    int keycode = xev->xkey.keycode;
    size_t len;
 
-   if (!keyrouter.HardKeys[keycode].bind)
+   if (!krt.HardKeys[keycode].bind)
      {
-        SECURE_SLOGD("[keyrouter][do_bound_key_action] bind info of key(%d) "
+        SECURE_SLOGD("[krt][do_bound_key_action] bind info of key(%d) "
                      "is NULL !\n", keycode);
         return;
      }
@@ -1002,29 +1002,29 @@ _e_keyrouter_do_bound_key_action(XEvent *xev)
    ev = malloc(sizeof(Ecore_Event_Key));
    if (!ev)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][do_bound_key_action] Failed to allocate memory "
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][do_bound_key_action] Failed to allocate memory "
              "for Ecore_Event_Key !\n");
         return;
      }
 
-   ev->keyname = (char *)malloc(strlen(keyrouter.HardKeys[keycode].bind->key)+1);
-   ev->key = (char *)malloc(strlen(keyrouter.HardKeys[keycode].bind->key)+1);
+   ev->keyname = (char *)malloc(strlen(krt.HardKeys[keycode].bind->key)+1);
+   ev->key = (char *)malloc(strlen(krt.HardKeys[keycode].bind->key)+1);
 
    if ((!ev->keyname) || (!ev->key))
      {
         free(ev);
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][do_bound_key_action] Failed to allocate memory "
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][do_bound_key_action] Failed to allocate memory "
              "for key name !\n");
         return;
      }
 
-   len = strlen(keyrouter.HardKeys[keycode].bind->key) + 1;
-   strncpy((char *)ev->keyname, keyrouter.HardKeys[keycode].bind->key, len);
+   len = strlen(krt.HardKeys[keycode].bind->key) + 1;
+   strncpy((char *)ev->keyname, krt.HardKeys[keycode].bind->key, len);
 
-   len = strlen(keyrouter.HardKeys[keycode].bind->key) + 1;
-   strncpy((char *)ev->key, keyrouter.HardKeys[keycode].bind->key, len);
+   len = strlen(krt.HardKeys[keycode].bind->key) + 1;
+   strncpy((char *)ev->key, krt.HardKeys[keycode].bind->key, len);
 
    ev->compose = NULL;
    ev->string = NULL;
@@ -1036,11 +1036,11 @@ _e_keyrouter_do_bound_key_action(XEvent *xev)
    ev->window = xev->xkey.subwindow ? xev->xkey.subwindow : xev->xkey.window;
 
    if (xev->type == KeyPress)
-     e_bindings_key_down_event_handle(keyrouter.HardKeys[keycode].bind->ctxt,
+     e_bindings_key_down_event_handle(krt.HardKeys[keycode].bind->ctxt,
                                       NULL,
                                       ev);
    else if (xev->type == KeyRelease)
-     e_bindings_key_up_event_handle(keyrouter.HardKeys[keycode].bind->ctxt,
+     e_bindings_key_up_event_handle(krt.HardKeys[keycode].bind->ctxt,
                                     NULL,
                                     ev);
 
@@ -1078,28 +1078,28 @@ _e_keyrouter_is_waiting_key_list_empty(XEvent *ev)
    Eina_List *l;
    key_event_info *data, *key_data;
 
-   if (!keyrouter.waiting_key_list)
+   if (!krt.waiting_key_list)
      return EINA_TRUE;
 
-   SECURE_SLOGD("[keyrouter][%s] waiting_key_list is NOT empty !\n", __FUNCTION__);
-   SECURE_SLOGD("[keyrouter][%s] type=%s, keycode=%d", __FUNCTION__,
+   SECURE_SLOGD("[krt][%s] waiting_key_list is NOT empty !\n", __FUNCTION__);
+   SECURE_SLOGD("[krt][%s] type=%s, keycode=%d", __FUNCTION__,
                 (ev->xkey.type==KeyPress) ? "KeyPress" : "KeyRelease",
                 ev->xkey.keycode);
 
-   EINA_LIST_FOREACH(keyrouter.waiting_key_list, l, data)
+   EINA_LIST_FOREACH(krt.waiting_key_list, l, data)
      {
         if ((data) &&
             (ev->type == data->ev_type) &&
             (ev->xkey.keycode == data->keycode))
           {
              /* found !!! */
-             SECURE_SLOGD("[keyrouter][%s] found !!! (keycode:%d, type=%d)\n",
+             SECURE_SLOGD("[krt][%s] found !!! (keycode:%d, type=%d)\n",
                           __FUNCTION__, data->keycode, data->ev_type);
              goto found;
           }
      }
 
-   SECURE_SLOGD("[keyrouter][%s] not found !!! (keycode:%d, type=%d)\n",
+   SECURE_SLOGD("[krt][%s] not found !!! (keycode:%d, type=%d)\n",
                 __FUNCTION__, ev->xkey.keycode, ev->type);
 
    /* If a key press is coming before the waiting_key_list is cleared,
@@ -1111,10 +1111,10 @@ _e_keyrouter_is_waiting_key_list_empty(XEvent *ev)
         key_data->ev_type = KeyRelease;
         key_data->keycode = ev->xkey.keycode;
 
-        l = keyrouter.ignored_key_list;
+        l = krt.ignored_key_list;
         l = eina_list_append(l, key_data);
 
-        SECURE_SLOGD("[keyrouter][%s] ignored key added (keycode=%d, type=%d)\n",
+        SECURE_SLOGD("[krt][%s] ignored key added (keycode=%d, type=%d)\n",
                      __FUNCTION__, key_data->keycode, key_data->ev_type);
      }
    else if (ev->type == KeyRelease)
@@ -1122,7 +1122,7 @@ _e_keyrouter_is_waiting_key_list_empty(XEvent *ev)
         /* If a key release which is contained in ignored_key_list is coming,
          * remove it from ignored_key_list.
          */
-        SECURE_SLOGD("[keyrouter][%s] check a key is exiting in ignored key list "
+        SECURE_SLOGD("[krt][%s] check a key is exiting in ignored key list "
                      "(keycode=%d, type=%d)\n", __FUNCTION__,
                      ev->xkey.keycode, ev->type);
 
@@ -1134,16 +1134,16 @@ _e_keyrouter_is_waiting_key_list_empty(XEvent *ev)
 found:
    modkey_index = data->modkey_index;
 
-   l = keyrouter.waiting_key_list;
+   l = krt.waiting_key_list;
    l = eina_list_remove(l, data);
 
-   SECURE_SLOGD("[keyrouter][%s][%d] key was remove from waiting_key_list !"
+   SECURE_SLOGD("[krt][%s][%d] key was remove from waiting_key_list !"
                 "(keycode:%d, type:%d)\n", __FUNCTION__,
                 modkey_index, ev->xkey.keycode, ev->type);
 
-   if (!keyrouter.waiting_key_list)
+   if (!krt.waiting_key_list)
      {
-        SECURE_SLOGD("[keyrouter][%s] Waiting conditions are satified !\n",
+        SECURE_SLOGD("[krt][%s] Waiting conditions are satified !\n",
                      __FUNCTION__);
 
         /* Do Action : ex> send ClientMessage to root window */
@@ -1159,37 +1159,37 @@ _e_keyrouter_is_key_in_ignored_list(XEvent *ev)
    Eina_List *l;
    key_event_info *data;
 
-   if (!keyrouter.ignored_key_list)
+   if (!krt.ignored_key_list)
      {
         return EINA_FALSE;
      }
 
-   SECURE_SLOGD("[keyrouter][%s] ignored_key_list is NOT empty !\n",
+   SECURE_SLOGD("[krt][%s] ignored_key_list is NOT empty !\n",
                 __FUNCTION__);
 
-   EINA_LIST_FOREACH(keyrouter.ignored_key_list, l, data)
+   EINA_LIST_FOREACH(krt.ignored_key_list, l, data)
      {
         if ((data) &&
             (ev->type == data->ev_type) &&
             (ev->xkey.keycode == data->keycode))
           {
              /* found !!! */
-             SECURE_SLOGD("[keyrouter][%s] found !!! (keycode:%d, type=%d)\n",
+             SECURE_SLOGD("[krt][%s] found !!! (keycode:%d, type=%d)\n",
                           __FUNCTION__, data->keycode, data->ev_type);
              goto found;
           }
      }
 
-   SECURE_SLOGD("[keyrouter][%s] not found !!! (keycode:%d, type=%d)\n",
+   SECURE_SLOGD("[krt][%s] not found !!! (keycode:%d, type=%d)\n",
                 __FUNCTION__, ev->xkey.keycode, ev->type);
 
    return EINA_FALSE;
 
 found:
-   l = keyrouter.ignored_key_list;
+   l = krt.ignored_key_list;
    l = eina_list_remove(l, data);
 
-   SECURE_SLOGD("[keyrouter][%s] key was remove from ignored_list !"
+   SECURE_SLOGD("[krt][%s] key was remove from ignored_list !"
                 "(keycode:%d, type:%d)\n", __FUNCTION__,
                 ev->xkey.keycode, ev->type);
 
@@ -1205,14 +1205,14 @@ _e_keyrouter_device_add(int id, int type)
    KeyrouterDeviceType kdtype = E_KEYROUTER_NONE;
    E_Keyrouter_Device_Info *kdi = NULL;
 
-   EINA_LIST_FOREACH(keyrouter.device_list, l, kdi)
+   EINA_LIST_FOREACH(krt.device_list, l, kdi)
      {
         if ((kdi) &&
             (kdi->type==E_KEYROUTER_HWKEY) &&
             (kdi->id == id))
           {
-             SLOG(LOG_DEBUG, "KEYROUTER",
-                  "[keyrouter] Slave key device (id=%d, name=%s) was added !\n",
+             SLOG(LOG_DEBUG, "krt",
+                  "[krt] Slave key device (id=%d, name=%s) was added !\n",
                   id, kdi->name);
 
              detachSlave(id);
@@ -1223,11 +1223,11 @@ _e_keyrouter_device_add(int id, int type)
    switch (type)
      {
       case XISlavePointer:
-         info = XIQueryDevice(keyrouter.disp, id, &ndevices);
+         info = XIQueryDevice(krt.disp, id, &ndevices);
          if ((!info) || (ndevices <= 0))
            {
-              SLOG(LOG_DEBUG, "KEYROUTER",
-                   "[keyrouter] There is no queried XI device. "
+              SLOG(LOG_DEBUG, "krt",
+                   "[krt] There is no queried XI device. "
                    "(device id=%d, type=%d)\n",
                    id, type);
               goto out;
@@ -1238,8 +1238,8 @@ _e_keyrouter_device_add(int id, int type)
              strcasestr(info->name, "mouse"))
            goto out;
 
-         SLOG(LOG_DEBUG, "KEYROUTER",
-              "[keyrouter] XISlavePointer but has key events... "
+         SLOG(LOG_DEBUG, "krt",
+              "[krt] XISlavePointer but has key events... "
               "(device id=%d, name=%s)\n",
               id, info->name);
          kdtype = E_KEYROUTER_KEYBOARD;
@@ -1248,11 +1248,11 @@ _e_keyrouter_device_add(int id, int type)
          break;
 
       case XISlaveKeyboard:
-         info = XIQueryDevice(keyrouter.disp, id, &ndevices);
+         info = XIQueryDevice(krt.disp, id, &ndevices);
          if ((!info) || (ndevices <= 0))
            {
-              SLOG(LOG_DEBUG, "KEYROUTER",
-                   "[keyrouter][%s] There is no queried XI device. "
+              SLOG(LOG_DEBUG, "krt",
+                   "[krt][%s] There is no queried XI device. "
                    "(device id=%d, type=%d)\n",
                    __FUNCTION__, id, type);
               goto out;
@@ -1270,8 +1270,8 @@ keyboard_added:
          E_Keyrouter_Device_Info *data = malloc(sizeof(E_Keyrouter_Device_Info));
          if (!data)
            {
-              SLOG(LOG_DEBUG, "KEYROUTER",
-                   "[keyrouter][%s] Failed to allocate memory for device info !\n",
+              SLOG(LOG_DEBUG, "krt",
+                   "[krt][%s] Failed to allocate memory for device info !\n",
                    __FUNCTION__);
               goto out;
            }
@@ -1280,7 +1280,7 @@ keyboard_added:
          data->id = id;
          data->name = eina_stringshare_add(info->name);
 
-         l = keyrouter.device_list;
+         l = krt.device_list;
          l = eina_list_append(l, data);
 
          _e_keyrouter_grab_hwkeys(id);
@@ -1296,16 +1296,16 @@ _e_keyrouter_device_remove(int id, int type)
    Eina_List *l, *ll;
    E_Keyrouter_Device_Info *data;
 
-   if (!keyrouter.device_list)
+   if (!krt.device_list)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][%s] device list is empty ! something's wrong ! "
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][%s] device list is empty ! something's wrong ! "
              "(id=%d, type=%d)\n",
              __FUNCTION__, id, type);
         goto out;
      }
 
-   EINA_LIST_FOREACH(keyrouter.device_list, ll, data)
+   EINA_LIST_FOREACH(krt.device_list, ll, data)
      {
         if ((data) && (data->id == id))
           {
@@ -1316,21 +1316,21 @@ _e_keyrouter_device_remove(int id, int type)
 
                 case E_KEYROUTER_HOTPLUGGED:
                 case E_KEYROUTER_KEYBOARD:
-                   SLOG(LOG_DEBUG, "KEYROUTER",
-                        "[keyrouter][%s] Slave hotplugged key|keyboard device "
+                   SLOG(LOG_DEBUG, "krt",
+                        "[krt][%s] Slave hotplugged key|keyboard device "
                         "(id=%d, name=%s, type=%d) was removed/disabled !\n",
                         __FUNCTION__, id, data->name, type);
-                   l = keyrouter.device_list;
+                   l = krt.device_list;
                    l = eina_list_remove(l, data);
                    free(data);
                    goto out;
 
                 default:
-                   SLOG(LOG_DEBUG, "KEYROUTER",
-                        "[keyrouter][%s] Unknown type of device ! "
+                   SLOG(LOG_DEBUG, "krt",
+                        "[krt][%s] Unknown type of device ! "
                         "(id=%d, type=%d, name=%s, device type=%d)\n",
                         __FUNCTION__, data->id, type, data->name, data->type);
-                   l = keyrouter.device_list;
+                   l = krt.device_list;
                    l = eina_list_remove(l, data);
                    free(data);
                    goto out;
@@ -1349,8 +1349,8 @@ _e_keyrouter_get_zone(void)
    E_Comp *c;
    E_Zone *zone = NULL;
 
-   if (keyrouter.zone)
-     return keyrouter.zone;
+   if (krt.zone)
+     return krt.zone;
 
    EINA_LIST_FOREACH(e_comp_list(), cl, c)
      {
@@ -1376,104 +1376,104 @@ _e_keyrouter_init(void)
 
    _e_keyrouter_structure_init();
 
-   keyrouter.disp = ecore_x_display_get();
-   if (!keyrouter.disp)
+   krt.disp = ecore_x_display_get();
+   if (!krt.disp)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter] Failed to open display..!\n");
+        SLOG(LOG_DEBUG, "krt", "[krt] Failed to open display..!\n");
         ret = 0;
         goto out;
      }
 
-   keyrouter.rootWin = DefaultRootWindow(keyrouter.disp);
+   krt.rootWin = DefaultRootWindow(krt.disp);
 
    _e_keyrouter_x_input_init();
    InitGrabKeyDevices();
    _e_keyrouter_bindings_init();
 
-   keyrouter.atomDeviceStatus = ecore_x_atom_get(STR_ATOM_DEVICE_STATUS);
-   keyrouter.atomGrabStatus = ecore_x_atom_get(STR_ATOM_GRAB_STATUS);
-   keyrouter.atomGrabKey = ecore_x_atom_get(STR_ATOM_GRAB_KEY);
-   keyrouter.atomGrabExclWin = ecore_x_atom_get(STR_ATOM_GRAB_EXCL_WIN);
-   keyrouter.atomGrabORExclWin = ecore_x_atom_get(STR_ATOM_GRAB_OR_EXCL_WIN);
-   keyrouter.atomHWKeyEmulation = ecore_x_atom_get(PROP_HWKEY_EMULATION);
-   keyrouter.atomMenuLongPress = ecore_x_atom_get(STR_ATOM_KEY_MENU_LONGPRESS);
-   keyrouter.atomBackLongPress = ecore_x_atom_get(STR_ATOM_KEY_BACK_LONGPRESS);
-   keyrouter.atomLongPressEnable = ecore_x_atom_get(STR_ATOM_LONG_PRESS_ENABLE);
-   keyrouter.atomNotiWindow = ecore_x_atom_get(STR_ATOM_KEYROUTER_NOTIWINDOW);
+   krt.atomDeviceStatus = ecore_x_atom_get(STR_ATOM_DEVICE_STATUS);
+   krt.atomGrabStatus = ecore_x_atom_get(STR_ATOM_GRAB_STATUS);
+   krt.atomGrabKey = ecore_x_atom_get(STR_ATOM_GRAB_KEY);
+   krt.atomGrabExclWin = ecore_x_atom_get(STR_ATOM_GRAB_EXCL_WIN);
+   krt.atomGrabORExclWin = ecore_x_atom_get(STR_ATOM_GRAB_OR_EXCL_WIN);
+   krt.atomHWKeyEmulation = ecore_x_atom_get(PROP_HWKEY_EMULATION);
+   krt.atomMenuLongPress = ecore_x_atom_get(STR_ATOM_KEY_MENU_LONGPRESS);
+   krt.atomBackLongPress = ecore_x_atom_get(STR_ATOM_KEY_BACK_LONGPRESS);
+   krt.atomLongPressEnable = ecore_x_atom_get(STR_ATOM_LONG_PRESS_ENABLE);
+   krt.atomNotiWindow = ecore_x_atom_get(STR_ATOM_KEYROUTER_NOTIWINDOW);
 
-   keyrouter.input_window = ecore_x_window_input_new(keyrouter.rootWin, -1, -1, 1, 1);
-   keyrouter.noti_window = ecore_x_window_input_new(keyrouter.rootWin, -1, -1, 1, 1);
-   keyrouter.longpress_enabled = enable;
+   krt.input_window = ecore_x_window_input_new(krt.rootWin, -1, -1, 1, 1);
+   krt.noti_window = ecore_x_window_input_new(krt.rootWin, -1, -1, 1, 1);
+   krt.longpress_enabled = enable;
 
-   ecore_x_window_prop_card32_set(keyrouter.rootWin,
-                                  keyrouter.atomLongPressEnable,
+   ecore_x_window_prop_card32_set(krt.rootWin,
+                                  krt.atomLongPressEnable,
                                   &enable,
                                   1);
 
-   if (!keyrouter.input_window)
+   if (!krt.input_window)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter] Failed to create input_window !\n");
+        SLOG(LOG_DEBUG, "krt",
+             "[krt] Failed to create input_window !\n");
      }
    else
      {
-        ecore_x_window_prop_property_set(keyrouter.rootWin,
-                                         keyrouter.atomHWKeyEmulation,
+        ecore_x_window_prop_property_set(krt.rootWin,
+                                         krt.atomHWKeyEmulation,
                                          ECORE_X_ATOM_WINDOW,
                                          32,
-                                         &keyrouter.input_window,
+                                         &krt.input_window,
                                          1);
      }
 
-   if (!keyrouter.noti_window)
+   if (!krt.noti_window)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter] Failed to create noti_window !\n");
+        SLOG(LOG_DEBUG, "krt",
+             "[krt] Failed to create noti_window !\n");
      }
    else
      {
-        ecore_x_window_prop_property_set(keyrouter.rootWin,
-                                         keyrouter.atomNotiWindow,
+        ecore_x_window_prop_property_set(krt.rootWin,
+                                         krt.atomNotiWindow,
                                          ECORE_X_ATOM_WINDOW,
                                          32,
-                                         &keyrouter.noti_window,
+                                         &krt.noti_window,
                                          1);
      }
 
-   keyrouter.zone = _e_keyrouter_get_zone();
-   if (!keyrouter.zone)
+   krt.zone = _e_keyrouter_get_zone();
+   if (!krt.zone)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter] Failed to get zone !\n");
+        SLOG(LOG_DEBUG, "krt",
+             "[krt] Failed to get zone !\n");
         ret = 0;
         goto out;
      }
 
-   grab_result = GrabKeyDevices(keyrouter.rootWin);
+   grab_result = GrabKeyDevices(krt.rootWin);
 
    if (!grab_result)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter] Failed to GrabDevices() !\n");
+        SLOG(LOG_DEBUG, "krt",
+             "[krt] Failed to GrabDevices() !\n");
         ret = 0;
         goto out;
      }
 
-   keyrouter.DeviceKeyPress = keyrouter.nInputEvent[INPUTEVENT_KEY_PRESS];
-   keyrouter.DeviceKeyRelease = keyrouter.nInputEvent[INPUTEVENT_KEY_RELEASE];
+   krt.DeviceKeyPress = krt.nInputEvent[INPUTEVENT_KEY_PRESS];
+   krt.DeviceKeyRelease = krt.nInputEvent[INPUTEVENT_KEY_RELEASE];
 
-   keyrouter.modkey = calloc(NUM_KEY_COMPOSITION_ACTIONS, sizeof(ModifierKey));
+   krt.modkey = calloc(NUM_KEY_COMPOSITION_ACTIONS, sizeof(ModifierKey));
 
-   if (!keyrouter.modkey)
+   if (!krt.modkey)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter] Failed to allocate memory for key composition !\n");
+        SLOG(LOG_DEBUG, "krt",
+             "[krt] Failed to allocate memory for key composition !\n");
         ret = 0;
         goto out;
      }
 
    InitModKeys();
-   BuildKeyGrabList(keyrouter.rootWin);
+   BuildKeyGrabList(krt.rootWin);
 
 out:
    return ret;
@@ -1488,34 +1488,34 @@ _e_keyrouter_fini(void)
 static void
 _e_keyrouter_structure_init(void)
 {
-   memset(&keyrouter, 0L, sizeof(keyrouter));
+   memset(&krt, 0L, sizeof(krt));
 
-   keyrouter.DeviceKeyPress = -1;
-   keyrouter.DeviceKeyRelease = -1;
-   keyrouter.xi2_opcode = -1;
-   keyrouter.isWindowStackChanged = 1;
-   keyrouter.prev_sent_keycode = 0;
-   keyrouter.resTopVisibleCheck = 0;
-   keyrouter.device_list = NULL;
-   keyrouter.ignored_key_list = NULL;
-   keyrouter.waiting_key_list = NULL;
-   keyrouter.hwkeymap_info_list = NULL;
-   keyrouter.longpress_list = NULL;
-   keyrouter.pressinfo = NULL;
-   keyrouter.num_hwkey_devices = 0;
-   keyrouter.timer_flag=0;
-   keyrouter.short_press_flag = 0;
-   keyrouter.first_press_flag = 0;
-   keyrouter.longpress_enabled = 0;
+   krt.DeviceKeyPress = -1;
+   krt.DeviceKeyRelease = -1;
+   krt.xi2_opcode = -1;
+   krt.isWindowStackChanged = 1;
+   krt.prev_sent_keycode = 0;
+   krt.resTopVisibleCheck = 0;
+   krt.device_list = NULL;
+   krt.ignored_key_list = NULL;
+   krt.waiting_key_list = NULL;
+   krt.hwkeymap_info_list = NULL;
+   krt.longpress_list = NULL;
+   krt.pressinfo = NULL;
+   krt.num_hwkey_devices = 0;
+   krt.timer_flag=0;
+   krt.short_press_flag = 0;
+   krt.first_press_flag = 0;
+   krt.longpress_enabled = 0;
 
-   keyrouter.atomGrabKey = None;
-   keyrouter.atomDeviceStatus = None;
-   keyrouter.atomGrabStatus = None;
-   keyrouter.atomGrabExclWin = None;
-   keyrouter.atomGrabORExclWin = None;
-   keyrouter.atomMenuLongPress = None;
-   keyrouter.atomBackLongPress = None;
-   keyrouter.atomLongPressEnable = None;
+   krt.atomGrabKey = None;
+   krt.atomDeviceStatus = None;
+   krt.atomGrabStatus = None;
+   krt.atomGrabExclWin = None;
+   krt.atomGrabORExclWin = None;
+   krt.atomMenuLongPress = None;
+   krt.atomBackLongPress = None;
+   krt.atomLongPressEnable = None;
 }
 
 static void
@@ -1532,17 +1532,17 @@ _e_keyrouter_grab_hwkeys(int devid)
    int nmods = sizeof(modifiers)/sizeof(modifiers[0]);
    XIEventMask mask;
 
-   if (!keyrouter.hwkeymap_info_list)
+   if (!krt.hwkeymap_info_list)
      {
-        XDisplayKeycodes(keyrouter.disp, &min_keycode, &max_keycode);
-        origkeymap = XGetKeyboardMapping(keyrouter.disp, min_keycode,
+        XDisplayKeycodes(krt.disp, &min_keycode, &max_keycode);
+        origkeymap = XGetKeyboardMapping(krt.disp, min_keycode,
                                          (max_keycode - min_keycode + 1),
                                          &keysyms_per_keycode);
 
         if (!origkeymap)
           {
-             SLOG(LOG_DEBUG, "KEYROUTER",
-                  "[keyrouter] Failed to get keyboard mapping from X\n");
+             SLOG(LOG_DEBUG, "krt",
+                  "[krt] Failed to get keyboard mapping from X\n");
              return;
           }
 
@@ -1550,11 +1550,11 @@ _e_keyrouter_grab_hwkeys(int devid)
           {
              if (!HWKeys[i]) break;
 
-             Eina_Inlist *l = keyrouter.hwkeymap_info_list;
+             Eina_Inlist *l = krt.hwkeymap_info_list;
 
              ksym = XStringToKeysym(HWKeys[i]);
 
-             if ((ksym == NoSymbol) || (ksym == keyrouter.cancel_key.keysym))
+             if ((ksym == NoSymbol) || (ksym == krt.cancel_key.keysym))
                continue;
 
              hwkeymap_info *hki = NULL;
@@ -1563,8 +1563,8 @@ _e_keyrouter_grab_hwkeys(int devid)
 
              if (!hki)
                {
-                  SLOG(LOG_ERROR, "KEYROUTER",
-                       "[keyrouter] Failed to allocate memory for HW keymap "
+                  SLOG(LOG_ERROR, "krt",
+                       "[krt] Failed to allocate memory for HW keymap "
                        "information !\n");
                   XFree(origkeymap);
                   return;
@@ -1589,8 +1589,8 @@ _e_keyrouter_grab_hwkeys(int devid)
 
              if (!keycodes)
                {
-                  SLOG(LOG_ERROR, "KEYROUTER",
-                       "[keyrouter] Failed to allocate memory for keycode "
+                  SLOG(LOG_ERROR, "krt",
+                       "[krt] Failed to allocate memory for keycode "
                        "array !\n");
                   XFree(origkeymap);
                   free(hki);
@@ -1611,7 +1611,7 @@ _e_keyrouter_grab_hwkeys(int devid)
 
              hki->keycodes = keycodes;
              l = eina_inlist_append(l, (Eina_Inlist *)hki);
-             keyrouter.hwkeymap_info_list = l;
+             krt.hwkeymap_info_list = l;
           }
 
         if (origkeymap)
@@ -1619,7 +1619,7 @@ _e_keyrouter_grab_hwkeys(int devid)
      }
 
    hwkeymap_info *hkinfo = NULL;
-   Eina_Inlist *lst = keyrouter.hwkeymap_info_list;
+   Eina_Inlist *lst = krt.hwkeymap_info_list;
 
    if (devid)
      {
@@ -1639,10 +1639,10 @@ _e_keyrouter_grab_hwkeys(int devid)
           {
              if (devid)
                {
-                  result = XIGrabKeycode(keyrouter.disp,
+                  result = XIGrabKeycode(krt.disp,
                                          devid,
                                          hkinfo->keycodes[k],
-                                         keyrouter.rootWin,
+                                         krt.rootWin,
                                          GrabModeAsync,
                                          GrabModeAsync,
                                          False,
@@ -1651,7 +1651,7 @@ _e_keyrouter_grab_hwkeys(int devid)
                                          modifiers);
                   if (result < 0)
                     {
-                       SECURE_SLOGD("[keyrouter][grab_hwkeys] Failed to grab "
+                       SECURE_SLOGD("[krt][grab_hwkeys] Failed to grab "
                                     "keycode (=%d) !\n", hkinfo->keycodes[k]);
                        continue;
                     }
@@ -1680,7 +1680,7 @@ _e_keyrouter_set_key_repeat(int key, int auto_repeat_mode)
         values.key = key;
      }
 
-   XChangeKeyboardControl(keyrouter.disp, mask, &values);
+   XChangeKeyboardControl(krt.disp, mask, &values);
 }
 
 static void
@@ -1696,7 +1696,7 @@ _e_keyrouter_bindings_init(void)
              ksym = XStringToKeysym(HWKeys[i]);
 
              if (ksym)
-               keycode = XKeysymToKeycode(keyrouter.disp, ksym);
+               keycode = XKeysymToKeycode(krt.disp, ksym);
              else
                keycode = 0;
 
@@ -1706,24 +1706,24 @@ _e_keyrouter_bindings_init(void)
                }
 
              /* get bound key information */
-             keyrouter.HardKeys[keycode].bind = e_bindings_key_find(HWKeys[i],
+             krt.HardKeys[keycode].bind = e_bindings_key_find(HWKeys[i],
                                                                     E_BINDING_MODIFIER_NONE,
                                                                     1);
 
-             if ((!keyrouter.HardKeys[keycode].bind) ||
-                 (strcmp(keyrouter.HardKeys[keycode].bind->key, HWKeys[i])))
+             if ((!krt.HardKeys[keycode].bind) ||
+                 (strcmp(krt.HardKeys[keycode].bind->key, HWKeys[i])))
                {
                   continue;
                }
 
              /* ungrab bound key(s) */
-             ecore_x_window_key_ungrab(keyrouter.rootWin,
-                                       keyrouter.HardKeys[keycode].bind->key,
-                                       _e_keyrouter_modifiers(keyrouter.HardKeys[keycode].bind->mod),
-                                       keyrouter.HardKeys[keycode].bind->any_mod);
+             ecore_x_window_key_ungrab(krt.rootWin,
+                                       krt.HardKeys[keycode].bind->key,
+                                       _e_keyrouter_modifiers(krt.HardKeys[keycode].bind->mod),
+                                       krt.HardKeys[keycode].bind->any_mod);
 
-             SECURE_SLOGD("[keyrouter][bindings_init] %s (keycode:%d) was bound !!\n",
-                          keyrouter.HardKeys[keycode].bind->key, keycode);
+             SECURE_SLOGD("[krt][bindings_init] %s (keycode:%d) was bound !!\n",
+                          krt.HardKeys[keycode].bind->key, keycode);
           }
         else
           break;
@@ -1738,10 +1738,10 @@ _e_keyrouter_update_key_delivery_list(Ecore_X_Window win, int keycode, const int
    hwkeymap_info *hkinfo = NULL;
    Eina_Inlist *l;
 
-   if (!keyrouter.hwkeymap_info_list)
+   if (!krt.hwkeymap_info_list)
      goto grab_a_keycode_only;
 
-   l = keyrouter.hwkeymap_info_list;
+   l = krt.hwkeymap_info_list;
    EINA_INLIST_FOREACH(l, hkinfo)
      {
         if (!hkinfo) continue;
@@ -1766,7 +1766,7 @@ _e_keyrouter_update_key_delivery_list(Ecore_X_Window win, int keycode, const int
                                            1);
              if (res)
                {
-                  SECURE_SLOGD("[keyrouter][%s] Failed to add window (0x%x) "
+                  SECURE_SLOGD("[krt][%s] Failed to add window (0x%x) "
                                "to delivery list ! keycode=%x, grab_mode=0x%X\n",
                                __FUNCTION__, win, hkinfo->keycodes[c], grab_mode);
                }
@@ -1781,7 +1781,7 @@ grab_a_keycode_only:
    res = AddWindowToDeliveryList(win,  keycode, grab_mode, 1);
    if (res)
      {
-        SECURE_SLOGD("[keyrouter][%s] Failed to add window (0x%x) to delivery list !"
+        SECURE_SLOGD("[krt][%s] Failed to add window (0x%x) to delivery list !"
                      "keycode=%x, grab_mode=0x%X\n", __FUNCTION__, win, keycode,
                      grab_mode);
      }
@@ -1796,9 +1796,9 @@ GetItemFromWindow(Window win, const char* atom_name, unsigned int **key_list)
    unsigned long sz_remains_data;
    Atom grabKey;
 
-   grabKey = XInternAtom(keyrouter.disp, atom_name, False);
+   grabKey = XInternAtom(krt.disp, atom_name, False);
 
-   if (XGetWindowProperty(keyrouter.disp,
+   if (XGetWindowProperty(krt.disp,
                           win,
                           grabKey,
                           0,
@@ -1829,14 +1829,14 @@ BuildKeyGrabList(Window root)
    int n_items = 0;
    int res;
 
-   XGrabServer(keyrouter.disp);
-   res = XQueryTree(keyrouter.disp,
+   XGrabServer(krt.disp);
+   res = XQueryTree(krt.disp,
                     root,
                     &tmp,
                     &tmp,
                     &childwins,
                     &num_children);
-   XUngrabServer(keyrouter.disp);
+   XUngrabServer(krt.disp);
    if (0 == res) return;
 
    for (i = 0; i < num_children; i++)
@@ -1874,7 +1874,7 @@ BuildKeyGrabList(Window root)
 static void
 InitGrabKeyDevices(void)
 {
-   memset(keyrouter.HardKeys, (int)NULL, sizeof(keyrouter.HardKeys));
+   memset(krt.HardKeys, (int)NULL, sizeof(krt.HardKeys));
 }
 
 /* Function for getting device pointer through device name */
@@ -1886,23 +1886,23 @@ GrabKeyDevice(Window win, const char* DeviceName, const int DeviceID)
    XDevice *pDev = NULL;
    int res;
 
-   pDev = XOpenDevice(keyrouter.disp, DeviceID);
+   pDev = XOpenDevice(krt.disp, DeviceID);
    if (!pDev)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][%s] Fail to open the device (id=%d) !\n",
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][%s] Fail to open the device (id=%d) !\n",
              __FUNCTION__, DeviceID);
         goto out;
      }
 
    /* key events */
-   DeviceKeyPress(pDev, keyrouter.nInputEvent[INPUTEVENT_KEY_PRESS], cls);
+   DeviceKeyPress(pDev, krt.nInputEvent[INPUTEVENT_KEY_PRESS], cls);
    if (cls) eventList[INPUTEVENT_KEY_PRESS] = cls;
 
-   DeviceKeyRelease(pDev, keyrouter.nInputEvent[INPUTEVENT_KEY_RELEASE], cls);
+   DeviceKeyRelease(pDev, krt.nInputEvent[INPUTEVENT_KEY_RELEASE], cls);
    if (cls) eventList[INPUTEVENT_KEY_RELEASE] = cls;
 
-   res = XGrabDevice(keyrouter.disp,
+   res = XGrabDevice(krt.disp,
                      pDev,
                      win,
                      False,
@@ -1913,11 +1913,11 @@ GrabKeyDevice(Window win, const char* DeviceName, const int DeviceID)
                      CurrentTime);
    if (res)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][%s] Fail to grab the device (error=%d, id=%d) !\n",
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][%s] Fail to grab the device (error=%d, id=%d) !\n",
              __FUNCTION__, res, DeviceID);
 
-        if (pDev) XCloseDevice(keyrouter.disp, pDev);
+        if (pDev) XCloseDevice(krt.disp, pDev);
         goto out;
      }
 
@@ -1934,7 +1934,7 @@ detachSlave(int DeviceID)
    detach.type = XIDetachSlave;
    detach.deviceid = DeviceID;
 
-   XIChangeHierarchy(keyrouter.disp,
+   XIChangeHierarchy(krt.disp,
                      (XIAnyHierarchyChangeInfo*)&detach,
                      1);
 }
@@ -1948,13 +1948,13 @@ GrabKeyDevices(Window win)
    E_Keyrouter_Device_Info *data = NULL;
    Eina_List *l;
 
-   info = XIQueryDevice(keyrouter.disp,
+   info = XIQueryDevice(krt.disp,
                         XIAllDevices,
                         &ndevices);
    if (!info)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][%s] There is no queried XI device.\n",
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][%s] There is no queried XI device.\n",
              __FUNCTION__);
         return 0;
      }
@@ -1972,8 +1972,8 @@ GrabKeyDevices(Window win)
                   strcasestr(dev->name, "mouse"))
                 continue;
 
-              SLOG(LOG_DEBUG, "KEYROUTER",
-                   "[keyrouter] XISlavePointer but has key events... "
+              SLOG(LOG_DEBUG, "krt",
+                   "[krt] XISlavePointer but has key events... "
                    "(device id=%d, name=%s)\n",
                    dev->deviceid, dev->name);
 
@@ -1994,8 +1994,8 @@ keyboard_added:
                    result = GrabKeyDevice(win, dev->name, dev->deviceid);
                    if (!result)
                      {
-                        SLOG(LOG_DEBUG, "KEYROUTER",
-                             "[keyrouter] Failed to grab key device"
+                        SLOG(LOG_DEBUG, "krt",
+                             "[krt] Failed to grab key device"
                              "(name=%s, result=%d)\n",
                              dev->name, result);
                         continue;
@@ -2013,14 +2013,14 @@ keyboard_added:
                    data->name = eina_stringshare_add(dev->name);
                    data->type = kdtype;
 
-                   l = keyrouter.device_list;
+                   l = krt.device_list;
                    l = eina_list_append(l, data);
                 }
 
               if (kdtype == E_KEYROUTER_HWKEY)
                 {
                    detachSlave(dev->deviceid);
-                   keyrouter.num_hwkey_devices++;
+                   krt.num_hwkey_devices++;
                 }
           }
      }
@@ -2039,7 +2039,7 @@ reattachSlave(int slave, int master)
    attach.deviceid = slave;
    attach.new_master = master;
 
-   XIChangeHierarchy(keyrouter.disp,
+   XIChangeHierarchy(krt.disp,
                      (XIAnyHierarchyChangeInfo*)&attach,
                      1);
 }
@@ -2051,11 +2051,11 @@ UngrabKeyDevices(void)
    XIDeviceInfo *dev, *info = NULL;
    XDevice* pDev = NULL;
 
-   info = XIQueryDevice(keyrouter.disp, XIAllDevices, &ndevices);
+   info = XIQueryDevice(krt.disp, XIAllDevices, &ndevices);
    if (!info)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][%s] There is no queried XI device.\n",
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][%s] There is no queried XI device.\n",
              __FUNCTION__);
         return;
      }
@@ -2070,11 +2070,11 @@ UngrabKeyDevices(void)
         if (dev->num_classes > 1) /* only for Floated SlaveKeyboard */
           continue;
 
-        pDev = XOpenDevice(keyrouter.disp, dev->deviceid);
+        pDev = XOpenDevice(krt.disp, dev->deviceid);
         if (!pDev) continue;
 
-        XUngrabDevice(keyrouter.disp, pDev, CurrentTime);
-        XCloseDevice(keyrouter.disp, pDev);
+        XUngrabDevice(krt.disp, pDev, CurrentTime);
+        XCloseDevice(krt.disp, pDev);
         pDev = NULL;
 
         reattachSlave(dev->deviceid, 3); /* reattach to Virtual Core Keyboard */
@@ -2094,9 +2094,9 @@ PrintKeyDeliveryList(void)
         int pid;
         KeySym ks;
 
-        if (keyrouter.HardKeys[index].keycode == 0) /* empty */
+        if (krt.HardKeys[index].keycode == 0) /* empty */
           continue;
-        ks = XkbKeycodeToKeysym(keyrouter.disp, index, 0, 0);
+        ks = XkbKeycodeToKeysym(krt.disp, index, 0, 0);
 
         SECURE_SLOGD("\n");
         keyname = XKeysymToString(ks);
@@ -2135,14 +2135,14 @@ PrintKeyDeliveryList(void)
         else if (!strncmp(keyname, KEY_SEARCH, LEN_KEY_SEARCH)) SECURE_SLOGD("[ KEY_SEARCH : %s : %d ]\n", keyname, index);
         else if (!strncmp(keyname, KEY_VOICE, LEN_KEY_VOICE)) SECURE_SLOGD("[ KEY_VOICE : %s : %d ]\n", keyname, index);
         else if (!strncmp(keyname, KEY_LANGUAGE, LEN_KEY_LANGUAGE)) SECURE_SLOGD("[ KEY_LANGUAGE : %s : %d ]\n", keyname, index);
-        else SECURE_SLOGD("[ UNKNOWN : %d ]\n", keyrouter.HardKeys[index].keycode);
+        else SECURE_SLOGD("[ UNKNOWN : %d ]\n", krt.HardKeys[index].keycode);
 
         /* Print EXCLUSIVE mode of grab */
-        if (NULL != keyrouter.HardKeys[index].excl_ptr)
+        if (NULL != krt.HardKeys[index].excl_ptr)
           {
-             ecore_x_netwm_pid_get((int)(keyrouter.HardKeys[index].excl_ptr->wid), &pid);
+             ecore_x_netwm_pid_get((int)(krt.HardKeys[index].excl_ptr->wid), &pid);
              SECURE_SLOGD("== EXCLUSIVE : Window(0x%X) -> pid(%d)\n",
-                          (int)(keyrouter.HardKeys[index].excl_ptr->wid),
+                          (int)(krt.HardKeys[index].excl_ptr->wid),
                           pid);
           }
         else
@@ -2151,10 +2151,10 @@ PrintKeyDeliveryList(void)
           }
 
         /* Print OR_EXCLUSIVE mode of grab */
-        if (NULL != keyrouter.HardKeys[index].or_excl_ptr)
+        if (NULL != krt.HardKeys[index].or_excl_ptr)
           {
              keylist_node* or_excl_ptr;
-             or_excl_ptr = keyrouter.HardKeys[index].or_excl_ptr;
+             or_excl_ptr = krt.HardKeys[index].or_excl_ptr;
              SECURE_SLOGD("== OR_EXCLUSIVE : ");
 
              do
@@ -2175,10 +2175,10 @@ PrintKeyDeliveryList(void)
           }
 
         /* Print TOP_POSITION mode of grab */
-        if (NULL != keyrouter.HardKeys[index].top_ptr)
+        if (NULL != krt.HardKeys[index].top_ptr)
           {
              keylist_node* top_ptr;
-             top_ptr = keyrouter.HardKeys[index].top_ptr;
+             top_ptr = krt.HardKeys[index].top_ptr;
              SECURE_SLOGD("== TOP_POSITION : ");
 
              do
@@ -2197,10 +2197,10 @@ PrintKeyDeliveryList(void)
           }
 
         /* Print SHARED mode of grab */
-        if (NULL != keyrouter.HardKeys[index].shared_ptr)
+        if (NULL != krt.HardKeys[index].shared_ptr)
           {
              keylist_node* shared_ptr;
-             shared_ptr = keyrouter.HardKeys[index].shared_ptr;
+             shared_ptr = krt.HardKeys[index].shared_ptr;
              SECURE_SLOGD("== SHARED : ");
 
              do
@@ -2234,19 +2234,19 @@ RemoveWindowDeliveryList(Window win, int isTopPositionMode, int UnSetExclusivePr
    /* If isTopPosition is true, remove win only from TOP_POSITION grab list ! */
    for (index = 0; index < MAX_HARDKEYS; index++)
      {
-        if (keyrouter.HardKeys[index].keycode == 0) /* empty */
+        if (krt.HardKeys[index].keycode == 0) /* empty */
           continue;
 
         if (isTopPositionMode)
           {
              /* Check & Delete TOP_POSITION mode of grab */
-             if (NULL != keyrouter.HardKeys[index].top_ptr)
+             if (NULL != krt.HardKeys[index].top_ptr)
                {
                   int flags = 0;
                   keylist_node* current;
                   keylist_node* next_current;
 
-                  current = keyrouter.HardKeys[index].top_ptr;
+                  current = krt.HardKeys[index].top_ptr;
 
                   if (!current) continue;
 
@@ -2254,14 +2254,14 @@ RemoveWindowDeliveryList(Window win, int isTopPositionMode, int UnSetExclusivePr
 
                   do
                     {
-                       if (win == keyrouter.HardKeys[index].top_ptr->wid)
+                       if (win == krt.HardKeys[index].top_ptr->wid)
                          {
                             if (current->next)
-                              keyrouter.HardKeys[index].top_ptr = current->next;
+                              krt.HardKeys[index].top_ptr = current->next;
                             else
                               {
-                                 keyrouter.HardKeys[index].top_ptr = NULL;
-                                 keyrouter.HardKeys[index].top_tail = NULL;
+                                 krt.HardKeys[index].top_ptr = NULL;
+                                 krt.HardKeys[index].top_tail = NULL;
                                  mode_count += TOP_GRAB_MODE;
                               }
 
@@ -2283,7 +2283,7 @@ RemoveWindowDeliveryList(Window win, int isTopPositionMode, int UnSetExclusivePr
                             else
                               {
                                  current->next = NULL;
-                                 keyrouter.HardKeys[index].top_tail = current;
+                                 krt.HardKeys[index].top_tail = current;
                               }
 
                             if (next_current)
@@ -2307,42 +2307,42 @@ RemoveWindowDeliveryList(Window win, int isTopPositionMode, int UnSetExclusivePr
         else /* isTopPositionMode == 0 */
           {
              /* Check & Delete EXCLUSIVE mode of grab */
-             if (NULL != keyrouter.HardKeys[index].excl_ptr)
+             if (NULL != krt.HardKeys[index].excl_ptr)
                {
-                  if (win == keyrouter.HardKeys[index].excl_ptr->wid)
+                  if (win == krt.HardKeys[index].excl_ptr->wid)
                     {
                        if (UnSetExclusiveProperty)
-                         UnSetExclusiveGrabInfoToRootWindow(keyrouter.HardKeys[index].keycode,
+                         UnSetExclusiveGrabInfoToRootWindow(krt.HardKeys[index].keycode,
                                                             EXCLUSIVE_GRAB);
 
-                       if (keyrouter.HardKeys[index].excl_ptr)
-                         free(keyrouter.HardKeys[index].excl_ptr);
-                       keyrouter.HardKeys[index].excl_ptr = NULL;
+                       if (krt.HardKeys[index].excl_ptr)
+                         free(krt.HardKeys[index].excl_ptr);
+                       krt.HardKeys[index].excl_ptr = NULL;
                        mode_count += EXCL_GRAB_MODE;
                        continue; /* need to check another keycode */
                     }
                }
 
              /* Check & Delete OR_EXCLUSIVE mode of grab */
-             if (NULL != keyrouter.HardKeys[index].or_excl_ptr)
+             if (NULL != krt.HardKeys[index].or_excl_ptr)
                {
                   int flags = 0;
                   keylist_node* current = NULL;
                   keylist_node* next_current = NULL;
 
-                  current = keyrouter.HardKeys[index].or_excl_ptr;
+                  current = krt.HardKeys[index].or_excl_ptr;
                   if (current)
                     {
                        next_current = current->next;
                        do
                          {
-                            if (win == keyrouter.HardKeys[index].or_excl_ptr->wid)
+                            if (win == krt.HardKeys[index].or_excl_ptr->wid)
                               {
                                  if (current->next)
-                                   keyrouter.HardKeys[index].or_excl_ptr = current->next;
+                                   krt.HardKeys[index].or_excl_ptr = current->next;
                                  else
                                    {
-                                      keyrouter.HardKeys[index].or_excl_ptr = NULL;
+                                      krt.HardKeys[index].or_excl_ptr = NULL;
                                       mode_count += OR_EXCL_GRAB_MODE;
                                    }
 
@@ -2381,21 +2381,21 @@ RemoveWindowDeliveryList(Window win, int isTopPositionMode, int UnSetExclusivePr
                          }
                        while (next_current);
                     }
-                  if (NULL == keyrouter.HardKeys[index].or_excl_ptr)
-                    UnSetExclusiveGrabInfoToRootWindow(keyrouter.HardKeys[index].keycode,
+                  if (NULL == krt.HardKeys[index].or_excl_ptr)
+                    UnSetExclusiveGrabInfoToRootWindow(krt.HardKeys[index].keycode,
                                                        OR_EXCLUSIVE_GRAB);
 
                   if (flags) continue;
                }
 
              /* heck & Delete TOP_POSITION mode of grab */
-             if (NULL != keyrouter.HardKeys[index].top_ptr)
+             if (NULL != krt.HardKeys[index].top_ptr)
                {
                   int flags = 0;
                   keylist_node* current;
                   keylist_node* next_current;
 
-                  current = keyrouter.HardKeys[index].top_ptr;
+                  current = krt.HardKeys[index].top_ptr;
 
                   if (!current)
                     goto null_top_ptr;
@@ -2404,14 +2404,14 @@ RemoveWindowDeliveryList(Window win, int isTopPositionMode, int UnSetExclusivePr
 
                   do
                     {
-                       if (win == keyrouter.HardKeys[index].top_ptr->wid)
+                       if (win == krt.HardKeys[index].top_ptr->wid)
                          {
                             if (current->next)
-                              keyrouter.HardKeys[index].top_ptr = current->next;
+                              krt.HardKeys[index].top_ptr = current->next;
                             else
                               {
-                                 keyrouter.HardKeys[index].top_ptr = NULL;
-                                 keyrouter.HardKeys[index].top_tail = NULL;
+                                 krt.HardKeys[index].top_ptr = NULL;
+                                 krt.HardKeys[index].top_tail = NULL;
                                  mode_count += TOP_GRAB_MODE;
                               }
 
@@ -2433,7 +2433,7 @@ RemoveWindowDeliveryList(Window win, int isTopPositionMode, int UnSetExclusivePr
                             else
                               {
                                  current->next = NULL;
-                                 keyrouter.HardKeys[index].top_tail = current;
+                                 krt.HardKeys[index].top_tail = current;
                               }
 
                             if (next_current)
@@ -2456,25 +2456,25 @@ RemoveWindowDeliveryList(Window win, int isTopPositionMode, int UnSetExclusivePr
 
 null_top_ptr:
              /* Check & Delete SHARED mode of grab */
-             if (NULL != keyrouter.HardKeys[index].shared_ptr)
+             if (NULL != krt.HardKeys[index].shared_ptr)
                {
                   int flags = 0;
                   keylist_node* current = NULL;
                   keylist_node* next_current = NULL;
 
-                  current = keyrouter.HardKeys[index].shared_ptr;
+                  current = krt.HardKeys[index].shared_ptr;
                   if (current)
                     {
                        next_current = current->next;
                        do
                          {
-                            if (win == keyrouter.HardKeys[index].shared_ptr->wid)
+                            if (win == krt.HardKeys[index].shared_ptr->wid)
                               {
                                  if (current->next)
-                                   keyrouter.HardKeys[index].shared_ptr = current->next;
+                                   krt.HardKeys[index].shared_ptr = current->next;
                                  else
                                    {
-                                      keyrouter.HardKeys[index].shared_ptr = NULL;
+                                      krt.HardKeys[index].shared_ptr = NULL;
                                       mode_count += SHARED_GRAB_MODE;
                                    }
 
@@ -2539,25 +2539,25 @@ UnSetExclusiveGrabInfoToRootWindow(int keycode, int grab_mode)
 
    if (grab_mode == EXCLUSIVE_GRAB)
      {
-        if (keyrouter.atomGrabExclWin == None)
-          keyrouter.atomGrabExclWin = XInternAtom(keyrouter.disp,
+        if (krt.atomGrabExclWin == None)
+          krt.atomGrabExclWin = XInternAtom(krt.disp,
                                                   STR_ATOM_GRAB_EXCL_WIN,
                                                   False);
-        ex_grabwin = keyrouter.atomGrabExclWin;
+        ex_grabwin = krt.atomGrabExclWin;
      }
    else if (grab_mode == OR_EXCLUSIVE_GRAB)
      {
-        if (keyrouter.atomGrabORExclWin == None)
-          keyrouter.atomGrabORExclWin = XInternAtom(keyrouter.disp,
+        if (krt.atomGrabORExclWin == None)
+          krt.atomGrabORExclWin = XInternAtom(krt.disp,
                                                     STR_ATOM_GRAB_OR_EXCL_WIN,
                                                     False);
-        ex_grabwin = keyrouter.atomGrabORExclWin;
+        ex_grabwin = krt.atomGrabORExclWin;
      }
    else
      return;
 
-   if (XGetWindowProperty(keyrouter.disp,
-                          keyrouter.rootWin,
+   if (XGetWindowProperty(krt.disp,
+                          krt.rootWin,
                           ex_grabwin,
                           0,
                           0x7fffffff,
@@ -2593,7 +2593,7 @@ UnSetExclusiveGrabInfoToRootWindow(int keycode, int grab_mode)
 
    if (!new_key_list)
      {
-        XDeleteProperty(keyrouter.disp, keyrouter.rootWin, ex_grabwin);
+        XDeleteProperty(krt.disp, krt.rootWin, ex_grabwin);
         ecore_x_sync();
         goto out;
      }
@@ -2606,8 +2606,8 @@ UnSetExclusiveGrabInfoToRootWindow(int keycode, int grab_mode)
           new_key_list[cnt++] = key_list[i];
      }
 
-   XChangeProperty(keyrouter.disp,
-                   keyrouter.rootWin,
+   XChangeProperty(krt.disp,
+                   krt.rootWin,
                    ex_grabwin,
                    XA_CARDINAL,
                    32,
@@ -2632,23 +2632,23 @@ AddWindowToDeliveryList(Window win, int keycode, const int grab_mode, const int 
 
    if (index >= MAX_HARDKEYS)
      {
-        SECURE_SLOGD("[keyrouter][%s] Error ! index of keyrouter.HardKeys must be smaller "
+        SECURE_SLOGD("[krt][%s] Error ! index of krt.HardKeys must be smaller "
                      "than %d (index=%d)!)\n", __FUNCTION__, MAX_HARDKEYS, index);
         ret = -1;
         goto out;
      }
 
    keylist_node* ptr = NULL;
-   keyrouter.HardKeys[index].keycode = keycode;
+   krt.HardKeys[index].keycode = keycode;
    switch (grab_mode)
      {
       case EXCLUSIVE_GRAB:
-         if (NULL != keyrouter.HardKeys[index].excl_ptr)
+         if (NULL != krt.HardKeys[index].excl_ptr)
            {
-              SECURE_SLOGD("[keyrouter][%s] keyrouter.HardKeys[%d].Keycode(%d) was "
+              SECURE_SLOGD("[krt][%s] krt.HardKeys[%d].Keycode(%d) was "
                            "EXCLUSIVELY grabbed already by window(0x%x) !\n",
                            __FUNCTION__, index, keycode,
-                           (int)(keyrouter.HardKeys[index].excl_ptr->wid));
+                           (int)(krt.HardKeys[index].excl_ptr->wid));
               ret = -1;
               goto out;
            }
@@ -2656,7 +2656,7 @@ AddWindowToDeliveryList(Window win, int keycode, const int grab_mode, const int 
          ptr = (keylist_node*)malloc(sizeof(keylist_node));
          if (!ptr)
            {
-              SECURE_SLOGD("[keyrouter][%s] Failed to allocate memory for adding "
+              SECURE_SLOGD("[krt][%s] Failed to allocate memory for adding "
                            "excl_ptr!\n", __FUNCTION__);
               ret = -1;
               goto out;
@@ -2664,7 +2664,7 @@ AddWindowToDeliveryList(Window win, int keycode, const int grab_mode, const int 
 
          ptr->wid = win;
          ptr->next = NULL;
-         keyrouter.HardKeys[index].excl_ptr = ptr;
+         krt.HardKeys[index].excl_ptr = ptr;
          break;
 
       case OR_EXCLUSIVE_GRAB:
@@ -2672,22 +2672,22 @@ AddWindowToDeliveryList(Window win, int keycode, const int grab_mode, const int 
          if (!ptr)
            {
               SLOG(LOG_WARN,
-                   "KEYROUTER", "Failed to allocate memory for adding "
+                   "krt", "Failed to allocate memory for adding "
                    "or_excl_ptr!\n");
               ret = -1;
               goto out;
            }
 
          ptr->wid = win;
-         if (NULL != keyrouter.HardKeys[index].or_excl_ptr)
+         if (NULL != krt.HardKeys[index].or_excl_ptr)
            {
-              ptr->next = keyrouter.HardKeys[index].or_excl_ptr;
-              keyrouter.HardKeys[index].or_excl_ptr = ptr;
+              ptr->next = krt.HardKeys[index].or_excl_ptr;
+              krt.HardKeys[index].or_excl_ptr = ptr;
            }
          else
            {
               ptr->next=NULL;
-              keyrouter.HardKeys[index].or_excl_ptr=ptr;
+              krt.HardKeys[index].or_excl_ptr=ptr;
            }
          break;
 
@@ -2696,7 +2696,7 @@ AddWindowToDeliveryList(Window win, int keycode, const int grab_mode, const int 
          if (!ptr)
            {
               SLOG(LOG_DEBUG,
-                   "KEYROUTER", "[keyrouter][%s] Failed to allocate "
+                   "krt", "[krt][%s] Failed to allocate "
                    "memory for adding top_ptr!\n",
                    __FUNCTION__);
               ret = -1;
@@ -2706,22 +2706,22 @@ AddWindowToDeliveryList(Window win, int keycode, const int grab_mode, const int 
          ptr->wid = win;
          ptr->next = NULL;
 
-         if (NULL == keyrouter.HardKeys[index].top_ptr)
+         if (NULL == krt.HardKeys[index].top_ptr)
            {
-              keyrouter.HardKeys[index].top_tail = ptr;
-              keyrouter.HardKeys[index].top_ptr = ptr;
+              krt.HardKeys[index].top_tail = ptr;
+              krt.HardKeys[index].top_ptr = ptr;
               break;
            }
 
          if (IsOnTop)
            {
-              ptr->next = keyrouter.HardKeys[index].top_ptr;
-              keyrouter.HardKeys[index].top_ptr = ptr;
+              ptr->next = krt.HardKeys[index].top_ptr;
+              krt.HardKeys[index].top_ptr = ptr;
            }
          else
            {
-              keyrouter.HardKeys[index].top_tail->next = ptr;
-              keyrouter.HardKeys[index].top_tail = ptr;
+              krt.HardKeys[index].top_tail->next = ptr;
+              krt.HardKeys[index].top_tail = ptr;
            }
          break;
 
@@ -2729,8 +2729,8 @@ AddWindowToDeliveryList(Window win, int keycode, const int grab_mode, const int 
          ptr = (keylist_node*)malloc(sizeof(keylist_node));
          if (!ptr)
            {
-              SLOG(LOG_DEBUG, "KEYROUTER",
-                   "[keyrouter][%s] Failed to allocate memory for "
+              SLOG(LOG_DEBUG, "krt",
+                   "[krt][%s] Failed to allocate memory for "
                    "adding shared_ptr!\n",
                    __FUNCTION__);
               ret = -1;
@@ -2738,20 +2738,20 @@ AddWindowToDeliveryList(Window win, int keycode, const int grab_mode, const int 
            }
 
          ptr->wid = win;
-         if (NULL != keyrouter.HardKeys[index].shared_ptr)
+         if (NULL != krt.HardKeys[index].shared_ptr)
            {
-              ptr->next = keyrouter.HardKeys[index].shared_ptr;
-              keyrouter.HardKeys[index].shared_ptr = ptr;
+              ptr->next = krt.HardKeys[index].shared_ptr;
+              krt.HardKeys[index].shared_ptr = ptr;
            }
          else
            {
               ptr->next = NULL;
-              keyrouter.HardKeys[index].shared_ptr = ptr;
+              krt.HardKeys[index].shared_ptr = ptr;
            }
          break;
 
       default:
-         SECURE_SLOGD("[keyrouter][%s] Unknown mode of grab ! "
+         SECURE_SLOGD("[krt][%s] Unknown mode of grab ! "
                       "(grab_mode=0x%X)\n",
                       __FUNCTION__, grab_mode);
          ret = -1;
@@ -2770,8 +2770,8 @@ AddWindowToPressedList(Window win, int keycode, const int grab_mode)
    int ret = 1;
    if (!ptr)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter] Failed to allocate memory for adding "
+        SLOG(LOG_DEBUG, "krt",
+             "[krt] Failed to allocate memory for adding "
              "pressed_win_ptr!\n");
 
         ret = 0;
@@ -2779,16 +2779,16 @@ AddWindowToPressedList(Window win, int keycode, const int grab_mode)
      }
 
    ptr->wid = win;
-   keyrouter.HardKeys[keycode].lastmode = grab_mode;
-   if (NULL != keyrouter.HardKeys[keycode].pressed_win_ptr)
+   krt.HardKeys[keycode].lastmode = grab_mode;
+   if (NULL != krt.HardKeys[keycode].pressed_win_ptr)
      {
-        ptr->next = keyrouter.HardKeys[keycode].pressed_win_ptr;
-        keyrouter.HardKeys[keycode].pressed_win_ptr = ptr;
+        ptr->next = krt.HardKeys[keycode].pressed_win_ptr;
+        krt.HardKeys[keycode].pressed_win_ptr = ptr;
      }
    else
      {
         ptr->next = NULL;
-        keyrouter.HardKeys[keycode].pressed_win_ptr = ptr;
+        krt.HardKeys[keycode].pressed_win_ptr = ptr;
      }
 out:
    return ret;
@@ -2806,16 +2806,16 @@ AdjustTopPositionDeliveryList(Window win, int IsOnTop)
    int i, result;
    int grab_mode, keycode;
 
-   if (keyrouter.atomGrabKey == None)
+   if (krt.atomGrabKey == None)
      {
-        keyrouter.atomGrabKey = XInternAtom(keyrouter.disp,
+        krt.atomGrabKey = XInternAtom(krt.disp,
                                             STR_ATOM_GRAB_KEY,
                                             False);
      }
 
-   if (Success != (result = XGetWindowProperty(keyrouter.disp,
+   if (Success != (result = XGetWindowProperty(krt.disp,
                                                win,
-                                               keyrouter.atomGrabKey,
+                                               krt.atomGrabKey,
                                                0,
                                                0x7fffffff,
                                                False,
@@ -2826,8 +2826,8 @@ AdjustTopPositionDeliveryList(Window win, int IsOnTop)
                                                &sz_remains_data,
                                                (unsigned char **)&key_list)))
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][%s] Failed to get window property from %s ! "
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][%s] Failed to get window property from %s ! "
              "(result = %d)\n",
              __FUNCTION__, STR_ATOM_GRAB_KEY, result);
 
@@ -2867,32 +2867,32 @@ IsGrabbed(unsigned int keycode)
 {
    int index = keycode;
 
-   if (keyrouter.HardKeys[index].keycode == 0) /* empty */
+   if (krt.HardKeys[index].keycode == 0) /* empty */
      {
         goto out;
      }
 
-   if (keyrouter.HardKeys[index].keycode != keycode)
+   if (krt.HardKeys[index].keycode != keycode)
      {
-        SECURE_SLOGD("[keyrouter][%s] Error ! (keyrouter.HardKeys[%d].keycode "
+        SECURE_SLOGD("[krt][%s] Error ! (krt.HardKeys[%d].keycode "
                      "must be equal to keycode(%d) !\n",
                      __FUNCTION__, index, keycode);
         goto out;
      }
 
-   if (NULL != keyrouter.HardKeys[index].excl_ptr)
+   if (NULL != krt.HardKeys[index].excl_ptr)
      {
         index |= EXCLUSIVE_GRAB;
      }
-   else if (NULL != keyrouter.HardKeys[index].or_excl_ptr)
+   else if (NULL != krt.HardKeys[index].or_excl_ptr)
      {
         index |= OR_EXCLUSIVE_GRAB;
      }
-   else if (NULL != keyrouter.HardKeys[index].top_ptr)
+   else if (NULL != krt.HardKeys[index].top_ptr)
      {
         index |= TOP_POSITION_GRAB;
      }
-   else if (NULL != keyrouter.HardKeys[index].shared_ptr)
+   else if (NULL != krt.HardKeys[index].shared_ptr)
      {
         index |= SHARED_GRAB;
      }
@@ -2937,15 +2937,15 @@ IsWindowTopVisibleWithoutInputFocus(keylist_node *top_ptr, Window focus, Window 
    XWindowAttributes win_attributes;
    E_Client *ec;
 
-   if (!XQueryTree(keyrouter.disp,
-                   keyrouter.rootWin,
+   if (!XQueryTree(krt.disp,
+                   krt.rootWin,
                    &root_win,
                    &parent_win,
                    &child_list,
                    &num_children))
      {
-        SLOG(LOG_DEBUG, "KEYROUTER",
-             "[keyrouter][%s] Failed to query window tree !\n",
+        SLOG(LOG_DEBUG, "krt",
+             "[krt][%s] Failed to query window tree !\n",
              __FUNCTION__);
         return 0;
      }
@@ -2956,7 +2956,7 @@ IsWindowTopVisibleWithoutInputFocus(keylist_node *top_ptr, Window focus, Window 
         /* 1. check map status of window
          * figure out whether the window is mapped or not
          */
-        XGetWindowAttributes(keyrouter.disp,
+        XGetWindowAttributes(krt.disp,
                              child_list[i],
                              &win_attributes);
 
@@ -3047,17 +3047,17 @@ DeliverDeviceKeyEvents(XEvent *xev)
 
    index = IsGrabbed(xev->xkey.keycode);
 
-   if (index < 0 && keyrouter.HardKeys[xev->xkey.keycode].bind)
+   if (index < 0 && krt.HardKeys[xev->xkey.keycode].bind)
      {
-        SECURE_SLOGD("[keyrouter][DeliverDeviceKeyEvents] key(keycode=%d, name=%s) "
+        SECURE_SLOGD("[krt][DeliverDeviceKeyEvents] key(keycode=%d, name=%s) "
                      "was bound !\n", xev->xkey.keycode,
-                     keyrouter.HardKeys[xev->xkey.keycode].bind->key);
+                     krt.HardKeys[xev->xkey.keycode].bind->key);
 
         _e_keyrouter_do_bound_key_action(xev);
         return;
      }
 
-   XGetInputFocus(keyrouter.disp,
+   XGetInputFocus(krt.disp,
                   &focus_window,
                   &revert_to_return);
 
@@ -3071,13 +3071,13 @@ DeliverDeviceKeyEvents(XEvent *xev)
              AddWindowToPressedList(xev->xkey.window,
                                     xev->xkey.keycode,
                                     NONE_GRAB_MODE);
-             XSendEvent(keyrouter.disp,
+             XSendEvent(krt.disp,
                         xev->xkey.window,
                         False,
                         KeyPressMask | KeyReleaseMask,
                         xev);
 
-             SECURE_SLOGD("[keyrouter][%s] Non-grabbed key! Deliver %s (keycode:%d) "
+             SECURE_SLOGD("[krt][%s] Non-grabbed key! Deliver %s (keycode:%d) "
                           "to focus window (0x%x) !\n", __FUNCTION__,
                           (xev->type == KeyPress) ? "KeyPress" : "KeyRelease",
                           xev->xkey.keycode,
@@ -3086,16 +3086,16 @@ DeliverDeviceKeyEvents(XEvent *xev)
         else
           {
              keylist_node *tmp_ptr;
-             for (ptr = keyrouter.HardKeys[xev->xkey.keycode].pressed_win_ptr; (NULL != ptr);)
+             for (ptr = krt.HardKeys[xev->xkey.keycode].pressed_win_ptr; (NULL != ptr);)
                {
                   xev->xkey.window = ptr->wid;
 
-                  SECURE_SLOGD("[keyrouter][%s] Deliver KeyRelease (keycode:%d) "
+                  SECURE_SLOGD("[krt][%s] Deliver KeyRelease (keycode:%d) "
                                "to window (0x%x) !\n", __FUNCTION__,
                                xev->xkey.keycode,
                                (int)xev->xkey.window);
 
-                  XSendEvent(keyrouter.disp,
+                  XSendEvent(krt.disp,
                              xev->xkey.window,
                              False,
                              KeyPressMask | KeyReleaseMask,
@@ -3106,7 +3106,7 @@ DeliverDeviceKeyEvents(XEvent *xev)
                   free(tmp_ptr);
                }
 
-             keyrouter.HardKeys[xev->xkey.keycode].pressed_win_ptr = NULL;
+             krt.HardKeys[xev->xkey.keycode].pressed_win_ptr = NULL;
           }
         return;
      }
@@ -3120,17 +3120,17 @@ DeliverDeviceKeyEvents(XEvent *xev)
           {
            case EXCLUSIVE_GRAB:
               /* Is Grab Mode equal to EXCLUSIVE ? */
-              xev->xkey.window = keyrouter.HardKeys[index].excl_ptr->wid;
+              xev->xkey.window = krt.HardKeys[index].excl_ptr->wid;
               AddWindowToPressedList(xev->xkey.window,
                                      xev->xkey.keycode,
                                      EXCLUSIVE_GRAB);
-              XSendEvent(keyrouter.disp,
+              XSendEvent(krt.disp,
                          xev->xkey.window,
                          False,
                          KeyPressMask | KeyReleaseMask,
                          xev);
 
-              SECURE_SLOGD("[keyrouter][%s] EXCLUSIVE mode of grab ! Deliver %s "
+              SECURE_SLOGD("[krt][%s] EXCLUSIVE mode of grab ! Deliver %s "
                            "(keycode:%d) to window (0x%x) !\n", __FUNCTION__,
                            (xev->type == KeyPress) ? "KeyPress" : "KeyRelease",
                            xev->xkey.keycode, (int)xev->xkey.window);
@@ -3138,72 +3138,72 @@ DeliverDeviceKeyEvents(XEvent *xev)
 
            case OR_EXCLUSIVE_GRAB:
               /* Is Grab Mode equal to OR_EXCLUSIVE ? */
-              xev->xkey.window = keyrouter.HardKeys[index].or_excl_ptr->wid;
+              xev->xkey.window = krt.HardKeys[index].or_excl_ptr->wid;
               AddWindowToPressedList(xev->xkey.window,
                                      xev->xkey.keycode,
                                      OR_EXCLUSIVE_GRAB);
 
-              XSendEvent(keyrouter.disp,
+              XSendEvent(krt.disp,
                          xev->xkey.window,
                          False,
                          KeyPressMask | KeyReleaseMask,
                          xev);
 
-              SECURE_SLOGD("[keyrouter][%s] OR_EXCLUSIVE mode of grab ! Deliver %s "
+              SECURE_SLOGD("[krt][%s] OR_EXCLUSIVE mode of grab ! Deliver %s "
                            "(keycode:%d) to window (0x%x) !\n", __FUNCTION__,
                            (xev->type == KeyPress) ? "KeyPress" : "KeyRelease",
                            xev->xkey.keycode, (int)xev->xkey.window);
               break;
 
            case TOP_POSITION_GRAB:
-              if (focus_window != keyrouter.HardKeys[index].top_ptr->wid)
+              if (focus_window != krt.HardKeys[index].top_ptr->wid)
                 {
                    if (focus_window == 0)
                      {
-                        SECURE_SLOGD("[keyrouter][%s] Focus_Window is NULL. "
+                        SECURE_SLOGD("[krt][%s] Focus_Window is NULL. "
                                      "Try it agin. focus_window=(0x%x) !\n",
                                      __FUNCTION__, focus_window);
 
-                        XGetInputFocus(keyrouter.disp,
+                        XGetInputFocus(krt.disp,
                                        &focus_window,
                                        &revert_to_return);
                      }
 
-                   if ((keyrouter.isWindowStackChanged) ||
-                       (keyrouter.prev_sent_keycode != xev->xkey.keycode))
+                   if ((krt.isWindowStackChanged) ||
+                       (krt.prev_sent_keycode != xev->xkey.keycode))
                      {
-                        keyrouter.resTopVisibleCheck = IsWindowTopVisibleWithoutInputFocus(keyrouter.HardKeys[index].top_ptr,
+                        krt.resTopVisibleCheck = IsWindowTopVisibleWithoutInputFocus(krt.HardKeys[index].top_ptr,
                                                                                            focus_window,
                                                                                            &dest_window);
                      }
 
-                   keyrouter.prev_sent_keycode = xev->xkey.keycode;
+                   krt.prev_sent_keycode = xev->xkey.keycode;
 
-                   if (!keyrouter.resTopVisibleCheck)
+                   if (!krt.resTopVisibleCheck)
                      goto shared_delivery;
 
-                   if (keyrouter.isWindowStackChanged)
-                     keyrouter.isWindowStackChanged = 0;
+                   if (krt.isWindowStackChanged)
+                     krt.isWindowStackChanged = 0;
                 }
 
               /* Is Grab Mode equal to TOP_POSITION ? */
-              if ((keyrouter.resTopVisibleCheck == 1) &&
+              if ((krt.resTopVisibleCheck == 1) &&
                   (dest_window != None))
                 xev->xkey.window = dest_window;
               else
-                xev->xkey.window = keyrouter.HardKeys[index].top_ptr->wid;
+                xev->xkey.window = krt.HardKeys[index].top_ptr->wid;
 
               AddWindowToPressedList(xev->xkey.window,
                                      xev->xkey.keycode,
                                      TOP_POSITION_GRAB);
 
-              XSendEvent(keyrouter.disp,
+              XSendEvent(krt.disp,
                          xev->xkey.window,
                          False,
                          KeyPressMask | KeyReleaseMask,
                          xev);
 
-              SECURE_SLOGD("[keyrouter][%s] TOP_POSITION mode of grab ! Deliver %s "
+              SECURE_SLOGD("[krt][%s] TOP_POSITION mode of grab ! Deliver %s "
                            "(keycode:%d) to window (0x%x) !\n",
                            __FUNCTION__,
                            (xev->type == KeyPress) ? "KeyPress" : "KeyRelease",
@@ -3220,13 +3220,13 @@ shared_delivery:
                                      xev->xkey.keycode,
                                      SHARED_GRAB);
 
-              XSendEvent(keyrouter.disp,
+              XSendEvent(krt.disp,
                          xev->xkey.window,
                          False,
                          KeyPressMask | KeyReleaseMask,
                          xev);
 
-              SECURE_SLOGD("[keyrouter][%s] Deliver %s (keycode:%d) "
+              SECURE_SLOGD("[krt][%s] Deliver %s (keycode:%d) "
                            "to focus window (0x%x)!\n",
                            __FUNCTION__,
                            (xev->type == KeyPress) ? "KeyPress" : "KeyRelease",
@@ -3234,7 +3234,7 @@ shared_delivery:
                            (unsigned int)xev->xkey.window);
 
               /* Deliver to shared grabbed window(s) */
-              for (ptr = keyrouter.HardKeys[index].shared_ptr; (NULL != ptr); ptr = ptr->next)
+              for (ptr = krt.HardKeys[index].shared_ptr; (NULL != ptr); ptr = ptr->next)
                 {
                    if (ptr->wid == focus_window) continue;
 
@@ -3244,13 +3244,13 @@ shared_delivery:
                                           xev->xkey.keycode,
                                           SHARED_GRAB);
 
-                   XSendEvent(keyrouter.disp,
+                   XSendEvent(krt.disp,
                               xev->xkey.window,
                               False,
                               KeyPressMask | KeyReleaseMask,
                               xev);
 
-                   SECURE_SLOGD("[keyrouter][%s] SHARED mode of grab ! Deliver %s "
+                   SECURE_SLOGD("[krt][%s] SHARED mode of grab ! Deliver %s "
                                 "(keycode:%d) to window (0x%x) !\n",
                                 __FUNCTION__,
                                 (xev->type == KeyPress) ? "KeyPress" : "KeyRelease",
@@ -3260,7 +3260,7 @@ shared_delivery:
               break;
 
            default:
-              SECURE_SLOGD("[keyrouter][%s] Unknown mode of grab "
+              SECURE_SLOGD("[krt][%s] Unknown mode of grab "
                            "(mode = %d, index = %d, keycode = %d)\n",
                            __FUNCTION__, grab_mode, index,
                            xev->xkey.keycode);
@@ -3270,17 +3270,17 @@ shared_delivery:
    else
      {
         keylist_node *tmp_ptr;
-        for (ptr = keyrouter.HardKeys[index].pressed_win_ptr; (NULL != ptr) ;)
+        for (ptr = krt.HardKeys[index].pressed_win_ptr; (NULL != ptr) ;)
           {
              xev->xkey.window = ptr->wid;
 
-             SECURE_SLOGD("[keyrouter][%s] Deliver KeyRelease (keycode:%d) "
+             SECURE_SLOGD("[krt][%s] Deliver KeyRelease (keycode:%d) "
                           "to window (0x%x) !\n",
                           __FUNCTION__,
                           xev->xkey.keycode,
                           (int)xev->xkey.window);
 
-             XSendEvent(keyrouter.disp,
+             XSendEvent(krt.disp,
                         xev->xkey.window,
                         False,
                         KeyPressMask | KeyReleaseMask,
@@ -3291,7 +3291,7 @@ shared_delivery:
              free(tmp_ptr);
           }
 
-        keyrouter.HardKeys[index].pressed_win_ptr = NULL;
+        krt.HardKeys[index].pressed_win_ptr = NULL;
      }
 }
 
@@ -3303,8 +3303,8 @@ _e_keyrouter_do_hardkey_emulation(const char *label, unsigned int key_event, uns
    if (label) return;
 
    memset(&xev, 0, sizeof(XEvent));
-   xev.xkey.display = keyrouter.disp;
-   xev.xkey.root = keyrouter.rootWin;
+   xev.xkey.display = krt.disp;
+   xev.xkey.root = krt.rootWin;
    xev.xkey.keycode = keycode;
    xev.xkey.time = CurrentTime;
    xev.xkey.type = key_event;
@@ -3313,7 +3313,7 @@ _e_keyrouter_do_hardkey_emulation(const char *label, unsigned int key_event, uns
      {
         _e_keyrouter_cancel_key(&xev, keycode);
 
-        SECURE_SLOGD("[keyrouter][do_hardkey_emulation] HWKeyEmulation Done !\n");
+        SECURE_SLOGD("[krt][do_hardkey_emulation] HWKeyEmulation Done !\n");
         SECURE_SLOGD("...(Cancel KeyPress + KeyRelease(keycode:%d) + Cancel KeyRelease)\n",
                      xev.xkey.keycode);
      }
@@ -3321,7 +3321,7 @@ _e_keyrouter_do_hardkey_emulation(const char *label, unsigned int key_event, uns
      {
         DeliverDeviceKeyEvents(&xev);
 
-        SECURE_SLOGD("[keyrouter][do_hardkey_emulation] HWKeyEmulation Done !\n");
+        SECURE_SLOGD("[krt][do_hardkey_emulation] HWKeyEmulation Done !\n");
         SECURE_SLOGD("...(%s(keycode=%d)\n",
                      (xev.xkey.type==KeyPress) ? "KeyPress" : "KeyRelease",
                      xev.xkey.keycode);
@@ -3334,36 +3334,36 @@ Device_Status(unsigned int val)
    Eina_List* l;
    E_Keyrouter_Device_Info *data;
 
-   SLOG(LOG_DEBUG, "KEYROUTER", "\n[keyrouter] - Device Status = Start\n");
-   if (!keyrouter.device_list)
+   SLOG(LOG_DEBUG, "krt", "\n[krt] - Device Status = Start\n");
+   if (!krt.device_list)
      {
-        SLOG(LOG_DEBUG, "KEYROUTER", "No input devices...\n");
+        SLOG(LOG_DEBUG, "krt", "No input devices...\n");
         goto out;
      }
 
-   EINA_LIST_FOREACH(keyrouter.device_list, l, data)
+   EINA_LIST_FOREACH(krt.device_list, l, data)
      {
         if (!data) continue;
-        SLOG(LOG_DEBUG, "KEYROUTER", "Device id : %d Name : %s\n", data->id, data->name);
+        SLOG(LOG_DEBUG, "krt", "Device id : %d Name : %s\n", data->id, data->name);
         switch (data->type)
           {
-           case E_KEYROUTER_HWKEY:      SLOG(LOG_DEBUG, "KEYROUTER", "¦¦Device type : H/W Key Device\n");             break;
-           case E_KEYROUTER_HOTPLUGGED: SLOG(LOG_DEBUG, "KEYROUTER", "¦¦Device type : Hotplugged Key Device\n");      break;
-           case E_KEYROUTER_KEYBOARD:   SLOG(LOG_DEBUG, "KEYROUTER", "¦¦Device type : Hotplugged Keyboard Device\n"); break;
-           default: SLOG(LOG_DEBUG, "KEYROUTER", "¦¦Device type : Unknown\n");
+           case E_KEYROUTER_HWKEY:      SLOG(LOG_DEBUG, "krt", "¦¦Device type : H/W Key Device\n");             break;
+           case E_KEYROUTER_HOTPLUGGED: SLOG(LOG_DEBUG, "krt", "¦¦Device type : Hotplugged Key Device\n");      break;
+           case E_KEYROUTER_KEYBOARD:   SLOG(LOG_DEBUG, "krt", "¦¦Device type : Hotplugged Keyboard Device\n"); break;
+           default: SLOG(LOG_DEBUG, "krt", "¦¦Device type : Unknown\n");
           }
      }
 
 out:
-   SLOG(LOG_DEBUG, "KEYROUTER", "\n[keyrouter] - Device Status = End\n");
+   SLOG(LOG_DEBUG, "krt", "\n[krt] - Device Status = End\n");
 }
 
 static void
 Keygrab_Status(unsigned int val)
 {
-   SECURE_SLOGD("\n[keyrouter] - Grab Status = Start\n");
+   SECURE_SLOGD("\n[krt] - Grab Status = Start\n");
    PrintKeyDeliveryList();
-   SECURE_SLOGD("\n[keyrouter] - Grab Status = End\n");
+   SECURE_SLOGD("\n[krt] - Grab Status = End\n");
 }
 
 static void
@@ -3373,35 +3373,35 @@ InitModKeys(void)
    unsigned int code;
    int i = 0;
 
-   if (!keyrouter.modkey)
+   if (!krt.modkey)
      return;
 
    sym = XStringToKeysym(KEY_POWER);
-   code = XKeysymToKeycode(keyrouter.disp, keyrouter.modkey[i].keys[0].keysym);
-   keyrouter.modkey[i].keys[0].keysym = sym;
-   keyrouter.modkey[i].keys[0].keycode = code;
+   code = XKeysymToKeycode(krt.disp, krt.modkey[i].keys[0].keysym);
+   krt.modkey[i].keys[0].keysym = sym;
+   krt.modkey[i].keys[0].keycode = code;
 
    sym = XStringToKeysym(KEY_HOME);
-   code = XKeysymToKeycode(keyrouter.disp, keyrouter.modkey[i].keys[1].keysym);
-   keyrouter.modkey[i].keys[1].keysym = sym;
-   keyrouter.modkey[i].keys[1].keycode = code;
+   code = XKeysymToKeycode(krt.disp, krt.modkey[i].keys[1].keysym);
+   krt.modkey[i].keys[1].keysym = sym;
+   krt.modkey[i].keys[1].keycode = code;
 
-   keyrouter.modkey[i].press_only = EINA_TRUE;
+   krt.modkey[i].press_only = EINA_TRUE;
 
    sym = XStringToKeysym(KEY_CANCEL);
-   code = XKeysymToKeycode(keyrouter.disp, keyrouter.cancel_key.keysym);
-   keyrouter.cancel_key.keysym = sym;
-   keyrouter.cancel_key.keycode = code;
+   code = XKeysymToKeycode(krt.disp, krt.cancel_key.keysym);
+   krt.cancel_key.keysym = sym;
+   krt.cancel_key.keycode = code;
 
-   SECURE_SLOGD("[keyrouter][%s][%d] Modifier Key=%s (keycode:%d)\n",
+   SECURE_SLOGD("[krt][%s][%d] Modifier Key=%s (keycode:%d)\n",
                 __FUNCTION__, i, KEY_POWER,
-                keyrouter.modkey[i].keys[0].keycode);
-   SECURE_SLOGD("[keyrouter][%s][%d] Composited Key=%s (keycode:%d)\n",
+                krt.modkey[i].keys[0].keycode);
+   SECURE_SLOGD("[krt][%s][%d] Composited Key=%s (keycode:%d)\n",
                 __FUNCTION__, i, KEY_HOME,
-                keyrouter.modkey[i].keys[1].keycode);
-   SECURE_SLOGD("[keyrouter][%s][%d] Cancel Key=%s (keycode:%d)\n",
+                krt.modkey[i].keys[1].keycode);
+   SECURE_SLOGD("[krt][%s][%d] Cancel Key=%s (keycode:%d)\n",
                 __FUNCTION__, i, KEY_CANCEL,
-                keyrouter.cancel_key.keycode);
+                krt.cancel_key.keycode);
 }
 
 static void
@@ -3411,17 +3411,17 @@ ResetModKeyInfo(void)
 
    for (i = 0; i < NUM_KEY_COMPOSITION_ACTIONS; i++)
      {
-        keyrouter.modkey[i].set = 0;
-        keyrouter.modkey[i].composited = 0;
-        keyrouter.modkey[i].time = 0;
-        keyrouter.modkey[i].idx_mod = 0;
-        keyrouter.modkey[i].idx_comp = 0;
+        krt.modkey[i].set = 0;
+        krt.modkey[i].composited = 0;
+        krt.modkey[i].time = 0;
+        krt.modkey[i].idx_mod = 0;
+        krt.modkey[i].idx_comp = 0;
      }
 
-   keyrouter.modkey_set = 0;
+   krt.modkey_set = 0;
 
-   SECURE_SLOGD("[keyrouter][%s][%d] modkey_set=%d\n",
-                __FUNCTION__, i, keyrouter.modkey_set);
+   SECURE_SLOGD("[krt][%s][%d] modkey_set=%d\n",
+                __FUNCTION__, i, krt.modkey_set);
 }
 
 static int
@@ -3430,7 +3430,7 @@ IsModKey(XEvent *ev, int index)
    int i, j = index;
 
    for (i = 0; i < NUM_COMPOSITION_KEY; i++)
-     if (ev->xkey.keycode == keyrouter.modkey[j].keys[i].keycode)
+     if (ev->xkey.keycode == krt.modkey[j].keys[i].keycode)
        return (i+1);
 
    return 0;
@@ -3440,9 +3440,9 @@ static int
 IsCompKey(XEvent *ev, int index)
 {
    int i = index;
-   int mod_i = keyrouter.modkey[i].idx_mod % NUM_COMPOSITION_KEY;
+   int mod_i = krt.modkey[i].idx_mod % NUM_COMPOSITION_KEY;
 
-   if (ev->xkey.keycode == keyrouter.modkey[i].keys[mod_i].keycode)
+   if (ev->xkey.keycode == krt.modkey[i].keys[mod_i].keycode)
      return 4;
 
    return 0;
@@ -3452,10 +3452,10 @@ static int
 IsKeyComposited(XEvent *ev, int index)
 {
    int i = index;
-   int mod_i = keyrouter.modkey[i].idx_mod % NUM_COMPOSITION_KEY;
+   int mod_i = krt.modkey[i].idx_mod % NUM_COMPOSITION_KEY;
 
-   if ((ev->xkey.keycode == keyrouter.modkey[i].keys[mod_i].keycode) &&
-       (ev->xkey.time <= (keyrouter.modkey[i].time + KEY_COMPOSITION_TIME)))
+   if ((ev->xkey.keycode == krt.modkey[i].keys[mod_i].keycode) &&
+       (ev->xkey.time <= (krt.modkey[i].time + KEY_COMPOSITION_TIME)))
      return 3;
 
    return 0;
@@ -3469,49 +3469,49 @@ DoKeyCompositionAction(int index, int press)
 
    int i = index;
 
-   xkey_composition_atom = XInternAtom(keyrouter.disp,
+   xkey_composition_atom = XInternAtom(krt.disp,
                                        STR_ATOM_XKEY_COMPOSITION,
                                        False);
 
-   xev.xclient.window = keyrouter.rootWin;
+   xev.xclient.window = krt.rootWin;
    xev.xclient.type = ClientMessage;
    xev.xclient.message_type = xkey_composition_atom;
    xev.xclient.format = 32;
-   xev.xclient.data.l[0] = keyrouter.modkey[i].keys[0].keycode;
-   xev.xclient.data.l[1] = keyrouter.modkey[i].keys[1].keycode;
+   xev.xclient.data.l[0] = krt.modkey[i].keys[0].keycode;
+   xev.xclient.data.l[1] = krt.modkey[i].keys[1].keycode;
    xev.xclient.data.l[2] = press;
    xev.xclient.data.l[3] = 0;
    xev.xclient.data.l[4] = 0;
 
-   XSendEvent(keyrouter.disp,
-              keyrouter.rootWin,
+   XSendEvent(krt.disp,
+              krt.rootWin,
               False,
               StructureNotifyMask | SubstructureNotifyMask,
               &xev);
 
-   xev.xclient.window = keyrouter.noti_window;
+   xev.xclient.window = krt.noti_window;
    xev.xclient.type = ClientMessage;
    xev.xclient.message_type = xkey_composition_atom;
    xev.xclient.format = 32;
-   xev.xclient.data.l[0] = keyrouter.modkey[i].keys[0].keycode;
-   xev.xclient.data.l[1] = keyrouter.modkey[i].keys[1].keycode;
+   xev.xclient.data.l[0] = krt.modkey[i].keys[0].keycode;
+   xev.xclient.data.l[1] = krt.modkey[i].keys[1].keycode;
    xev.xclient.data.l[2] = press;
    xev.xclient.data.l[3] = 0;
    xev.xclient.data.l[4] = 0;
 
-   XSendEvent(keyrouter.disp,
-              keyrouter.noti_window,
+   XSendEvent(krt.disp,
+              krt.noti_window,
               False,
               StructureNotifyMask | SubstructureNotifyMask,
               &xev);
 
    ecore_x_sync();
 
-   SECURE_SLOGD("\n[keyrouter][%s][%d] Do Key Composition Action : ClientMessage "
-                "to RootWindow(0x%x)!: %s\n", __FUNCTION__, i, keyrouter.rootWin,
+   SECURE_SLOGD("\n[krt][%s][%d] Do Key Composition Action : ClientMessage "
+                "to RootWindow(0x%x)!: %s\n", __FUNCTION__, i, krt.rootWin,
                 press ? "Press" : "Release");
 
-   SECURE_SLOGD("\n[keyrouter][%s][%d] Do Key Composition Action : ClientMessage "
+   SECURE_SLOGD("\n[krt][%s][%d] Do Key Composition Action : ClientMessage "
                 "to Keyrouter NotiWindow (0x%x)!: %s\n", __FUNCTION__, i,
-                keyrouter.noti_window, press ? "Press" : "Release");
+                krt.noti_window, press ? "Press" : "Release");
 }
