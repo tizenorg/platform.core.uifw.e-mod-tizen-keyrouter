@@ -12,14 +12,6 @@ KeyRouter keyrouter;
 EAPI void *
 e_modapi_init(E_Module *m)
 {
-   printf("---------------------------------------\n");
-   printf("---------------------------------------\n");
-   printf("---------------------------------------\n");
-   printf("LOAD %s MODULE\n", e_modapi.name);
-   printf("---------------------------------------\n");
-   printf("---------------------------------------\n");
-   printf("---------------------------------------\n");
-
    if( !_e_keyrouter_init() )
      {
         SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter][%s] Failed @ _e_keyrouter_init()..!\n", __FUNCTION__);
@@ -37,16 +29,6 @@ e_modapi_init(E_Module *m)
 	keyrouter.e_window_configure_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_CONFIGURE,(Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_configure, NULL);
 	keyrouter.e_window_stack_handler = ecore_event_handler_add(ECORE_X_EVENT_WINDOW_STACK, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_window_stack, NULL);
 	keyrouter.e_client_message_handler = ecore_event_handler_add(ECORE_X_EVENT_CLIENT_MESSAGE, (Ecore_Event_Handler_Cb)_e_keyrouter_cb_client_message, NULL);
-
-	if( !keyrouter.e_window_stack_handler )			SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter][%s] Failed to add ECORE_X_EVENT_WINDOW_STACK handler\n", __FUNCTION__);
-	if( !keyrouter.e_window_configure_handler )		SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter][%s] Failed to add ECORE_X_EVENT_WINDOW_CONFIGURE handler\n", __FUNCTION__);
-	if( !keyrouter.e_window_destroy_handler )		SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter][%s] Failed to add ECORE_X_EVENT_WINDOW_DESTROY handler\n", __FUNCTION__);
-	if( !keyrouter.e_window_create_handler )			SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter][%s] Failed to add ECORE_X_EVENT_WINDOW_CREATE handler\n", __FUNCTION__);
-	if( !keyrouter.e_window_property_handler )		SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter][%s] Failed to add ECORE_X_EVENT_WINDOW_PROPERTY handler\n", __FUNCTION__);
-	if( !keyrouter.e_client_stack_handler )			SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter][%s] Failed to add E_EVENT_BORDER_STACK handler\n", __FUNCTION__);
-	if( !keyrouter.e_client_remove_handler )		SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter][%s] Failed to add E_EVENT_BORDER_REMOVE handler\n", __FUNCTION__);
-	if( !keyrouter.e_event_generic_handler )			SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter][%s] Failed to add ECORE_X_EVENT_GENERIC handler\n", __FUNCTION__);
-	if( !keyrouter.e_event_any_handler )			SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter][%s] Failed to add ECORE_X_EVENT_ANY handler\n", __FUNCTION__);
 
 	return m;
 }
@@ -278,7 +260,7 @@ static void _e_keyrouter_cancel_key(XEvent *xev, int keycode)
 	keylist_node *tmp_ptr;
 	keylist_node* ptr;
 
-	SECURE_SLOGD("[32m[keyrouter] Begin of cancel process of a keycode(%d)![0m\n", keycode);
+	SECURE_SLOGD("[keyrouter] Begin of cancel process of a keycode(%d)!\n", keycode);
 
 	for( ptr = keyrouter.HardKeys[keycode].pressed_win_ptr; (NULL != ptr) ; )
 	{
@@ -287,19 +269,19 @@ static void _e_keyrouter_cancel_key(XEvent *xev, int keycode)
 		//Send Cancel KeyPress
 		xev->xkey.type = KeyPress;
 		xev->xkey.keycode = keyrouter.cancel_key.keycode;
-		SECURE_SLOGD("[32m[keyrouter] Deliver KeyPress (keycode:%d) to window (0x%x) ![0m\n", xev->xkey.keycode, (int)xev->xkey.window);
+		SECURE_SLOGD("[keyrouter] Deliver KeyPress (keycode:%d) to window (0x%x) !\n", xev->xkey.keycode, (int)xev->xkey.window);
 		XSendEvent(keyrouter.disp, xev->xkey.window, False, KeyPressMask | KeyReleaseMask, xev);
 
 		//Send KeyRelease of the keycode
 		xev->xkey.type = KeyRelease;
 		xev->xkey.keycode = keycode;
-		SECURE_SLOGD("[32m[keyrouter] Deliver KeyRelease (keycode:%d) to window (0x%x) ![0m\n", xev->xkey.keycode, (int)xev->xkey.window);
+		SECURE_SLOGD("[keyrouter] Deliver KeyRelease (keycode:%d) to window (0x%x) !\n", xev->xkey.keycode, (int)xev->xkey.window);
 		XSendEvent(keyrouter.disp, xev->xkey.window, False, KeyPressMask | KeyReleaseMask, xev);
 
 		//Cancel KeyRelease
 		xev->xkey.type = KeyRelease;
 		xev->xkey.keycode = keyrouter.cancel_key.keycode;
-		SECURE_SLOGD("[32m[keyrouter] Deliver KeyRelease (keycode:%d) to window (0x%x) ![0m\n", xev->xkey.keycode, (int)xev->xkey.window);
+		SECURE_SLOGD("[keyrouter] Deliver KeyRelease (keycode:%d) to window (0x%x) !\n", xev->xkey.keycode, (int)xev->xkey.window);
 		XSendEvent(keyrouter.disp, xev->xkey.window, False, KeyPressMask | KeyReleaseMask, xev);
 
 		tmp_ptr = ptr;
@@ -307,7 +289,7 @@ static void _e_keyrouter_cancel_key(XEvent *xev, int keycode)
 		free(tmp_ptr);
 	}
 
-	SECURE_SLOGD("[32m[keyrouter] End of cancel process of a keycode(%d)![0m\n", keycode);
+	SECURE_SLOGD("[keyrouter] End of cancel process of a keycode(%d)!\n", keycode);
 
 	keyrouter.HardKeys[keycode].pressed_win_ptr = NULL;
 }
@@ -336,7 +318,7 @@ _e_keyrouter_hwkey_event_handler(XEvent *ev)
 	}
 	else if( ev->type == KeyPress )	//KeyPress handling for key composition
 	{
-		SECURE_SLOGD("\n[31m[keyrouter][%s] KeyPress (keycode:%d)[0m\n", __FUNCTION__, ev->xkey.keycode);
+		SECURE_SLOGD("\n[keyrouter][%s] KeyPress (keycode:%d)\n", __FUNCTION__, ev->xkey.keycode);
 
 		if((keyrouter.longpress_enabled == 1) && keyrouter.short_press_flag == 0 && keyrouter.timer_flag == 0 && keyrouter.first_press_flag == 1)
 		{
@@ -369,7 +351,7 @@ _e_keyrouter_hwkey_event_handler(XEvent *ev)
 
 					if(keyrouter.modkey[i].idx_mod)
 					{
-						SECURE_SLOGD("\n[35m[keyrouter][%s][%d] Modifier Key ! (keycode=%d)[0m\n", __FUNCTION__, i, ev->xkey.keycode);
+						SECURE_SLOGD("\n[keyrouter][%s][%d] Modifier Key ! (keycode=%d)\n", __FUNCTION__, i, ev->xkey.keycode);
 						keyrouter.modkey[i].set = 1;
 						keyrouter.modkey_set = 1;
 						keyrouter.modkey[i].time = ev->xkey.time;
@@ -389,7 +371,7 @@ _e_keyrouter_hwkey_event_handler(XEvent *ev)
 
 				if(keyrouter.modkey[i].composited)
 				{
-					SECURE_SLOGD("\n[35m[keyrouter][%s][%d] Composition Key ! (keycode=%d)[0m\n", __FUNCTION__, i, ev->xkey.keycode);
+					SECURE_SLOGD("\n[keyrouter][%s][%d] Composition Key ! (keycode=%d)\n", __FUNCTION__, i, ev->xkey.keycode);
 
 					_e_keyrouter_cancel_key(ev, keyrouter.modkey[i].keys[keyrouter.modkey[i].idx_mod-1].keycode);
 
@@ -644,7 +626,6 @@ _e_keyrouter_cb_window_property(void *data, int ev_type, void *ev)
 	int keycode;
 	int grab_mode;
 
-	//property¸¦ º¸°í list¿¡ add
 	for( i=0 ; i < count ; i++ )
 	{
 		grab_mode = prop_data[i] & GRAB_MODE_MASK;
@@ -850,7 +831,7 @@ _e_keyrouter_cb_window_stack(void *data, int ev_type, void *ev)
 	return 1;
 }
 
-//e17 bindings functions and action callbacks
+//e bindings functions and action callbacks
 
 static int
 _e_keyrouter_modifiers(E_Binding_Modifier modifiers)
@@ -861,9 +842,6 @@ _e_keyrouter_modifiers(E_Binding_Modifier modifiers)
    if (modifiers & E_BINDING_MODIFIER_CTRL) mod |= ECORE_EVENT_MODIFIER_CTRL;
    if (modifiers & E_BINDING_MODIFIER_ALT) mod |= ECORE_EVENT_MODIFIER_ALT;
    if (modifiers & E_BINDING_MODIFIER_WIN) mod |= ECORE_EVENT_MODIFIER_WIN;
-   /* see comment in e_bindings on numlock
-      if (modifiers & ECORE_X_LOCK_NUM) mod |= ECORE_X_LOCK_NUM;
-   */
 
    return mod;
 }
@@ -1182,7 +1160,7 @@ int _e_keyrouter_init()
 
 	if( !keyrouter.disp )
 	{
-		SLOG(LOG_DEBUG, "KEYROUTER", "[32m[keyrouter] Failed to open display..![0m\n");
+		SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter] Failed to open display..!\n");
 		ret = 0;
 		goto out;
 	}
@@ -1240,7 +1218,7 @@ int _e_keyrouter_init()
 
 	if( !grab_result )
 	{
-		SLOG(LOG_DEBUG, "KEYROUTER", "[32m[keyrouter] Failed to GrabDevices() ![0m\n");
+		SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter] Failed to GrabDevices() !\n");
 		ret = 0;
 		goto out;
 	}
@@ -1252,7 +1230,7 @@ int _e_keyrouter_init()
 
 	if(!keyrouter.modkey)
 	{
-		SLOG(LOG_DEBUG, "KEYROUTER", "[32m[keyrouter] Failed to allocate memory for key composition ![0m\n");
+		SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter] Failed to allocate memory for key composition !\n");
 		ret = 0;
 		goto out;
 	}
@@ -1530,7 +1508,7 @@ _e_keyrouter_update_key_delivery_list(Ecore_X_Window win, int keycode, const int
 				result = AddWindowToDeliveryList(win, hkinfo->keycodes[c], grab_mode, 1);
 
 				if( result )
-					SECURE_SLOGD("[32m[keyrouter][%s] Failed to add window (0x%x) to delivery list ! keycode=%x, grab_mode=0x%X[0m\n", __FUNCTION__, win, hkinfo->keycodes[c], grab_mode);
+					SECURE_SLOGD("[keyrouter][%s] Failed to add window (0x%x) to delivery list ! keycode=%x, grab_mode=0x%X\n", __FUNCTION__, win, hkinfo->keycodes[c], grab_mode);
 			}
 
 			return;
@@ -1545,7 +1523,7 @@ grab_a_keycode_only:
 
 		if( result )
 		{
-			SECURE_SLOGD("[32m[keyrouter][%s] Failed to add window (0x%x) to delivery list ! keycode=%x, grab_mode=0x%X[0m\n", __FUNCTION__, win, keycode, grab_mode);
+			SECURE_SLOGD("[keyrouter][%s] Failed to add window (0x%x) to delivery list ! keycode=%x, grab_mode=0x%X\n", __FUNCTION__, win, keycode, grab_mode);
 		}
 }
 
@@ -1752,6 +1730,7 @@ static void reattachSlave(int slave, int master)
 
 	XIChangeHierarchy(keyrouter.disp, (XIAnyHierarchyChangeInfo*)&attach, 1);
 }
+
 static void UngrabKeyDevices()
 {
 	int i, ndevices;
@@ -1945,22 +1924,6 @@ static void PrintKeyDeliveryList()
 		{
 			SECURE_SLOGD("[ KEY_LANGUAGE : %s : %d ]\n", keyname, index);
 		}
-		/*else if( !strncmp(keyname, KEY_CONNECT, LEN_KEY_CONNECT) )
-		{
-			SECURE_SLOGD("[ KEY_CONNECT : %s : %d ]\n", keyname, index);
-		}
-		else if( !strncmp(keyname, KEY_GAMEPLAY, LEN_KEY_GAMEPLAY) )
-		{
-			SECURE_SLOGD("[ KEY_GAMEPLAY : %s : %d ]\n", keyname, index);
-		}
-		else if( !strncmp(keyname, KEY_VOICEWAKEUP_LPSD, LEN_KEY_VOICEWAKEUP_LPSD) )
-		{
-			SECURE_SLOGD("[ KEY_VOICEWAKEUP_LPSD : %s : %d ]\n", keyname, index);
-		}
-		else if( !strncmp(keyname, KEY_VOICEWAKEUP, LEN_KEY_VOICEWAKEUP) )
-		{
-			SECURE_SLOGD("[ KEY_VOICEWAKEUP : %s : %d ]\n", keyname, index);
-		}*/
 		else
 		{
 			SECURE_SLOGD("[ UNKNOWN : %d ]\n", keyrouter.HardKeys[index].keycode);
@@ -1970,7 +1933,7 @@ static void PrintKeyDeliveryList()
 		if( NULL != keyrouter.HardKeys[index].excl_ptr )
 		{
 			ecore_x_netwm_pid_get((int)(keyrouter.HardKeys[index].excl_ptr->wid), &pid);
-			SECURE_SLOGD("[32m== EXCLUSIVE : Window(0x%X) -> pid(%d)[0m\n", (int)(keyrouter.HardKeys[index].excl_ptr->wid), pid);
+			SECURE_SLOGD("== EXCLUSIVE : Window(0x%X) -> pid(%d)\n", (int)(keyrouter.HardKeys[index].excl_ptr->wid), pid);
 		}
 		else
 		{
@@ -1982,7 +1945,7 @@ static void PrintKeyDeliveryList()
 		{
 			keylist_node* or_excl_ptr;
 			or_excl_ptr = keyrouter.HardKeys[index].or_excl_ptr;
-			SECURE_SLOGD("[32m== OR_EXCLUSIVE : ");
+			SECURE_SLOGD("== OR_EXCLUSIVE : ");
 
 			do
 			{
@@ -1990,7 +1953,7 @@ static void PrintKeyDeliveryList()
 				SECURE_SLOGD("Window(0x%X) -> pid(%d)", (unsigned int)(or_excl_ptr->wid), pid);
 				or_excl_ptr = or_excl_ptr->next;
 			} while( or_excl_ptr );
-			SECURE_SLOGD("None[0m\n");
+			SECURE_SLOGD("None\n");
 		}
 		else
 		{
@@ -2002,7 +1965,7 @@ static void PrintKeyDeliveryList()
 		{
 			keylist_node* top_ptr;
 			top_ptr = keyrouter.HardKeys[index].top_ptr;
-			SECURE_SLOGD("[32m== TOP_POSITION : ");
+			SECURE_SLOGD("== TOP_POSITION : ");
 
 			do
 			{
@@ -2010,7 +1973,7 @@ static void PrintKeyDeliveryList()
 				SECURE_SLOGD("Window(0x%X) -> pid(%d)", (unsigned int)(top_ptr->wid), pid);
 				top_ptr = top_ptr->next;
 			} while( top_ptr );
-			SECURE_SLOGD("None[0m\n");
+			SECURE_SLOGD("None\n");
 		}
 		else
 		{
@@ -2022,7 +1985,7 @@ static void PrintKeyDeliveryList()
 		{
 			keylist_node* shared_ptr;
 			shared_ptr = keyrouter.HardKeys[index].shared_ptr;
-			SECURE_SLOGD("[32m== SHARED : ");
+			SECURE_SLOGD("== SHARED : ");
 
 			do
 			{
@@ -2030,7 +1993,7 @@ static void PrintKeyDeliveryList()
 				SECURE_SLOGD("Window(0x%X) -> pid(%d)", (unsigned int)(shared_ptr->wid), pid);
 				shared_ptr = shared_ptr->next;
 			} while( shared_ptr );
-			SECURE_SLOGD("None[0m\n");
+			SECURE_SLOGD("None\n");
 		}
 		else
 		{
@@ -2387,7 +2350,7 @@ static void UnSetExclusiveGrabInfoToRootWindow(int keycode, int grab_mode)
 
 	for( i=0 ; i < nr_item ; i++ )
 	{
-		if( key_list[i] == keycode )//&& grab_mode == EXCLUSIVE_GRAB )
+		if( key_list[i] == keycode )
 		{
 			continue;
 		}
@@ -2411,7 +2374,7 @@ static void UnSetExclusiveGrabInfoToRootWindow(int keycode, int grab_mode)
 
 	for( i=0 ; i < nr_item ; i++ )
 	{
-		if( key_list[i] == keycode )//&& grab_mode == EXCLUSIVE_GRAB )
+		if( key_list[i] == keycode )
 		{
 			continue;
 		}
@@ -2502,7 +2465,7 @@ static int AddWindowToDeliveryList(Window win, int keycode, const int grab_mode,
 			ptr->wid = win;
 			ptr->next = NULL;
 
-			if( NULL == keyrouter.HardKeys[index].top_ptr )//µ¥ÀÌÅÍ ¾øÀ½
+			if( NULL == keyrouter.HardKeys[index].top_ptr )
 			{
 				keyrouter.HardKeys[index].top_tail = keyrouter.HardKeys[index].top_ptr = ptr;
 				break;
@@ -2530,12 +2493,12 @@ static int AddWindowToDeliveryList(Window win, int keycode, const int grab_mode,
 			}
 
 			ptr->wid = win;
-			if( NULL != keyrouter.HardKeys[index].shared_ptr )//µ¥ÀÌÅÍ Á¸Àç
+			if( NULL != keyrouter.HardKeys[index].shared_ptr )
 			{
 				ptr->next = keyrouter.HardKeys[index].shared_ptr;
 				keyrouter.HardKeys[index].shared_ptr = ptr;
 			}
-			else//µ¥ÀÌÅÍ ¾øÀ½
+			else
 			{
 				ptr->next = NULL;
 				keyrouter.HardKeys[index].shared_ptr = ptr;
@@ -2702,7 +2665,7 @@ static int IsWindowTopVisibleWithoutInputFocus(keylist_node* top_ptr, Window foc
 
  	if( !XQueryTree(keyrouter.disp, keyrouter.rootWin, &root_win, &parent_win, &child_list, &num_children) )
 	{
-		SLOG(LOG_DEBUG, "KEYROUTER", "[32m[keyrouter][%s] Failed to query window tree ![0m\n", __FUNCTION__);
+		SLOG(LOG_DEBUG, "KEYROUTER", "[keyrouter][%s] Failed to query window tree !\n", __FUNCTION__);
 		return 0;
 	}
 
@@ -2794,8 +2757,6 @@ static void DeliverDeviceKeyEvents(XEvent *xev)
 
 	if( index < 0 && keyrouter.HardKeys[xev->xkey.keycode].bind )
 	{
-		printf("[keyrouter][DeliverDeviceKeyEvents] key(keycode=%d, name=%s) was bound !\n",
-			xev->xkey.keycode, keyrouter.HardKeys[xev->xkey.keycode].bind->key);
 		SECURE_SLOGD("[keyrouter][DeliverDeviceKeyEvents] key(keycode=%d, name=%s) was bound !\n",
 			xev->xkey.keycode, keyrouter.HardKeys[xev->xkey.keycode].bind->key);
 		_e_keyrouter_do_bound_key_action(xev);
@@ -2804,7 +2765,6 @@ static void DeliverDeviceKeyEvents(XEvent *xev)
 
 	XGetInputFocus(keyrouter.disp, &focus_window, &revert_to_return);
 
-	printf("keycode:%d, %s\n", xev->xkey.keycode, (index < 0)?"Not Grabbed":"Grabbed");
 	// Is Grabbed ?
 	if( index < 0 )//Code for non-grabbed key
 	{
@@ -2815,8 +2775,7 @@ static void DeliverDeviceKeyEvents(XEvent *xev)
 			//XTestFakeKeyEvent(xev->xany.display, xev->xkey.keycode, (xev->type==KeyPress) ? True : False, CurrentTime);
 			AddWindowToPressedList(xev->xkey.window, xev->xkey.keycode, NONE_GRAB_MODE);
 			XSendEvent(keyrouter.disp, xev->xkey.window, False, KeyPressMask | KeyReleaseMask, xev);
-			printf("[32m[keyrouter][%s] Non-grabbed key! Deliver %s (keycode:%d) to focus window (0x%x) ![0m\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)focus_window);
-			SECURE_SLOGD("[32m[keyrouter][%s] Non-grabbed key! Deliver %s (keycode:%d) to focus window (0x%x) ![0m\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)focus_window);
+			SECURE_SLOGD("[keyrouter][%s] Non-grabbed key! Deliver %s (keycode:%d) to focus window (0x%x) !\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)focus_window);
 		}
 		else
 		{
@@ -2824,8 +2783,7 @@ static void DeliverDeviceKeyEvents(XEvent *xev)
 			for( ptr=keyrouter.HardKeys[xev->xkey.keycode].pressed_win_ptr; (NULL != ptr) ; )
 			{
 				xev->xkey.window = ptr->wid;
-				printf("[32m[keyrouter][%s] Deliver KeyRelease (keycode:%d) to window (0x%x) ![0m\n", __FUNCTION__, xev->xkey.keycode, (int)xev->xkey.window);
-				SECURE_SLOGD("[32m[keyrouter][%s] Deliver KeyRelease (keycode:%d) to window (0x%x) ![0m\n", __FUNCTION__, xev->xkey.keycode, (int)xev->xkey.window);
+				SECURE_SLOGD("[keyrouter][%s] Deliver KeyRelease (keycode:%d) to window (0x%x) !\n", __FUNCTION__, xev->xkey.keycode, (int)xev->xkey.window);
 				XSendEvent(keyrouter.disp, xev->xkey.window, False, KeyPressMask | KeyReleaseMask, xev);
 				tmp_ptr = ptr;
 				ptr=ptr->next ;
@@ -2833,7 +2791,6 @@ static void DeliverDeviceKeyEvents(XEvent *xev)
 			}
 			keyrouter.HardKeys[xev->xkey.keycode].pressed_win_ptr = NULL;
 		}
-		printf("NOT GRABBED: (keycode:%d)\n", xev->xkey.keycode);
 		return;
 	}
 
@@ -2842,7 +2799,6 @@ static void DeliverDeviceKeyEvents(XEvent *xev)
 
 	if (xev->type == KeyPress)
 	{
-		printf("GRABBED - KeyPress\n");
 		switch( grab_mode )
 		{
 			case EXCLUSIVE_GRAB:
@@ -2850,8 +2806,7 @@ static void DeliverDeviceKeyEvents(XEvent *xev)
 				xev->xkey.window = keyrouter.HardKeys[index].excl_ptr->wid;
 				AddWindowToPressedList(xev->xkey.window, xev->xkey.keycode, EXCLUSIVE_GRAB);
 				XSendEvent(keyrouter.disp, xev->xkey.window, False, KeyPressMask | KeyReleaseMask, xev);
-				printf("[32m[keyrouter][%s] EXCLUSIVE mode of grab ! Deliver %s (keycode:%d) to window (0x%x) ![0m\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)xev->xkey.window);
-				SECURE_SLOGD("[32m[keyrouter][%s] EXCLUSIVE mode of grab ! Deliver %s (keycode:%d) to window (0x%x) ![0m\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)xev->xkey.window);
+				SECURE_SLOGD("[keyrouter][%s] EXCLUSIVE mode of grab ! Deliver %s (keycode:%d) to window (0x%x) !\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)xev->xkey.window);
 				break;
 
 			case OR_EXCLUSIVE_GRAB:
@@ -2859,8 +2814,7 @@ static void DeliverDeviceKeyEvents(XEvent *xev)
 				xev->xkey.window = keyrouter.HardKeys[index].or_excl_ptr->wid;
 				AddWindowToPressedList(xev->xkey.window, xev->xkey.keycode, OR_EXCLUSIVE_GRAB);
 				XSendEvent(keyrouter.disp, xev->xkey.window, False, KeyPressMask | KeyReleaseMask, xev);
-				printf("[32m[keyrouter][%s] OR_EXCLUSIVE mode of grab ! Deliver %s (keycode:%d) to window (0x%x) ![0m\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)xev->xkey.window);
-				SECURE_SLOGD("[32m[keyrouter][%s] OR_EXCLUSIVE mode of grab ! Deliver %s (keycode:%d) to window (0x%x) ![0m\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)xev->xkey.window);
+				SECURE_SLOGD("[keyrouter][%s] OR_EXCLUSIVE mode of grab ! Deliver %s (keycode:%d) to window (0x%x) !\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)xev->xkey.window);
 				break;
 
 			case TOP_POSITION_GRAB:
@@ -2868,8 +2822,7 @@ static void DeliverDeviceKeyEvents(XEvent *xev)
 				{
 				       if( focus_window == 0 )
 				       {
-					printf("[32m[keyrouter][%s] Focus_Window is NULL. Try it agin.  focus_window=(0x%x) ![0m\n", __FUNCTION__, focus_window);	
-				           SECURE_SLOGD("[32m[keyrouter][%s] Focus_Window is NULL. Try it agin.  focus_window=(0x%x) ![0m\n", __FUNCTION__, focus_window);
+				           SECURE_SLOGD("[keyrouter][%s] Focus_Window is NULL. Try it agin.  focus_window=(0x%x) !\n", __FUNCTION__, focus_window);
 				           XGetInputFocus(keyrouter.disp, &focus_window, &revert_to_return);
 				       }
 
@@ -2892,8 +2845,7 @@ static void DeliverDeviceKeyEvents(XEvent *xev)
 					xev->xkey.window = keyrouter.HardKeys[index].top_ptr->wid;
 				AddWindowToPressedList(xev->xkey.window, xev->xkey.keycode, TOP_POSITION_GRAB);
 				XSendEvent(keyrouter.disp, xev->xkey.window, False, KeyPressMask | KeyReleaseMask, xev);
-				printf("[32m[keyrouter][%s] TOP_POSITION mode of grab ! Deliver %s (keycode:%d) to window (0x%x) ![0m\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)xev->xkey.window);
-				SECURE_SLOGD("[32m[keyrouter][%s] TOP_POSITION mode of grab ! Deliver %s (keycode:%d) to window (0x%x) ![0m\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)xev->xkey.window);
+				SECURE_SLOGD("[keyrouter][%s] TOP_POSITION mode of grab ! Deliver %s (keycode:%d) to window (0x%x) !\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)xev->xkey.window);
 				break;
 
 			case SHARED_GRAB:
@@ -2903,8 +2855,7 @@ static void DeliverDeviceKeyEvents(XEvent *xev)
 				//XTestFakeKeyEvent(xev->xany.display, xev->xkey.keycode, (xev->type==KeyPress) ? True : False, CurrentTime);
 				AddWindowToPressedList(xev->xkey.window, xev->xkey.keycode, SHARED_GRAB);
 				XSendEvent(keyrouter.disp, xev->xkey.window, False, KeyPressMask | KeyReleaseMask, xev);
-				printf("[32m[keyrouter][%s] Deliver %s (keycode:%d) to focus window (0x%x)![0m\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (unsigned int)xev->xkey.window);
-				SECURE_SLOGD("[32m[keyrouter][%s] Deliver %s (keycode:%d) to focus window (0x%x)![0m\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (unsigned int)xev->xkey.window);
+				SECURE_SLOGD("[keyrouter][%s] Deliver %s (keycode:%d) to focus window (0x%x)!\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (unsigned int)xev->xkey.window);
 
 				//Deliver to shared grabbed window(s)
 				for( ptr=keyrouter.HardKeys[index].shared_ptr ; (NULL != ptr) ; ptr=ptr->next )
@@ -2914,26 +2865,22 @@ static void DeliverDeviceKeyEvents(XEvent *xev)
 					xev->xkey.window = ptr->wid;
 					AddWindowToPressedList(xev->xkey.window, xev->xkey.keycode, SHARED_GRAB);
 					XSendEvent(keyrouter.disp, xev->xkey.window, False, KeyPressMask | KeyReleaseMask, xev);
-					printf("[32m[keyrouter][%s] SHARED mode of grab ! Deliver %s (keycode:%d) to window (0x%x) ![0m\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)xev->xkey.window);
-					SECURE_SLOGD("[32m[keyrouter][%s] SHARED mode of grab ! Deliver %s (keycode:%d) to window (0x%x) ![0m\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)xev->xkey.window);
+					SECURE_SLOGD("[keyrouter][%s] SHARED mode of grab ! Deliver %s (keycode:%d) to window (0x%x) !\n", __FUNCTION__, (xev->type == KeyPress) ? "KeyPress" : "KeyRelease", xev->xkey.keycode, (int)xev->xkey.window);
 				}
 				break;
 
 			default:
-				printf("[32m[keyrouter][%s] Unknown mode of grab (mode = %d, index = %d, keycode = %d)[0m\n", __FUNCTION__, grab_mode, index, xev->xkey.keycode);
-				SECURE_SLOGD("[32m[keyrouter][%s] Unknown mode of grab (mode = %d, index = %d, keycode = %d)[0m\n", __FUNCTION__, grab_mode, index, xev->xkey.keycode);
+				SECURE_SLOGD("[keyrouter][%s] Unknown mode of grab (mode = %d, index = %d, keycode = %d)\n", __FUNCTION__, grab_mode, index, xev->xkey.keycode);
 				break;
 		}
 	}
 	else
 	{
-		printf("GRABBED - KeyRelease\n");
 		keylist_node *tmp_ptr;
 		for( ptr=keyrouter.HardKeys[index].pressed_win_ptr; (NULL != ptr) ; )
 		{
 			xev->xkey.window = ptr->wid;
-			printf("[32m[keyrouter][%s] Deliver KeyRelease (keycode:%d) to window (0x%x) ![0m\n", __FUNCTION__, xev->xkey.keycode, (int)xev->xkey.window);
-			SECURE_SLOGD("[32m[keyrouter][%s] Deliver KeyRelease (keycode:%d) to window (0x%x) ![0m\n", __FUNCTION__, xev->xkey.keycode, (int)xev->xkey.window);
+			SECURE_SLOGD("[keyrouter][%s] Deliver KeyRelease (keycode:%d) to window (0x%x) !\n", __FUNCTION__, xev->xkey.keycode, (int)xev->xkey.window);
 			XSendEvent(keyrouter.disp, xev->xkey.window, False, KeyPressMask | KeyReleaseMask, xev);
 			tmp_ptr = ptr;
 			ptr=ptr->next ;
@@ -3047,18 +2994,6 @@ static void InitModKeys()
 	SECURE_SLOGD("[keyrouter][%s][%d] Modifier Key=%s (keycode:%d)\n", __FUNCTION__, i, KEY_POWER, keyrouter.modkey[i].keys[0].keycode);
 	SECURE_SLOGD("[keyrouter][%s][%d] Composited Key=%s (keycode:%d)\n", __FUNCTION__, i, KEY_HOME, keyrouter.modkey[i].keys[1].keycode);
 	SECURE_SLOGD("[keyrouter][%s][%d] Cancel Key=%s (keycode:%d)\n", __FUNCTION__, i, KEY_CANCEL, keyrouter.cancel_key.keycode);
-
-/*
-	i++;
-	keyrouter.modkey[i].keys[0].keysym = XStringToKeysym(KEY_VOLUMEUP);
-	keyrouter.modkey[i].keys[0].keycode = XKeysymToKeycode(keyrouter.disp, keyrouter.modkey[i].keys[0].keysym);
-	keyrouter.modkey[i].keys[1].keysym = XStringToKeysym(KEY_VOLUMEDOWN);
-	keyrouter.modkey[i].keys[1].keycode = XKeysymToKeycode(keyrouter.disp, keyrouter.modkey[i].keys[1].keysym);
-	keyrouter.modkey[i].press_only = EINA_FALSE;
-	SECURE_SLOGD("[keyrouter][%s][%d] Modifier Key=%s (keycode:%d)\n", __FUNCTION__, i, KEY_VOLUMEUP, keyrouter.modkey[i].keys[0].keycode);
-	SECURE_SLOGD("[keyrouter][%s][%d] Composited Key=%s (keycode:%d)\n", __FUNCTION__, i, KEY_VOLUMEDOWN, keyrouter.modkey[i].keys[1].keycode);
-	SECURE_SLOGD("[keyrouter][%s][%d] Cancel Key=%s (keycode:%d)\n", __FUNCTION__, i, KEY_CANCEL, keyrouter.cancel_key.keycode);
-*/
 }
 
 static void ResetModKeyInfo()

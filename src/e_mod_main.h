@@ -146,21 +146,7 @@ const char *HWKeys[] = {
 	"6",
 	"7",
 	"8",
-	"9",
-	/*KEY_1,
-	KEY_2,
-	KEY_3,
-	KEY_4,
-	KEY_5,
-	KEY_6,
-	KEY_UP,
-	KEY_DOWN,
-	KEY_LEFT,
-	KEY_RIGHT,*/
-	/*KEY_CONNECT,
-	KEY_GAMEPLAY,
-	KEY_VOICEWAKEUP_LPSD,
-	KEY_VOICEWAKEUP*/
+	"9"
 };
 
 typedef enum
@@ -296,7 +282,7 @@ static void _e_keyrouter_device_add(int id, int type);
 static void _e_keyrouter_device_remove(int id, int type);
 static void _e_keyrouter_update_key_delivery_list(Ecore_X_Window win, int keycode, const int grab_mode, const int IsOnTop);
 
-//e17 bindings functions and action callbacks
+//e bindings functions and action callbacks
 static int _e_keyrouter_modifiers(E_Binding_Modifier modifiers);
 static void _e_keyrouter_do_bound_key_action(XEvent *xev);
 
