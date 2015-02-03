@@ -894,8 +894,7 @@ _e_keyrouter_cb_client_message(void* data, int type, void* event)
                             linfo->keycode = i;
                             linfo->longpress_timeout = longpress_timeout;
 
-                            l = krt.longpress_list;
-                            l = eina_list_append(l, linfo);
+                            krt.longpress_list = eina_list_append(krt.longpress_list, linfo);
                          }
                     }
                }
@@ -1096,8 +1095,7 @@ _e_keyrouter_is_waiting_key_list_empty(XEvent *ev)
         key_data->ev_type = KeyRelease;
         key_data->keycode = ev->xkey.keycode;
 
-        l = krt.ignored_key_list;
-        l = eina_list_append(l, key_data);
+        krt.ignored_key_list = eina_list_append(krt.ignored_key_list, key_data);
 
         SECURE_SLOGD("[krt][%s] ignored key added (keycode=%d, type=%d)\n",
                      __FUNCTION__, key_data->keycode, key_data->ev_type);
@@ -1119,8 +1117,7 @@ _e_keyrouter_is_waiting_key_list_empty(XEvent *ev)
 found:
    modkey_index = data->modkey_index;
 
-   l = krt.waiting_key_list;
-   l = eina_list_remove(l, data);
+   krt.waiting_key_list = eina_list_remove(krt.waiting_key_list, data);
 
    SECURE_SLOGD("[krt][%s][%d] key was remove from waiting_key_list !"
                 "(keycode:%d, type:%d)\n", __FUNCTION__,
@@ -1171,8 +1168,7 @@ _e_keyrouter_is_key_in_ignored_list(XEvent *ev)
    return EINA_FALSE;
 
 found:
-   l = krt.ignored_key_list;
-   l = eina_list_remove(l, data);
+   krt.ignored_key_list = eina_list_remove(krt.ignored_key_list, data);
 
    SECURE_SLOGD("[krt][%s] key was remove from ignored_list !"
                 "(keycode:%d, type:%d)\n", __FUNCTION__,
@@ -1265,8 +1261,7 @@ keyboard_added:
          data->id = id;
          data->name = eina_stringshare_add(info->name);
 
-         l = krt.device_list;
-         l = eina_list_append(l, data);
+         krt.device_list = eina_list_append(krt.device_list, data);
 
          _e_keyrouter_grab_hwkeys(id);
      }
@@ -1305,8 +1300,7 @@ _e_keyrouter_device_remove(int id, int type)
                         "[krt][%s] Slave hotplugged key|keyboard device "
                         "(id=%d, name=%s, type=%d) was removed/disabled !\n",
                         __FUNCTION__, id, data->name, type);
-                   l = krt.device_list;
-                   l = eina_list_remove(l, data);
+                   krt.device_list = eina_list_remove(krt.device_list, data);
                    free(data);
                    goto out;
 
@@ -1315,8 +1309,7 @@ _e_keyrouter_device_remove(int id, int type)
                         "[krt][%s] Unknown type of device ! "
                         "(id=%d, type=%d, name=%s, device type=%d)\n",
                         __FUNCTION__, data->id, type, data->name, data->type);
-                   l = krt.device_list;
-                   l = eina_list_remove(l, data);
+                   krt.device_list = eina_list_remove(krt.device_list, data);
                    free(data);
                    goto out;
                }
@@ -1998,8 +1991,7 @@ keyboard_added:
                    data->name = eina_stringshare_add(dev->name);
                    data->type = kdtype;
 
-                   l = krt.device_list;
-                   l = eina_list_append(l, data);
+                   krt.device_list = eina_list_append(krt.device_list, data);
                 }
 
               if (kdtype == E_KEYROUTER_HWKEY)
