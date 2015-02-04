@@ -1273,7 +1273,7 @@ out:
 static void
 _e_keyrouter_device_remove(int id, int type)
 {
-   Eina_List *l, *ll;
+   Eina_List *l;
    E_Keyrouter_Device_Info *data;
 
    if (!krt.device_list)
@@ -1285,7 +1285,7 @@ _e_keyrouter_device_remove(int id, int type)
         goto out;
      }
 
-   EINA_LIST_FOREACH(krt.device_list, ll, data)
+   EINA_LIST_FOREACH(krt.device_list, l, data)
      {
         if ((data) && (data->id == id))
           {
@@ -1766,28 +1766,22 @@ grab_a_keycode_only:
 }
 
 static int
-GetItemFromWindow(Window win, const char* atom_name, unsigned int **key_list)
+GetItemFromWindow(Ecore_X_Window win, const char* atom_name, unsigned int **key_list)
 {
-   Atom ret_type;
-   int ret_format;
-   unsigned long nr_item = 0;
-   unsigned long sz_remains_data;
+   int ret = 0;
+   int nr_item = 0;
+   int sz_remains_data = 0;
    Atom grabKey;
 
-   grabKey = XInternAtom(krt.disp, atom_name, False);
+   grabKey = ecore_x_atom_get(atom_name);
 
-   if (XGetWindowProperty(krt.disp,
-                          win,
-                          grabKey,
-                          0,
-                          0x7fffffff,
-                          False,
-                          XA_CARDINAL,
-                          &ret_type,
-                          &ret_format,
-                          &nr_item,
-                          &sz_remains_data,
-                          (unsigned char **)key_list) != Success)
+   ret = ecore_x_window_prop_property_get(win,
+                                          grabKey,
+                                          XA_CARDINAL,
+                                          sz_remains_data,
+                                          (unsigned char **)&key_list,
+                                          &nr_item);
+   if (!ret || !key_list)
      {
         nr_item = 0;
      }
@@ -1796,26 +1790,19 @@ GetItemFromWindow(Window win, const char* atom_name, unsigned int **key_list)
 }
 
 static void
-BuildKeyGrabList(Window root)
+BuildKeyGrabList(Ecore_X_Window root)
 {
-   Window tmp;
-   Window *childwins = NULL;
-   unsigned int num_children;
+   Ecore_X_Window *childwins = NULL;
+   int num_children;
    register unsigned int i, j;
    int grab_mode, keycode;
    unsigned int *key_list = NULL;
    int n_items = 0;
-   int res;
 
-   XGrabServer(krt.disp);
-   res = XQueryTree(krt.disp,
-                    root,
-                    &tmp,
-                    &tmp,
-                    &childwins,
-                    &num_children);
-   XUngrabServer(krt.disp);
-   if (0 == res) return;
+   ecore_x_grab();
+   childwins = ecore_x_window_children_get(root, &num_children);
+   ecore_x_ungrab();
+   if (!childwins) return;
 
    for (i = 0; i < num_children; i++)
      {
@@ -1857,7 +1844,7 @@ InitGrabKeyDevices(void)
 
 /* Function for getting device pointer through device name */
 static int
-GrabKeyDevice(Window win, const char* DeviceName, const int DeviceID)
+GrabKeyDevice(Ecore_X_Window win, const char* DeviceName, const int DeviceID)
 {
    XEventClass eventList[32];
    XEventClass cls;
@@ -1918,13 +1905,12 @@ detachSlave(int DeviceID)
 }
 
 static int
-GrabKeyDevices(Window win)
+GrabKeyDevices(Ecore_X_Window win)
 {
    int i, ndevices, result;
    XIDeviceInfo *dev, *info = NULL;
    KeyrouterDeviceType kdtype;
    E_Keyrouter_Device_Info *data = NULL;
-   Eina_List *l;
 
    info = XIQueryDevice(krt.disp,
                         XIAllDevices,
@@ -2203,7 +2189,7 @@ PrintKeyDeliveryList(void)
 }
 
 static int
-RemoveWindowDeliveryList(Window win, int isTopPositionMode, int UnSetExclusiveProperty)
+RemoveWindowDeliveryList(Ecore_X_Window win, int isTopPositionMode, int UnSetExclusiveProperty)
 {
    int index, mode_count = 0;
 
@@ -2508,43 +2494,33 @@ UnSetExclusiveGrabInfoToRootWindow(int keycode, int grab_mode)
    unsigned int *key_list = NULL;
    int *new_key_list = NULL;
 
-   Atom ret_type;
-   int ret_format;
-   unsigned long nr_item;
-   unsigned long sz_remains_data;
-   Window ex_grabwin;
+   int ret;
+   int nr_item = 0;
+   int sz_remains_data = 0;
+   Ecore_X_Window ex_grabwin;
 
    if (grab_mode == EXCLUSIVE_GRAB)
      {
         if (krt.atomGrabExclWin == None)
-          krt.atomGrabExclWin = XInternAtom(krt.disp,
-                                                  STR_ATOM_GRAB_EXCL_WIN,
-                                                  False);
+          krt.atomGrabExclWin = ecore_x_atom_get(STR_ATOM_GRAB_EXCL_WIN);
         ex_grabwin = krt.atomGrabExclWin;
      }
    else if (grab_mode == OR_EXCLUSIVE_GRAB)
      {
         if (krt.atomGrabORExclWin == None)
-          krt.atomGrabORExclWin = XInternAtom(krt.disp,
-                                                    STR_ATOM_GRAB_OR_EXCL_WIN,
-                                                    False);
+          krt.atomGrabORExclWin = ecore_x_atom_get(STR_ATOM_GRAB_OR_EXCL_WIN);
         ex_grabwin = krt.atomGrabORExclWin;
      }
    else
      return;
 
-   if (XGetWindowProperty(krt.disp,
-                          krt.rootWin,
-                          ex_grabwin,
-                          0,
-                          0x7fffffff,
-                          False,
-                          XA_CARDINAL,
-                          &ret_type,
-                          &ret_format,
-                          &nr_item,
-                          &sz_remains_data,
-                          (unsigned char **)&key_list) != Success)
+   ret = ecore_x_window_prop_property_get(krt.rootWin,
+                                           ex_grabwin,
+                                           XA_CARDINAL,
+                                           sz_remains_data,
+                                           (unsigned char **)&key_list,
+                                           &nr_item);
+   if (!ret || !key_list)
      {
         nr_item = 0;
      }
@@ -2570,8 +2546,7 @@ UnSetExclusiveGrabInfoToRootWindow(int keycode, int grab_mode)
 
    if (!new_key_list)
      {
-        XDeleteProperty(krt.disp, krt.rootWin, ex_grabwin);
-        ecore_x_sync();
+        ecore_x_window_prop_property_del(krt.rootWin, ex_grabwin);
         goto out;
      }
 
@@ -2583,15 +2558,12 @@ UnSetExclusiveGrabInfoToRootWindow(int keycode, int grab_mode)
           new_key_list[cnt++] = key_list[i];
      }
 
-   XChangeProperty(krt.disp,
-                   krt.rootWin,
-                   ex_grabwin,
-                   XA_CARDINAL,
-                   32,
-                   PropModeReplace,
-                   (unsigned char *)new_key_list,
-                   cnt);
-   ecore_x_sync();
+   ecore_x_window_prop_property_set(krt.rootWin,
+                                    ex_grabwin,
+                                    XA_CARDINAL,
+                                    32,
+                                    (unsigned char *)new_key_list,
+                                    cnt);
 
 out:
    if (new_key_list)
@@ -2602,7 +2574,7 @@ out:
 }
 
 static int
-AddWindowToDeliveryList(Window win, int keycode, const int grab_mode, const int IsOnTop)
+AddWindowToDeliveryList(Ecore_X_Window win, int keycode, const int grab_mode, const int IsOnTop)
 {
    int ret = 0;
    int index = keycode;
@@ -2772,12 +2744,10 @@ out:
 }
 
 static int
-AdjustTopPositionDeliveryList(Window win, int IsOnTop)
+AdjustTopPositionDeliveryList(Ecore_X_Window win, int IsOnTop)
 {
-   Atom ret_type;
-   int ret_format;
-   unsigned long nr_item = 0;
-   unsigned long sz_remains_data;
+   int nr_item = 0;
+   int sz_remains_data = 0;
    unsigned int *key_list = NULL;
 
    int i, result;
@@ -2785,23 +2755,16 @@ AdjustTopPositionDeliveryList(Window win, int IsOnTop)
 
    if (krt.atomGrabKey == None)
      {
-        krt.atomGrabKey = XInternAtom(krt.disp,
-                                            STR_ATOM_GRAB_KEY,
-                                            False);
+        krt.atomGrabKey = ecore_x_atom_get(STR_ATOM_GRAB_KEY);
      }
 
-   if (Success != (result = XGetWindowProperty(krt.disp,
-                                               win,
-                                               krt.atomGrabKey,
-                                               0,
-                                               0x7fffffff,
-                                               False,
-                                               XA_CARDINAL,
-                                               &ret_type,
-                                               &ret_format,
-                                               &nr_item,
-                                               &sz_remains_data,
-                                               (unsigned char **)&key_list)))
+   result = ecore_x_window_prop_property_get(win,
+                                             krt.atomGrabKey,
+                                             XA_CARDINAL,
+                                             sz_remains_data,
+                                             (unsigned char **)&key_list,
+                                             &nr_item);
+   if (!result || !key_list)
      {
         SLOG(LOG_DEBUG, "krt",
              "[krt][%s] Failed to get window property from %s ! "
@@ -2904,22 +2867,16 @@ _e_keyrouter_find_client_by_window(Window win)
 }
 
 static int
-IsWindowTopVisibleWithoutInputFocus(keylist_node *top_ptr, Window focus, Window *dest_window)
+IsWindowTopVisibleWithoutInputFocus(keylist_node *top_ptr, Ecore_X_Window focus, Ecore_X_Window *dest_window)
 {
-   Window root_win, parent_win;
-   unsigned int num_children;
-   Window *child_list = NULL;
+   int num_children;
+   Ecore_X_Window *child_list = NULL;
    keylist_node *ptr = NULL;
    int i;
-   XWindowAttributes win_attributes;
    E_Client *ec;
 
-   if (!XQueryTree(krt.disp,
-                   krt.rootWin,
-                   &root_win,
-                   &parent_win,
-                   &child_list,
-                   &num_children))
+   child_list = ecore_x_window_children_get(krt.rootWin, &num_children);
+   if (!child_list)
      {
         SLOG(LOG_DEBUG, "krt",
              "[krt][%s] Failed to query window tree !\n",
@@ -2932,13 +2889,8 @@ IsWindowTopVisibleWithoutInputFocus(keylist_node *top_ptr, Window focus, Window 
      {
         /* 1. check map status of window
          * figure out whether the window is mapped or not
-         */
-        XGetWindowAttributes(krt.disp,
-                             child_list[i],
-                             &win_attributes);
-
-        /* 2. return if map status is 0 or border's visible is 0 */
-        if (win_attributes.map_state == 0)
+         * if map status is 0 or border's visible is 0 */
+        if (ecore_x_window_visible_get(child_list[i]) == 0)
           continue;
 
         /* 3. check window is border or not
@@ -3017,10 +2969,9 @@ static void
 DeliverDeviceKeyEvents(XEvent *xev)
 {
    int index;
-   int revert_to_return;
-   Window focus_window;
+   Ecore_X_Window focus_window;
    keylist_node* ptr = NULL;
-   Window dest_window = None;
+   Ecore_X_Window dest_window = None;
 
    index = IsGrabbed(xev->xkey.keycode);
 
@@ -3034,9 +2985,7 @@ DeliverDeviceKeyEvents(XEvent *xev)
         return;
      }
 
-   XGetInputFocus(krt.disp,
-                  &focus_window,
-                  &revert_to_return);
+   focus_window = ecore_x_window_focus_get();
 
    /* Is Grabbed ? */
    if (index < 0) /* Code for non-grabbed key */
@@ -3141,9 +3090,7 @@ DeliverDeviceKeyEvents(XEvent *xev)
                                      "Try it agin. focus_window=(0x%x) !\n",
                                      __FUNCTION__, focus_window);
 
-                        XGetInputFocus(krt.disp,
-                                       &focus_window,
-                                       &revert_to_return);
+                        focus_window = ecore_x_window_focus_get();
                      }
 
                    if ((krt.isWindowStackChanged) ||
@@ -3446,9 +3393,7 @@ DoKeyCompositionAction(int index, int press)
 
    int i = index;
 
-   xkey_composition_atom = XInternAtom(krt.disp,
-                                       STR_ATOM_XKEY_COMPOSITION,
-                                       False);
+   xkey_composition_atom = ecore_x_atom_get(STR_ATOM_XKEY_COMPOSITION);
 
    xev.xclient.window = krt.rootWin;
    xev.xclient.type = ClientMessage;

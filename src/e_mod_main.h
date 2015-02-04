@@ -49,7 +49,7 @@ EAPI int   e_modapi_save(E_Module *m);
 
 typedef struct _keylist_node
 {
-   Window wid;
+   Ecore_X_Window wid;
    struct _keylist_node* next;
 } keylist_node;
 
@@ -274,7 +274,7 @@ static void _e_keyrouter_do_bound_key_action(XEvent *xev);
 
 static void DeliverDeviceKeyEvents(XEvent *xev);
 static void InitGrabKeyDevices();
-static int GrabKeyDevices(Window win);
+static int GrabKeyDevices(Ecore_X_Window win);
 static void UngrabKeyDevices();
 
 /* functions related to mouse rbutton popup */
@@ -290,10 +290,10 @@ static int IsKeyComposited(XEvent *ev, int index);
 static void DoKeyCompositionAction(int index, int press);
 
 static void UnSetExclusiveGrabInfoToRootWindow(int keycode, int grab_mode);
-static int AdjustTopPositionDeliveryList(Window win, int IsOnTop);
-static int AddWindowToDeliveryList(Window win, int keycode, const int grab_mode, const int IsOnTop);
-static int RemoveWindowDeliveryList(Window win, int isTopPositionMode, int UnSetExclusiveProperty);
-static int GetItemFromWindow(Window win, const char* atom_name, unsigned int **key_list);
+static int AdjustTopPositionDeliveryList(Ecore_X_Window win, int IsOnTop);
+static int AddWindowToDeliveryList(Ecore_X_Window win, int keycode, const int grab_mode, const int IsOnTop);
+static int RemoveWindowDeliveryList(Ecore_X_Window win, int isTopPositionMode, int UnSetExclusiveProperty);
+static int GetItemFromWindow(Ecore_X_Window win, const char* atom_name, unsigned int **key_list);
 
 static int IsGrabbed(unsigned int keycode);
 static void detachSlave(int DeviceID);
@@ -301,8 +301,8 @@ static void reattachSlave(int slave, int master);
 static void Keygrab_Status(unsigned int val);
 static void Device_Status(unsigned int val);
 static void PrintKeyDeliveryList();
-static void BuildKeyGrabList(Window root);
-static int GrabKeyDevice(Window win, const char* DeviceName, const int DeviceID);
+static void BuildKeyGrabList(Ecore_X_Window root);
+static int GrabKeyDevice(Ecore_X_Window win, const char* DeviceName, const int DeviceID);
 
 static int LongPressRecognize(int keycode);
 static Eina_Bool LongPressEventDeliver(void *data);
