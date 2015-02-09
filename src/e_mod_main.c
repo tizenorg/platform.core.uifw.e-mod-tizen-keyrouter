@@ -3416,46 +3416,27 @@ IsKeyComposited(unsigned int keycode, Time time, int index)
 static void
 DoKeyCompositionAction(int index, int press)
 {
-   XEvent xev;
    Atom xkey_composition_atom = None;
 
    int i = index;
 
-   xkey_composition_atom = ecore_x_atom_get(STR_ATOM_XKEY_COMPOSITION);
+   ecore_x_client_message32_send(krt.rootWin,
+                                 xkey_composition_atom,
+                                 StructureNotifyMask | SubstructureNotifyMask,
+                                 krt.modkey[i].keys[0].keycode,
+                                 krt.modkey[i].keys[1].keycode,
+                                 press,
+                                 0,
+                                 0);
 
-   xev.xclient.window = krt.rootWin;
-   xev.xclient.type = ClientMessage;
-   xev.xclient.message_type = xkey_composition_atom;
-   xev.xclient.format = 32;
-   xev.xclient.data.l[0] = krt.modkey[i].keys[0].keycode;
-   xev.xclient.data.l[1] = krt.modkey[i].keys[1].keycode;
-   xev.xclient.data.l[2] = press;
-   xev.xclient.data.l[3] = 0;
-   xev.xclient.data.l[4] = 0;
-
-   XSendEvent(krt.disp,
-              krt.rootWin,
-              False,
-              StructureNotifyMask | SubstructureNotifyMask,
-              &xev);
-
-   xev.xclient.window = krt.noti_window;
-   xev.xclient.type = ClientMessage;
-   xev.xclient.message_type = xkey_composition_atom;
-   xev.xclient.format = 32;
-   xev.xclient.data.l[0] = krt.modkey[i].keys[0].keycode;
-   xev.xclient.data.l[1] = krt.modkey[i].keys[1].keycode;
-   xev.xclient.data.l[2] = press;
-   xev.xclient.data.l[3] = 0;
-   xev.xclient.data.l[4] = 0;
-
-   XSendEvent(krt.disp,
-              krt.noti_window,
-              False,
-              StructureNotifyMask | SubstructureNotifyMask,
-              &xev);
-
-   ecore_x_sync();
+   ecore_x_client_message32_send(krt.noti_window,
+                                 xkey_composition_atom,
+                                 StructureNotifyMask | SubstructureNotifyMask,
+                                 krt.modkey[i].keys[0].keycode,
+                                 krt.modkey[i].keys[1].keycode,
+                                 press,
+                                 0,
+                                 0);
 
    SECURE_SLOGD("\n[krt][%s][%d] Do Key Composition Action : ClientMessage "
                 "to RootWindow(0x%x)!: %s\n", __FUNCTION__, i, krt.rootWin,
