@@ -226,6 +226,8 @@ LongPressEventDeliver(void *data)
    longpress_info *lpinfo;
    key_event_info* key_data;
    int menu_keycode, back_keycode;
+   const char * menu_keyname;
+   const char * back_keyname;
    int col=0;
    Eina_Bool ret_val = EINA_FALSE;
    KeySym sym_long, sym_menu, sym_back;
@@ -235,8 +237,13 @@ LongPressEventDeliver(void *data)
    if (!lpinfo)
      return ret_val;
 
-   menu_keycode = ecore_x_keysym_keycode_get(KEY_MENU);
-   back_keycode = ecore_x_keysym_keycode_get(KEY_BACK);
+   menu_keyname = utilx_get_key_symbol("KEY_MENU");
+   if (menu_keyname)
+     menu_keycode = ecore_x_keysym_keycode_get(menu_keyname);
+
+   back_keyname = utilx_get_key_symbol("KEY_BACK");
+   if (back_keyname)
+     back_keycode = ecore_x_keysym_keycode_get(back_keyname);
 
    sym_long = XkbKeycodeToKeysym(krt.disp, lpinfo->keycode, col, 0);
    sym_menu = XkbKeycodeToKeysym(krt.disp, menu_keycode, col, 0);
@@ -422,7 +429,7 @@ _e_keyrouter_hwkey_event_handler(XEvent *ev)
                   if (!krt.modkey[i].set)
                     {
                        /* check modifier key */
-                       krt.modkey[i].idx_mod = IsModKey(ev, i);
+                       krt.modkey[i].idx_mod = IsModKey(ev->xkey.keycode, i);
 
                        if (krt.modkey[i].idx_mod)
                          {
@@ -444,7 +451,7 @@ _e_keyrouter_hwkey_event_handler(XEvent *ev)
           {
              for (i = 0; i < NUM_KEY_COMPOSITION_ACTIONS; i++)
                {
-                  krt.modkey[i].composited = IsKeyComposited(ev, i);
+                  krt.modkey[i].composited = IsKeyComposited(ev->xkey.keycode, ev->xkey.time, i);
 
                   if (krt.modkey[i].composited)
                     {
@@ -518,6 +525,8 @@ _e_keyrouter_cb_event_generic(void *data, int ev_type, void *event)
    int keycode = 0;
    static int home_keycode = 0;
    static int back_keycode = 0;
+   const char * home_keyname;
+   const char * back_keyname;
 #endif /* _F_REMAP_MOUSE_BUTTON_TO_HWKEY_ */
 
    if (e->extension != krt.xi2_opcode)
@@ -548,15 +557,17 @@ _e_keyrouter_cb_event_generic(void *data, int ev_type, void *event)
       case XI_ButtonRelease:
          if (evData->detail == 2) /* Home key */
            {
-              if (!home_keycode)
-                home_keycode = ecore_x_keysym_keycode_get(KEY_HOME);
+              home_keyname = utilx_get_key_symbol("KEY_HOME");
+              if (home_keyname)
+                home_keycode = ecore_x_keysym_keycode_get(home_keyname);
 
               keycode = home_keycode;
            }
          else if (evData->detail == 3) /* Back key */
            {
-              if (!back_keycode)
-                back_keycode = ecore_x_keysym_keycode_get(KEY_BACK);
+              back_keyname = utilx_get_key_symbol("KEY_BACK");
+              if (back_keyname)
+                back_keycode = ecore_x_keysym_keycode_get(back_keyname);
 
               keycode = back_keycode;
            }
@@ -842,8 +853,7 @@ _e_keyrouter_cb_client_message(void* data, int type, void* event)
           {
            case KeyPress:
            case KeyRelease:
-              keycode = XKeysymToKeycode(krt.disp,
-                                         XStringToKeysym(&ev->data.b[2]));
+              keycode = ecore_x_keysym_keycode_get(&ev->data.b[2]);
 
               _e_keyrouter_do_hardkey_emulation(NULL,
                                                 event_type,
@@ -1779,7 +1789,7 @@ GetItemFromWindow(Ecore_X_Window win, const char* atom_name, unsigned int **key_
                                           grabKey,
                                           XA_CARDINAL,
                                           sz_remains_data,
-                                          (unsigned char **)&key_list,
+                                          (unsigned char **)key_list,
                                           &nr_item);
    if (!ret || !key_list)
      {
@@ -1832,8 +1842,8 @@ BuildKeyGrabList(Ecore_X_Window root)
           }
      }
 
-   if (key_list) XFree(key_list);
-   if (childwins) XFree(childwins);
+   if (key_list) free(key_list);
+   if (childwins) free(childwins);
 }
 
 static void
@@ -2961,7 +2971,7 @@ IsWindowTopVisibleWithoutInputFocus(keylist_node *top_ptr, Ecore_X_Window focus,
              return 0;
           }
      }
-   XFree(child_list);
+   free(child_list);
    return 0;
 }
 
@@ -3294,28 +3304,46 @@ static void
 InitModKeys(void)
 {
    KeySym sym;
-   unsigned int code;
+   unsigned int code = 0;
+   const char * keyname_power;
+   const char * keyname_home;
+   const char * keyname_cancel;
    int i = 0;
 
    if (!krt.modkey)
      return;
 
-   sym = XStringToKeysym(KEY_POWER);
-   code = XKeysymToKeycode(krt.disp, krt.modkey[i].keys[0].keysym);
-   krt.modkey[i].keys[0].keysym = sym;
-   krt.modkey[i].keys[0].keycode = code;
+   keyname_power = utilx_get_key_symbol("KEY_POWER");
+   if (keyname_power)
+     {
+        sym = XStringToKeysym(keyname_power);
+        if (sym)
+          code = XKeysymToKeycode(krt.disp, sym);
+        krt.modkey[i].keys[0].keysym = sym;
+        krt.modkey[i].keys[0].keycode = code;
+     }
 
-   sym = XStringToKeysym(KEY_HOME);
-   code = XKeysymToKeycode(krt.disp, krt.modkey[i].keys[1].keysym);
-   krt.modkey[i].keys[1].keysym = sym;
-   krt.modkey[i].keys[1].keycode = code;
+   keyname_home = utilx_get_key_symbol("KEY_HOME");
+   if (keyname_home)
+     {
+        sym = XStringToKeysym(keyname_home);
+        if (sym)
+          code = XKeysymToKeycode(krt.disp, sym);
+        krt.modkey[i].keys[1].keysym = sym;
+        krt.modkey[i].keys[1].keycode = code;
+     }
 
    krt.modkey[i].press_only = EINA_TRUE;
 
-   sym = XStringToKeysym(KEY_CANCEL);
-   code = XKeysymToKeycode(krt.disp, krt.cancel_key.keysym);
-   krt.cancel_key.keysym = sym;
-   krt.cancel_key.keycode = code;
+   keyname_cancel = utilx_get_key_symbol("KEY_CANCEL");
+   if (keyname_cancel)
+     {
+        sym = XStringToKeysym(keyname_cancel);
+        if (sym)
+          code = XKeysymToKeycode(krt.disp, sym);
+        krt.cancel_key.keysym = sym;
+        krt.cancel_key.keycode = code;
+     }
 
    SECURE_SLOGD("[krt][%s][%d] Modifier Key=%s (keycode:%d)\n",
                 __FUNCTION__, i, KEY_POWER,
@@ -3349,37 +3377,37 @@ ResetModKeyInfo(void)
 }
 
 static int
-IsModKey(XEvent *ev, int index)
+IsModKey(unsigned int keycode, int index)
 {
    int i, j = index;
 
    for (i = 0; i < NUM_COMPOSITION_KEY; i++)
-     if (ev->xkey.keycode == krt.modkey[j].keys[i].keycode)
+     if (keycode == krt.modkey[j].keys[i].keycode)
        return (i+1);
 
    return 0;
 }
 
 static int
-IsCompKey(XEvent *ev, int index)
+IsCompKey(unsigned int keycode, int index)
 {
    int i = index;
    int mod_i = krt.modkey[i].idx_mod % NUM_COMPOSITION_KEY;
 
-   if (ev->xkey.keycode == krt.modkey[i].keys[mod_i].keycode)
+   if (keycode == krt.modkey[i].keys[mod_i].keycode)
      return 4;
 
    return 0;
 }
 
 static int
-IsKeyComposited(XEvent *ev, int index)
+IsKeyComposited(unsigned int keycode, Time time, int index)
 {
    int i = index;
    int mod_i = krt.modkey[i].idx_mod % NUM_COMPOSITION_KEY;
 
-   if ((ev->xkey.keycode == krt.modkey[i].keys[mod_i].keycode) &&
-       (ev->xkey.time <= (krt.modkey[i].time + KEY_COMPOSITION_TIME)))
+   if ((keycode == krt.modkey[i].keys[mod_i].keycode) &&
+       (time <= (krt.modkey[i].time + KEY_COMPOSITION_TIME)))
      return 3;
 
    return 0;

@@ -61,7 +61,7 @@ dnl ========================================================================
 # checks for pkg-config
 dnl ========================================================================
 PKG_CHECK_MODULES(ENLIGHTENMENT, [enlightenment,
-                                  dlog])
+                                  dlog, utilX])
 ENLIGHTENMENT_CFLAGS="${ENLIGHTENMENT_CFLAGS} -D_GNU_SOURCE "
 AC_SUBST(ENLIGHTENMENT_CFLAGS)
 AC_SUBST(ENLIGHTENMENT_LIBS)

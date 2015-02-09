@@ -105,7 +105,7 @@ typedef struct _ModifierKey
 
 typedef struct ModifierKey *ModifierKeyPtr;
 
-#define NUM_HWKEYS 37
+#define NUM_HWKEYS 42
 
 const char *HWKeys[] = {
      KEY_VOLUMEUP,
@@ -284,9 +284,9 @@ static void _e_keyrouter_do_hardkey_emulation(const char *label, unsigned int ke
 /* functions related to key composition for screen capture */
 static void InitModKeys();
 static void ResetModKeyInfo();
-static int IsModKey(XEvent *ev, int index);
-static int IsCompKey(XEvent *ev, int index);
-static int IsKeyComposited(XEvent *ev, int index);
+static int IsModKey(unsigned int keycode, int index);
+static int IsCompKey(unsigned int keycode, int index);
+static int IsKeyComposited(unsigned int keycode, Time time, int index);
 static void DoKeyCompositionAction(int index, int press);
 
 static void UnSetExclusiveGrabInfoToRootWindow(int keycode, int grab_mode);
