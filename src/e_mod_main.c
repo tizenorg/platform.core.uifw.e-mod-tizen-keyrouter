@@ -422,7 +422,7 @@ _e_keyrouter_hwkey_event_handler(XEvent *ev)
                   if (!krt.modkey[i].set)
                     {
                        /* check modifier key */
-                       krt.modkey[i].idx_mod = IsModKey(ev, i);
+                       krt.modkey[i].idx_mod = IsModKey(ev->xkey.keycode, i);
 
                        if (krt.modkey[i].idx_mod)
                          {
@@ -444,7 +444,7 @@ _e_keyrouter_hwkey_event_handler(XEvent *ev)
           {
              for (i = 0; i < NUM_KEY_COMPOSITION_ACTIONS; i++)
                {
-                  krt.modkey[i].composited = IsKeyComposited(ev, i);
+                  krt.modkey[i].composited = IsKeyComposited(ev->xkey.keycode, ev->xkey.time, i);
 
                   if (krt.modkey[i].composited)
                     {
@@ -842,8 +842,7 @@ _e_keyrouter_cb_client_message(void* data, int type, void* event)
           {
            case KeyPress:
            case KeyRelease:
-              keycode = XKeysymToKeycode(krt.disp,
-                                         XStringToKeysym(&ev->data.b[2]));
+              keycode = ecore_x_keysym_keycode_get(&ev->data.b[2]);
 
               _e_keyrouter_do_hardkey_emulation(NULL,
                                                 event_type,
@@ -1826,14 +1825,14 @@ BuildKeyGrabList(Ecore_X_Window root)
 
              if (key_list)
                {
-                  XFree(key_list);
+                  free(key_list);
                   key_list = NULL;
                }
           }
      }
 
-   if (key_list) XFree(key_list);
-   if (childwins) XFree(childwins);
+   if (key_list) free(key_list);
+   if (childwins) free(childwins);
 }
 
 static void
@@ -2569,7 +2568,7 @@ out:
    if (new_key_list)
      free(new_key_list);
    if (key_list)
-     XFree(key_list);
+     free(key_list);
    return;
 }
 
@@ -2798,7 +2797,7 @@ AdjustTopPositionDeliveryList(Ecore_X_Window win, int IsOnTop)
      }
 
 out:
-   if (key_list) XFree(key_list);
+   if (key_list) free(key_list);
    return 0;
 }
 
@@ -2906,7 +2905,7 @@ IsWindowTopVisibleWithoutInputFocus(keylist_node *top_ptr, Ecore_X_Window focus,
                {
                   if (e_client_util_win_get(ec) == focus)
                     {
-                       XFree(child_list);
+                       free(child_list);
                        return 0;
                     }
                   else
@@ -2928,7 +2927,7 @@ IsWindowTopVisibleWithoutInputFocus(keylist_node *top_ptr, Ecore_X_Window focus,
                   if (e_client_util_win_get(ec) == ptr->wid)
                     {
                        *dest_window = ptr->wid;
-                       XFree(child_list);
+                       free(child_list);
                        return 1;
                     }
                }
@@ -2941,7 +2940,7 @@ IsWindowTopVisibleWithoutInputFocus(keylist_node *top_ptr, Ecore_X_Window focus,
                   if (child_list[i] == ptr->wid)
                     {
                        *dest_window = ptr->wid;
-                       XFree(child_list);
+                       free(child_list);
                        return 1;
                     }
                }
@@ -2951,17 +2950,17 @@ IsWindowTopVisibleWithoutInputFocus(keylist_node *top_ptr, Ecore_X_Window focus,
           {
              if (e_client_util_win_get(ec) == focus)
                {
-                  XFree(child_list);
+                  free(child_list);
                   return 0;
                }
           }
         else if (child_list[i] == focus)
           {
-             XFree(child_list);
+             free(child_list);
              return 0;
           }
      }
-   XFree(child_list);
+   free(child_list);
    return 0;
 }
 
@@ -3349,37 +3348,37 @@ ResetModKeyInfo(void)
 }
 
 static int
-IsModKey(XEvent *ev, int index)
+IsModKey(unsigned int keycode, int index)
 {
    int i, j = index;
 
    for (i = 0; i < NUM_COMPOSITION_KEY; i++)
-     if (ev->xkey.keycode == krt.modkey[j].keys[i].keycode)
+     if (keycode == krt.modkey[j].keys[i].keycode)
        return (i+1);
 
    return 0;
 }
 
 static int
-IsCompKey(XEvent *ev, int index)
+IsCompKey(unsigned int keycode, int index)
 {
    int i = index;
    int mod_i = krt.modkey[i].idx_mod % NUM_COMPOSITION_KEY;
 
-   if (ev->xkey.keycode == krt.modkey[i].keys[mod_i].keycode)
+   if (keycode == krt.modkey[i].keys[mod_i].keycode)
      return 4;
 
    return 0;
 }
 
 static int
-IsKeyComposited(XEvent *ev, int index)
+IsKeyComposited(unsigned int keycode, Time time, int index)
 {
    int i = index;
    int mod_i = krt.modkey[i].idx_mod % NUM_COMPOSITION_KEY;
 
-   if ((ev->xkey.keycode == krt.modkey[i].keys[mod_i].keycode) &&
-       (ev->xkey.time <= (krt.modkey[i].time + KEY_COMPOSITION_TIME)))
+   if ((keycode == krt.modkey[i].keys[mod_i].keycode) &&
+       (time <= (krt.modkey[i].time + KEY_COMPOSITION_TIME)))
      return 3;
 
    return 0;
@@ -3388,47 +3387,29 @@ IsKeyComposited(XEvent *ev, int index)
 static void
 DoKeyCompositionAction(int index, int press)
 {
-   XEvent xev;
    Atom xkey_composition_atom = None;
 
    int i = index;
 
    xkey_composition_atom = ecore_x_atom_get(STR_ATOM_XKEY_COMPOSITION);
 
-   xev.xclient.window = krt.rootWin;
-   xev.xclient.type = ClientMessage;
-   xev.xclient.message_type = xkey_composition_atom;
-   xev.xclient.format = 32;
-   xev.xclient.data.l[0] = krt.modkey[i].keys[0].keycode;
-   xev.xclient.data.l[1] = krt.modkey[i].keys[1].keycode;
-   xev.xclient.data.l[2] = press;
-   xev.xclient.data.l[3] = 0;
-   xev.xclient.data.l[4] = 0;
+   ecore_x_client_message32_send(krt.rootWin,
+                                 xkey_composition_atom,
+                                 StructureNotifyMask | SubstructureNotifyMask,
+                                 krt.modkey[i].keys[0].keycode,
+                                 krt.modkey[i].keys[1].keycode,
+                                 press,
+                                 0,
+                                 0);
 
-   XSendEvent(krt.disp,
-              krt.rootWin,
-              False,
-              StructureNotifyMask | SubstructureNotifyMask,
-              &xev);
-
-   xev.xclient.window = krt.noti_window;
-   xev.xclient.type = ClientMessage;
-   xev.xclient.message_type = xkey_composition_atom;
-   xev.xclient.format = 32;
-   xev.xclient.data.l[0] = krt.modkey[i].keys[0].keycode;
-   xev.xclient.data.l[1] = krt.modkey[i].keys[1].keycode;
-   xev.xclient.data.l[2] = press;
-   xev.xclient.data.l[3] = 0;
-   xev.xclient.data.l[4] = 0;
-
-   XSendEvent(krt.disp,
-              krt.noti_window,
-              False,
-              StructureNotifyMask | SubstructureNotifyMask,
-              &xev);
-
-   ecore_x_sync();
-
+   ecore_x_client_message32_send(krt.noti_window,
+                                 xkey_composition_atom,
+                                 StructureNotifyMask | SubstructureNotifyMask,
+                                 krt.modkey[i].keys[0].keycode,
+                                 krt.modkey[i].keys[1].keycode,
+                                 press,
+                                 0,
+                                 0);
    SECURE_SLOGD("\n[krt][%s][%d] Do Key Composition Action : ClientMessage "
                 "to RootWindow(0x%x)!: %s\n", __FUNCTION__, i, krt.rootWin,
                 press ? "Press" : "Release");
