@@ -1,7 +1,7 @@
 %bcond_with x
 
 Name: e-mod-tizen-keyrouter
-Version: 0.0.1
+Version: 0.0.2
 Release: 1
 Summary: The Enlightenment Keyrouter Module for Tizen
 URL: http://www.enlightenment.org
