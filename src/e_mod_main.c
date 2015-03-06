@@ -1322,23 +1322,17 @@ out:
 static E_Zone *
 _e_keyrouter_get_zone(void)
 {
-   const Eina_List *cl;
-   E_Comp *c;
    E_Zone *zone = NULL;
+   Eina_List *zl;
+   E_Zone *z;
 
    if (krt.zone)
      return krt.zone;
 
-   EINA_LIST_FOREACH(e_comp_list(), cl, c)
+   EINA_LIST_FOREACH(e_comp->zones, zl, z)
      {
-        Eina_List *zl;
-        E_Zone *z;
-
-        EINA_LIST_FOREACH(c->zones, zl, z)
-          {
-             if (z)
-               zone = z;
-          }
+        if (z)
+          zone = z;
      }
 
    return zone;
@@ -2849,19 +2843,18 @@ out:
 static E_Client *
 _e_keyrouter_find_client_by_window(Window win)
 {
-   const Eina_List *l, *ll;
-   E_Comp *c;
+   const Eina_List *l;
    E_Client *ec = NULL;
 
-   EINA_LIST_FOREACH(e_comp_list(), l, c)
-      EINA_LIST_FOREACH(c->clients, ll, ec)
-        {
-           if (ec)
-             {
-                if (e_client_util_win_get(ec) == win)
-                  break;
-             }
-        }
+   EINA_LIST_FOREACH(e_comp->clients, l, ec)
+     {
+        if (ec)
+          {
+             if (e_client_util_win_get(ec) == win)
+               break;
+          }
+     }
+
    return ec;
 }
 
