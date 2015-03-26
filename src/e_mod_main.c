@@ -2091,6 +2091,12 @@ PrintKeyDeliveryList(void)
         else if (!strncmp(keyname, KEY_SEARCH, LEN_KEY_SEARCH)) SECURE_SLOGD("[ KEY_SEARCH : %s : %d ]\n", keyname, index);
         else if (!strncmp(keyname, KEY_VOICE, LEN_KEY_VOICE)) SECURE_SLOGD("[ KEY_VOICE : %s : %d ]\n", keyname, index);
         else if (!strncmp(keyname, KEY_LANGUAGE, LEN_KEY_LANGUAGE)) SECURE_SLOGD("[ KEY_LANGUAGE : %s : %d ]\n", keyname, index);
+        else if (!strncmp(keyname, KEY_CHANNELUP, LEN_KEY_CHANNELUP)) SECURE_SLOGD("[ KEY_CHANNELUP : %s : %d ]\n", keyname, index);
+        else if (!strncmp(keyname, KEY_CHANNELDOWN, LEN_KEY_CHANNELDOWN)) SECURE_SLOGD("[ KEY_CHANNELDOWN : %s : %d ]\n", keyname, index);
+        else if (!strncmp(keyname, KEY_CLOSE, LEN_KEY_CLOSE)) SECURE_SLOGD("[ KEY_KEY_CLOSE : %s : %d ]\n", keyname, index);
+        else if (!strncmp(keyname, KEY_VIDEOPAUSE, LEN_KEY_VIDEOPAUSE)) SECURE_SLOGD("[ KEY_VIDEOPAUSE : %s : %d ]\n", keyname, index);
+        else if (!strncmp(keyname, KEY_RECORD, LEN_KEY_RECORD)) SECURE_SLOGD("[ KEY_RECORD : %s : %d ]\n", keyname, index);
+        else if (!strncmp(keyname, KEY_TV, LEN_KEY_TV)) SECURE_SLOGD("[ KEY_TV : %s : %d ]\n", keyname, index);
         else SECURE_SLOGD("[ UNKNOWN : %d ]\n", krt.HardKeys[index].keycode);
 
         /* Print EXCLUSIVE mode of grab */

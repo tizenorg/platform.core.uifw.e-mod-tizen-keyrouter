@@ -105,7 +105,7 @@ typedef struct _ModifierKey
 
 typedef struct ModifierKey *ModifierKeyPtr;
 
-#define NUM_HWKEYS 37
+#define NUM_HWKEYS 49
 
 const char *HWKeys[] = {
      KEY_VOLUMEUP,
@@ -141,7 +141,13 @@ const char *HWKeys[] = {
      KEY_SEARCH,
      KEY_VOICE,
      KEY_LANGUAGE,
-     "1", "2", "3", "4", "5", "6", "7", "8", "9"
+     KEY_CHANNELUP,
+     KEY_CHANNELDOWN,
+     KEY_CLOSE,
+     KEY_VIDEOPAUSE,
+     KEY_RECORD,
+     KEY_TV,
+     "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"
 };
 
 typedef enum
