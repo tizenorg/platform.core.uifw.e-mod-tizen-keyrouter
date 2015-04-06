@@ -1,7 +1,7 @@
 %bcond_with x
 
 Name: e-mod-tizen-keyrouter
-Version: 0.0.2
+Version: 0.0.3
 Release: 1
 Summary: The Enlightenment Keyrouter Module for Tizen
 URL: http://www.enlightenment.org
@@ -16,6 +16,7 @@ BuildRequires:  pkgconfig(xtst)
 BuildRequires:  pkgconfig(xrandr)
 BuildRequires:  pkgconfig(utilX)
 BuildRequires:  pkgconfig(dlog)
+BuildRequires:  e-tizen-data
 
 %if !%{with x}
 ExclusiveArch:
@@ -34,7 +35,8 @@ export CFLAGS+=" -Wall -g -fPIC -rdynamic ${GC_SECTIONS_FLAGS}"
 export LDFLAGS+=" -Wl,--hash-style=both -Wl,--as-needed -Wl,--rpath=/usr/lib"
 
 %autogen
-%configure --prefix=/usr
+%configure --prefix=/usr \
+           --with-tizen-keylayout-file=/usr/share/X11/xkb/tizen_key_layout.txt
 make
 
 %install

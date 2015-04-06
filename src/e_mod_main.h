@@ -105,51 +105,6 @@ typedef struct _ModifierKey
 
 typedef struct ModifierKey *ModifierKeyPtr;
 
-#define NUM_HWKEYS 49
-
-const char *HWKeys[] = {
-     KEY_VOLUMEUP,
-     KEY_VOLUMEDOWN,
-     KEY_CAMERA,
-     KEY_CONFIG,
-     KEY_POWER,
-     KEY_PAUSE,
-     KEY_CANCEL,
-     KEY_SEND,
-     KEY_SELECT,
-     KEY_END,
-     KEY_MEDIA,
-     KEY_PLAYCD,
-     KEY_STOPCD,
-     KEY_PAUSECD,
-     KEY_NEXTSONG,
-     KEY_PREVIOUSSONG,
-     KEY_REWIND,
-     KEY_FASTFORWARD,
-     KEY_PLAYPAUSE,
-     KEY_MUTE,
-     KEY_HOMEPAGE,
-     KEY_WEBPAGE,
-     KEY_MAIL,
-     KEY_SCREENSAVER,
-     KEY_BRIGHTNESSUP,
-     KEY_BRIGHTNESSDOWN,
-     KEY_SOFTKBD,
-     KEY_QUICKPANEL,
-     KEY_TASKSWITCH,
-     KEY_APPS,
-     KEY_SEARCH,
-     KEY_VOICE,
-     KEY_LANGUAGE,
-     KEY_CHANNELUP,
-     KEY_CHANNELDOWN,
-     KEY_CLOSE,
-     KEY_VIDEOPAUSE,
-     KEY_RECORD,
-     KEY_TV,
-     "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"
-};
-
 typedef enum
 {
    E_KEYROUTER_HWKEY= 1,
@@ -230,6 +185,9 @@ typedef struct _tag_keyrouter
    int resTopVisibleCheck;
    int prev_sent_keycode;
 
+   char **TizenKeys;
+   int numTizenKeys;
+
    /* atoms */
    Atom atomHWKeyEmulation;
    Atom atomGrabKey;
@@ -251,6 +209,7 @@ static void _e_keyrouter_fini();
 static void _e_keyrouter_structure_init();
 static void _e_keyrouter_bindings_init();
 static void _e_keyrouter_x_input_init(void);
+static void _e_keyrouter_query_tizen_key_table(void);
 static void _e_keyrouter_grab_hwkeys(int devid);
 static void _e_keyrouter_set_key_repeat(int key, int auto_repeat_mode);
 static void _e_keyrouter_hwkey_event_handler(XEvent *ev);

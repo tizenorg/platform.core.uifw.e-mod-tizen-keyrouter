@@ -1359,6 +1359,7 @@ _e_keyrouter_init(void)
 
    _e_keyrouter_x_input_init();
    InitGrabKeyDevices();
+   _e_keyrouter_query_tizen_key_table();
    _e_keyrouter_bindings_init();
 
    krt.atomDeviceStatus = ecore_x_atom_get(STR_ATOM_DEVICE_STATUS);
@@ -1489,6 +1490,39 @@ _e_keyrouter_structure_init(void)
    krt.atomLongPressEnable = None;
 }
 
+static void _e_keyrouter_query_tizen_key_table(void)
+{
+   FILE *fp_key_tables = NULL;
+   char keyname[64] = {0};
+   int keycode=0, key_count=0, i=0, key_size=0;
+
+   fp_key_tables = fopen(KEYLAYOUT_PATH, "r");
+   if (!fp_key_tables)
+     {
+        SLOG(LOG_ERROR, "KEYROUTER", "Failed to read file (%s)\n", KEYLAYOUT_PATH);
+        return;
+     }
+
+   SECURE_SLOGD("Support Tizen Keymap\n");
+   while ( 0 < fscanf(fp_key_tables, "%s %d", keyname, &keycode))
+     {
+        key_count++;
+        SECURE_SLOGD(" - [%s\t:%d]\n", keyname, keycode);
+     }
+   fseek(fp_key_tables, 0, SEEK_SET);
+
+   krt.TizenKeys = (char**)calloc(key_count, sizeof(char*));
+   krt.numTizenKeys = key_count;
+   for (i=0; i<key_count; i++)
+     {
+        fscanf(fp_key_tables, "%s %d", keyname, &keycode);
+        key_size = sizeof(keyname);
+        krt.TizenKeys[i] = (char*)calloc(key_size, sizeof(char));
+        strncpy(krt.TizenKeys[i], keyname, key_size);
+     }
+   fclose(fp_key_tables);
+}
+
 static void
 _e_keyrouter_grab_hwkeys(int devid)
 {
@@ -1517,13 +1551,13 @@ _e_keyrouter_grab_hwkeys(int devid)
              return;
           }
 
-        for (i = 0; i < NUM_HWKEYS; i++)
+        for (i = 0; i < krt.numTizenKeys; i++)
           {
-             if (!HWKeys[i]) break;
+             if (!krt.TizenKeys[i]) break;
 
              Eina_Inlist *l = krt.hwkeymap_info_list;
 
-             ksym = XStringToKeysym(HWKeys[i]);
+             ksym = XStringToKeysym(krt.TizenKeys[i]);
 
              if ((ksym == NoSymbol) || (ksym == krt.cancel_key.keysym))
                continue;
@@ -1541,7 +1575,7 @@ _e_keyrouter_grab_hwkeys(int devid)
                   return;
                }
 
-             hki->key_name = HWKeys[i];
+             hki->key_name = krt.TizenKeys[i];
              hki->key_sym = ksym;
              hki->keycodes = NULL;
 
@@ -1660,11 +1694,11 @@ _e_keyrouter_bindings_init(void)
    int i, keycode;
    KeySym ksym;
 
-   for (i = 0; i < NUM_HWKEYS; i++)
+   for (i = 0; i < krt.numTizenKeys; i++)
      {
-        if (HWKeys[i])
+        if (krt.TizenKeys[i])
           {
-             ksym = XStringToKeysym(HWKeys[i]);
+             ksym = XStringToKeysym(krt.TizenKeys[i]);
 
              if (ksym)
                keycode = XKeysymToKeycode(krt.disp, ksym);
@@ -1677,12 +1711,12 @@ _e_keyrouter_bindings_init(void)
                }
 
              /* get bound key information */
-             krt.HardKeys[keycode].bind = e_bindings_key_find(HWKeys[i],
+             krt.HardKeys[keycode].bind = e_bindings_key_find(krt.TizenKeys[i],
                                                                     E_BINDING_MODIFIER_NONE,
                                                                     1);
 
              if ((!krt.HardKeys[keycode].bind) ||
-                 (strcmp(krt.HardKeys[keycode].bind->key, HWKeys[i])))
+                 (strcmp(krt.HardKeys[keycode].bind->key, krt.TizenKeys[i])))
                {
                   continue;
                }
@@ -2044,6 +2078,17 @@ PrintKeyDeliveryList(void)
 {
    int index;
 
+   SECURE_SLOGD("Full of grabbed keys\n");
+   for (index=0; index<krt.numTizenKeys; index++)
+     {
+        KeySym ksym;
+        int code;
+        ksym = XStringToKeysym(krt.TizenKeys[index]);
+        code = XKeysymToKeycode(krt.disp, ksym);
+        SECURE_SLOGD("[%d]\t[%s]\t\t[keysym: 0x%x]\t[keycode: %d]\n", index, krt.TizenKeys[index], ksym, code);
+     }
+   SECURE_SLOGD("Key delivery list\n");
+
    for (index = 0; index < MAX_HARDKEYS; index++)
      {
         char *keyname;
@@ -2059,45 +2104,7 @@ PrintKeyDeliveryList(void)
 
         if (!keyname) continue;
 
-        if      (!strncmp(keyname, KEY_VOLUMEDOWN, LEN_KEY_VOLUMEDOWN)) SECURE_SLOGD("[ KEY_VOLUMEDOWN : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_VOLUMEUP, LEN_KEY_VOLUMEUP)) SECURE_SLOGD("[ KEY_VOLUMEUP : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_PAUSE, LEN_KEY_PAUSE)) SECURE_SLOGD("[ KEY_PAUSE : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_SEND, LEN_KEY_SEND)) SECURE_SLOGD("[ KEY_SEND : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_SELECT, LEN_KEY_SELECT)) SECURE_SLOGD("[ KEY_SELECT : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_END, LEN_KEY_END)) SECURE_SLOGD("[ KEY_END : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_POWER, LEN_KEY_POWER)) SECURE_SLOGD("[ KEY_POWER : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_CAMERA, LEN_KEY_CAMERA)) SECURE_SLOGD("[ KEY_CAMERA : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_CONFIG, LEN_KEY_CONFIG)) SECURE_SLOGD("[ KEY_CONFIG : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_MEDIA, LEN_KEY_MEDIA)) SECURE_SLOGD("[ KEY_MEDIA : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_PLAYCD, LEN_KEY_PLAYCD)) SECURE_SLOGD("[ KEY_PLAYCD : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_STOPCD, LEN_KEY_STOPCD)) SECURE_SLOGD("[ KEY_STOPCD : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_PAUSECD, LEN_KEY_PAUSECD)) SECURE_SLOGD("[ KEY_PAUSECD : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_NEXTSONG, LEN_KEY_NEXTSONG)) SECURE_SLOGD("[ KEY_NEXTSONG : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_PREVIOUSSONG, LEN_KEY_PREVIOUSSONG)) SECURE_SLOGD("[ KEY_PREVIOUSSONG : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_REWIND, LEN_KEY_REWIND)) SECURE_SLOGD("[ KEY_REWIND : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_FASTFORWARD, LEN_KEY_FASTFORWARD)) SECURE_SLOGD("[ KEY_FASTFORWARD : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_PLAYPAUSE, LEN_KEY_PLAYPAUSE)) SECURE_SLOGD("[ KEY_PLAYPAUSE : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_MUTE, LEN_KEY_MUTE)) SECURE_SLOGD("[ KEY_MUTE : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_HOMEPAGE, LEN_KEY_HOMEPAGE)) SECURE_SLOGD("[ KEY_HOMEPAGE : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_WEBPAGE, LEN_KEY_WEBPAGE)) SECURE_SLOGD("[ KEY_WEBPAGE : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_MAIL, LEN_KEY_MAIL)) SECURE_SLOGD("[ KEY_MAIL : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_SCREENSAVER, LEN_KEY_SCREENSAVER)) SECURE_SLOGD("[ KEY_SCREENSAVER : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_BRIGHTNESSUP, LEN_KEY_BRIGHTNESSUP)) SECURE_SLOGD("[ KEY_BRIGHTNESSUP : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_BRIGHTNESSDOWN, LEN_KEY_BRIGHTNESSDOWN)) SECURE_SLOGD("[ KEY_BRIGHTNESSDOWN : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_SOFTKBD, LEN_KEY_SOFTKBD)) SECURE_SLOGD("[ KEY_SOFTKBD : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_QUICKPANEL, LEN_KEY_QUICKPANEL)) SECURE_SLOGD("[ KEY_QUICKPANEL : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_TASKSWITCH, LEN_KEY_TASKSWITCH)) SECURE_SLOGD("[ KEY_TASKSWITCH : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_APPS, LEN_KEY_APPS)) SECURE_SLOGD("[ KEY_APPS : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_SEARCH, LEN_KEY_SEARCH)) SECURE_SLOGD("[ KEY_SEARCH : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_VOICE, LEN_KEY_VOICE)) SECURE_SLOGD("[ KEY_VOICE : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_LANGUAGE, LEN_KEY_LANGUAGE)) SECURE_SLOGD("[ KEY_LANGUAGE : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_CHANNELUP, LEN_KEY_CHANNELUP)) SECURE_SLOGD("[ KEY_CHANNELUP : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_CHANNELDOWN, LEN_KEY_CHANNELDOWN)) SECURE_SLOGD("[ KEY_CHANNELDOWN : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_CLOSE, LEN_KEY_CLOSE)) SECURE_SLOGD("[ KEY_KEY_CLOSE : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_VIDEOPAUSE, LEN_KEY_VIDEOPAUSE)) SECURE_SLOGD("[ KEY_VIDEOPAUSE : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_RECORD, LEN_KEY_RECORD)) SECURE_SLOGD("[ KEY_RECORD : %s : %d ]\n", keyname, index);
-        else if (!strncmp(keyname, KEY_TV, LEN_KEY_TV)) SECURE_SLOGD("[ KEY_TV : %s : %d ]\n", keyname, index);
-        else SECURE_SLOGD("[ UNKNOWN : %d ]\n", krt.HardKeys[index].keycode);
+        SECURE_SLOGD("[ %s : %d ]\n", keyname, index);
 
         /* Print EXCLUSIVE mode of grab */
         if (NULL != krt.HardKeys[index].excl_ptr)
@@ -3284,6 +3291,7 @@ static void
 Keygrab_Status(unsigned int val)
 {
    SECURE_SLOGD("\n[krt] - Grab Status = Start\n");
+   SECURE_SLOGD("[krt] key layout path: %s\n", KEYLAYOUT_PATH);
    PrintKeyDeliveryList();
    SECURE_SLOGD("\n[krt] - Grab Status = End\n");
 }

@@ -41,6 +41,16 @@ dnl ========================================================================
 AC_CHECK_HEADERS([math.h fcntl.h stdlib.h string.h unistd.h])
 
 dnl ========================================================================
+# checks for input files
+dnl ========================================================================
+AC_ARG_WITH(tizen_keylayout_file,
+	AS_HELP_STRING([--with-tizen-keylayout-file=PATH],
+	[Tizen key layout file path (default: (/usr/share/X11/xkb/tizen_key_layout.txt))]),
+	[ KEYLAYOUT_PATH="$withval" ],
+	[ KEYLAYOUT_PATH="/usr/share/X11/xkb/tizen_key_layout.txt"])
+
+AC_DEFINE_UNQUOTED(KEYLAYOUT_PATH, "$KEYLAYOUT_PATH", [Path to tizen keylayout file])
+dnl ========================================================================
 # checks for typedefs, structures, and compiler characteristics
 AC_C_CONST
 
