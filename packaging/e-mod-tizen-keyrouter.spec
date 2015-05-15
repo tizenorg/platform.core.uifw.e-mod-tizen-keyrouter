@@ -1,7 +1,8 @@
 %bcond_with x
+%bcond_with wayland
 
 Name: e-mod-tizen-keyrouter
-Version: 0.0.3
+Version: 0.1.0
 Release: 1
 Summary: The Enlightenment Keyrouter Module for Tizen
 URL: http://www.enlightenment.org
@@ -10,16 +11,25 @@ Source0: %{name}-%{version}.tar.gz
 License: BSD-2-Clause
 BuildRequires: pkgconfig(enlightenment)
 BuildRequires:  gettext
+%if %{with x}
 BuildRequires:  pkgconfig(x11)
 BuildRequires:  pkgconfig(xi)
 BuildRequires:  pkgconfig(xtst)
 BuildRequires:  pkgconfig(xrandr)
 BuildRequires:  pkgconfig(utilX)
+%endif
+%if %{with wayland}
+BuildRequires:  pkgconfig(ecore)
+BuildRequires:  pkgconfig(wayland-server)
+#BuildRequires:  pkgconfig(ecore-wayland)
+%endif
 BuildRequires:  pkgconfig(dlog)
 BuildRequires:  e-tizen-data
 
 %if !%{with x}
+%if !%{with wayland}
 ExclusiveArch:
+%endif
 %endif
 
 %description
@@ -35,8 +45,15 @@ export CFLAGS+=" -Wall -g -fPIC -rdynamic ${GC_SECTIONS_FLAGS}"
 export LDFLAGS+=" -Wl,--hash-style=both -Wl,--as-needed -Wl,--rpath=/usr/lib"
 
 %autogen
+%if %{with wayland}
+%configure --prefix=/usr \
+	   --enable-wayland-only \
+           --with-tizen-keylayout-file=/usr/share/X11/xkb/tizen_key_layout.txt
+%else
 %configure --prefix=/usr \
            --with-tizen-keylayout-file=/usr/share/X11/xkb/tizen_key_layout.txt
+%endif
+
 make
 
 %install
