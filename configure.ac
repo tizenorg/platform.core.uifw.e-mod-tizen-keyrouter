@@ -92,6 +92,30 @@ AC_SUBST(ENLIGHTENMENT_LIBS)
 #AC_MSG_CHECKING([Which edje_cc to use])
 #AC_MSG_RESULT(${EDJE_CC})
 
+dnl ========================================================================
+# checks for the existence of wayland_scanner
+dnl ========================================================================
+AC_PATH_PROG([wayland_scanner], [wayland-scanner])
+if test x$wayland_scanner = x; then
+   AC_MSG_ERROR([wayland-scanner is needed to compile])
+fi
+
+PKG_CHECK_MODULES(WAYLAND_SCANNER, [wayland-scanner])
+PKG_CHECK_MODULES(WAYLAND, [wayland-server wayland-client ecore-wayland])
+
+dnl ========================================================================
+# checks for wayland only argument
+dnl ========================================================================
+have_wayland_only=no
+AC_ARG_ENABLE([wayland-only],
+  AS_HELP_STRING([--enable-wayland-only],[enable wayland-only version of enlightenment @<:@default=disabled@:>@]),
+  [have_wayland_only=$enableval],
+  [have_wayland_only=no])
+AC_MSG_CHECKING([whether wayland-only version is enabled])
+AM_CONDITIONAL(WAYLAND_ONLY, test x$have_wayland_only = xyes)
+if test "x${have_wayland_only}" != "xno"; then
+  AC_DEFINE_UNQUOTED([HAVE_WAYLAND_ONLY],[1],[enable wayland-only version of enlightenment])
+fi
 
 dnl =======================================================================
 
