@@ -66,7 +66,6 @@ dnl ========================================================================
 dnl ========================================================================
 PKG_PROG_PKG_CONFIG
 
-
 dnl ========================================================================
 # checks for pkg-config
 dnl ========================================================================
@@ -92,7 +91,6 @@ AC_SUBST(ENLIGHTENMENT_LIBS)
 #AC_MSG_CHECKING([Which edje_cc to use])
 #AC_MSG_RESULT(${EDJE_CC})
 
-PKG_CHECK_MODULES(WAYLAND, [wayland-server])
 
 dnl ========================================================================
 # checks for wayland only argument
@@ -108,7 +106,12 @@ if test "x${have_wayland_only}" != "xno"; then
   AC_DEFINE_UNQUOTED([HAVE_WAYLAND_ONLY],[1],[enable wayland-only version of enlightenment])
 fi
 
-dnl =======================================================================
+dnl ========================================================================
+# checks for wayland only argument
+dnl ========================================================================
+if test "x${have_wayland_only}" = "xyes"; then
+  PKG_CHECK_MODULES(WAYLAND, [wayland-server])
+fi
 
 release=$(pkg-config --variable=release enlightenment)
 MODULE_ARCH="$host_os-$host_cpu-$release"
