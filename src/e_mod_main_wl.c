@@ -1,7 +1,7 @@
 #define E_COMP_WL
 #include "e.h"
 #include "e_mod_main_wl.h"
-#include "keyrouter-protocol.h"
+#include "protocol/keyrouter-protocol.h"
 #include <string.h>
 
 E_KeyrouterPtr krt;

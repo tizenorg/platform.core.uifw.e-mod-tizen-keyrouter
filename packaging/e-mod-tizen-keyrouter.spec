@@ -19,9 +19,8 @@ BuildRequires:  pkgconfig(xrandr)
 BuildRequires:  pkgconfig(utilX)
 %endif
 %if %{with wayland}
-BuildRequires:  pkgconfig(ecore)
+#BuildRequires:  pkgconfig(ecore)
 BuildRequires:  pkgconfig(wayland-server)
-#BuildRequires:  pkgconfig(ecore-wayland)
 %endif
 BuildRequires:  pkgconfig(dlog)
 BuildRequires:  e-tizen-data
