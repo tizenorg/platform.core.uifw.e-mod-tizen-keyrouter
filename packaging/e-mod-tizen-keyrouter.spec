@@ -22,8 +22,10 @@ BuildRequires:  pkgconfig(utilX)
 BuildRequires:  pkgconfig(wayland-server)
 %endif
 BuildRequires:  pkgconfig(dlog)
+%if "%{?profile}" == "common"
+%else
 BuildRequires:  e-tizen-data
-
+%endif
 %description
 This package is a the Enlightenment Keyrouter Module for Tizen.
 
