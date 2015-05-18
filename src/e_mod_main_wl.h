@@ -57,6 +57,7 @@ struct _E_Keyrouter
 
    E_Keyrouter_Grabbed_Key HardKeys[MAX_HWKEYS];
    E_Keyrouter_Tizen_HWKey *TizenHWKeys;
+   Eina_List *none_surface_grab_client;
 
    Eina_Bool isWindowStackChanged;
    int numTizenHWKeys;
@@ -73,18 +74,19 @@ static void _e_keyrouter_init_handlers(void);
 static void _e_keyrouter_deinit_handlers(void);
 
 static int _e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *client, uint32_t key, uint32_t mode);
-static int _e_keyrouter_find_duplicated_client(E_Client *ec, uint32_t key, uint32_t mode);
+static int _e_keyrouter_find_duplicated_client(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode);
 static int _e_keyrouter_prepend_to_keylist(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode);
-static void _e_keyrouter_remove_from_keylist(E_Client *ec, uint32_t key, uint32_t mode, E_Keyrouter_Key_List_NodePtr prev_node, E_Keyrouter_Key_List_NodePtr key_node);
-static void _e_keyrouter_find_and_remove_client_from_list(E_Client *ec, uint32_t key, uint32_t mode);
+static void _e_keyrouter_remove_from_keylist(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode, E_Keyrouter_Key_List_NodePtr prev_node, E_Keyrouter_Key_List_NodePtr key_node);
+static void _e_keyrouter_find_and_remove_client_from_list(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode);
 static void _e_keyrouter_remove_client_from_list(E_Client *ec, struct wl_client *wc);
 static void _e_keyrouter_rearray_list_item_to_top(int mode, int arr_idx, E_Keyrouter_Key_List_NodePtr keylistPtr);
 
+static int _e_keyrouter_add_client_destroy_listener(struct wl_client *client);
 static Eina_Bool _e_keyrouter_process_key_event(void *event, int type);
 static Eina_Bool _e_keyrouter_send_key_events(int type, Ecore_Event_Key *ev);
 static Eina_Bool _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev);
 static Eina_Bool _e_keyrouter_send_key_events_release(int type, Ecore_Event_Key *ev);
-static void _e_keyrouter_send_key_event(int type, E_Client *ec, Ecore_Event_Key *ev);
+static void _e_keyrouter_send_key_event(int type, E_Client *ec, struct wl_client *wc, Ecore_Event_Key *ev);
 static Eina_Bool _e_keyrouter_is_key_grabbed(int key);
 static Eina_Bool _e_keyrouter_check_top_visible_window(E_Comp *c, E_Client *ec_focus, int arr_idx);
 static void _e_keyrouter_query_tizen_key_table(void);
