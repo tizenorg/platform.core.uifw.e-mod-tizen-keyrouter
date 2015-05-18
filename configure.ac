@@ -92,16 +92,7 @@ AC_SUBST(ENLIGHTENMENT_LIBS)
 #AC_MSG_CHECKING([Which edje_cc to use])
 #AC_MSG_RESULT(${EDJE_CC})
 
-dnl ========================================================================
-# checks for the existence of wayland_scanner
-dnl ========================================================================
-AC_PATH_PROG([wayland_scanner], [wayland-scanner])
-if test x$wayland_scanner = x; then
-   AC_MSG_ERROR([wayland-scanner is needed to compile])
-fi
-
-PKG_CHECK_MODULES(WAYLAND_SCANNER, [wayland-scanner])
-PKG_CHECK_MODULES(WAYLAND, [wayland-server wayland-client ecore-wayland])
+PKG_CHECK_MODULES(WAYLAND, [wayland-server])
 
 dnl ========================================================================
 # checks for wayland only argument
