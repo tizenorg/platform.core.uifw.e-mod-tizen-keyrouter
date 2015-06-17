@@ -1,4 +1,4 @@
-<protocol name="keyrouter">
+<protocol name="wl_keyrouter">
   <interface name="wl_keyrouter" version="1">
     <description summary="an interface to set each focus for each key">
       In tradition, all the keys in a keyboard and a device on which
