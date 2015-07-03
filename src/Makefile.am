@@ -8,6 +8,7 @@ pkg_LTLIBRARIES        = module.la
 if WAYLAND_ONLY
 module_la_SOURCES      = e_mod_main_wl.c \
                          e_mod_main_wl.h \
+                         e_mod_keyrouter_list.c \
                          $(top_srcdir)/protocol/keyrouter-protocol.c \
                          $(top_srcdir)/protocol/keyrouter-protocol.h
 module_la_CFLAGS       = @ENLIGHTENMENT_CFLAGS@ @WAYLAND_CFLAGS@ -DHAVE_WAYLAND_ONLY
