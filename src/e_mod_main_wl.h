@@ -27,7 +27,6 @@ struct _E_Keyrouter_Key_List_Node
 {
    E_Client *ec;
    struct wl_client *wc;
-   struct _E_Keyrouter_Key_List_Node* next;
 };
 
 struct _E_Keyrouter_Tizen_HWKey
@@ -41,11 +40,11 @@ struct _E_Keyrouter_Grabbed_Key
    int keycode;
    char* keyname;
 
-   E_Keyrouter_Key_List_Node* excl_ptr;
-   E_Keyrouter_Key_List_Node* or_excl_ptr;
-   E_Keyrouter_Key_List_Node* top_ptr;
-   E_Keyrouter_Key_List_Node* shared_ptr;
-   E_Keyrouter_Key_List_NodePtr press_ptr;
+   Eina_List *excl_ptr;
+   Eina_List *or_excl_ptr;
+   Eina_List *top_ptr;
+   Eina_List *shared_ptr;
+   Eina_List *press_ptr;
 };
 
 struct _E_Keyrouter
@@ -76,10 +75,8 @@ static void _e_keyrouter_deinit_handlers(void);
 static int _e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *client, uint32_t key, uint32_t mode);
 static int _e_keyrouter_find_duplicated_client(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode);
 static int _e_keyrouter_prepend_to_keylist(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode);
-static void _e_keyrouter_remove_from_keylist(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode, E_Keyrouter_Key_List_NodePtr prev_node, E_Keyrouter_Key_List_NodePtr key_node);
 static void _e_keyrouter_find_and_remove_client_from_list(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode);
 static void _e_keyrouter_remove_client_from_list(E_Client *ec, struct wl_client *wc);
-static void _e_keyrouter_rearray_list_item_to_top(int mode, int arr_idx, E_Keyrouter_Key_List_NodePtr keylistPtr);
 
 static int _e_keyrouter_add_client_destroy_listener(struct wl_client *client);
 static Eina_Bool _e_keyrouter_process_key_event(void *event, int type);
