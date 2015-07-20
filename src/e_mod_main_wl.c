@@ -4,8 +4,25 @@
 #include "protocol/keyrouter-protocol.h"
 #include <string.h>
 
-E_KeyrouterPtr krt;
+E_KeyrouterPtr krt = NULL;
 EAPI E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Keyrouter Module of Window Manager" };
+
+static Eina_Bool _e_keyrouter_init();
+static void _e_keyrouter_init_handlers(void);
+static void _e_keyrouter_deinit_handlers(void);
+static Eina_Bool _e_keyrouter_process_key_event(void *event, int type);
+static Eina_Bool _e_keyrouter_send_key_events(int type, Ecore_Event_Key *ev);
+static Eina_Bool _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev);
+static Eina_Bool _e_keyrouter_send_key_events_release(int type, Ecore_Event_Key *ev);
+static void _e_keyrouter_send_key_event(int type, E_Client *ec, struct wl_client *wc, Ecore_Event_Key *ev);
+static Eina_Bool _e_keyrouter_is_key_grabbed(int key);
+static Eina_Bool _e_keyrouter_check_top_visible_window(E_Comp *c, E_Client *ec_focus, int arr_idx);
+static void _e_keyrouter_query_tizen_key_table(void);
+
+static Eina_Bool _e_keyrouter_client_cb_stack(void *data, int type, void *event);
+static Eina_Bool _e_keyrouter_client_cb_remove(void *data, int type, void *event);
+static void _e_keyrouter_wl_client_cb_destroy(struct wl_listener *l, void *data);
+
 
 /* wl_keyrouter_set_keygrab request handler */
 static void
@@ -56,7 +73,7 @@ _e_keyrouter_cb_keygrab_set(struct wl_client *client, struct wl_resource *resour
      }
 
    /* Check whether the request key can be grabbed or not */
-   res = _e_keyrouter_set_keygrab_in_list(surface, client, key, mode);
+   res = e_keyrouter_set_keygrab_in_list(surface, client, key, mode);
 
    KLDBG("Result of grab check for a key (key:%d, mode:%d, res:%d)\n", key, mode, res);
 
@@ -78,16 +95,16 @@ _e_keyrouter_cb_keygrab_unset(struct wl_client *client, struct wl_resource *reso
    if (!surface)
      {
         /* EXCLUSIVE grab */
-        _e_keyrouter_find_and_remove_client_from_list(NULL, client, key, WL_KEYROUTER_MODE_EXCLUSIVE);
+        e_keyrouter_find_and_remove_client_from_list(NULL, client, key, WL_KEYROUTER_MODE_EXCLUSIVE);
 
         /* OVERRIDABLE_EXCLUSIVE grab */
-        _e_keyrouter_find_and_remove_client_from_list(NULL, client, key, WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE);
+        e_keyrouter_find_and_remove_client_from_list(NULL, client, key, WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE);
 
         /* TOPMOST(TOP_POSITION) grab */
-        _e_keyrouter_find_and_remove_client_from_list(NULL, client, key, WL_KEYROUTER_MODE_TOPMOST);
+        e_keyrouter_find_and_remove_client_from_list(NULL, client, key, WL_KEYROUTER_MODE_TOPMOST);
 
         /* SHARED grab */
-        _e_keyrouter_find_and_remove_client_from_list(NULL, client, key, WL_KEYROUTER_MODE_SHARED);
+        e_keyrouter_find_and_remove_client_from_list(NULL, client, key, WL_KEYROUTER_MODE_SHARED);
 
         WL_KEYGRAB_NOTIFY_WITH_VAL(resource, surface, key, WL_KEYROUTER_MODE_NONE, WL_KEYROUTER_ERROR_NONE);
      }
@@ -105,16 +122,16 @@ _e_keyrouter_cb_keygrab_unset(struct wl_client *client, struct wl_resource *reso
      }
 
    /* EXCLUSIVE grab */
-   _e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, WL_KEYROUTER_MODE_EXCLUSIVE);
+   e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, WL_KEYROUTER_MODE_EXCLUSIVE);
 
    /* OVERRIDABLE_EXCLUSIVE grab */
-   _e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE);
+   e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE);
 
    /* TOPMOST(TOP_POSITION) grab */
-   _e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, WL_KEYROUTER_MODE_TOPMOST);
+   e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, WL_KEYROUTER_MODE_TOPMOST);
 
    /* SHARED grab */
-   _e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, WL_KEYROUTER_MODE_SHARED);
+   e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, WL_KEYROUTER_MODE_SHARED);
 
    WL_KEYGRAB_NOTIFY_WITH_VAL(resource, surface, key, WL_KEYROUTER_MODE_NONE, WL_KEYROUTER_ERROR_NONE);
 }
@@ -154,8 +171,8 @@ _e_keyrouter_cb_get_keygrab_status(struct wl_client *client, struct wl_resource 
 }
 
 /* Function for registering wl_client destroy listener */
-static int
-_e_keyrouter_add_client_destroy_listener(struct wl_client *client)
+int
+e_keyrouter_add_client_destroy_listener(struct wl_client *client)
 {
    struct wl_listener *destroy_listener = NULL;
    Eina_List *l;
@@ -188,369 +205,6 @@ _e_keyrouter_add_client_destroy_listener(struct wl_client *client)
    KLDBG("Add a wl_client(%p) destroy listener(%p)\n", client, destroy_listener);
 
    return WL_KEYROUTER_ERROR_NONE;
-}
-
-/* Function for adding a new key grab information into the keyrouting list */
-static int
-_e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *client, uint32_t key, uint32_t mode)
-{
-   E_Pixmap *ep = NULL;
-   E_Client *ec = NULL;
-
-   int res = WL_KEYROUTER_ERROR_NONE;
-
-   if (surface)
-     {
-        if (!(ep = wl_resource_get_user_data(surface)))
-          {
-             KLDBG("Surface is valid and e_pixmap pointer from the surface is invalid ! Return error !\n");
-             return WL_KEYROUTER_ERROR_INVALID_SURFACE;
-          }
-
-        if (!(ec = e_pixmap_client_get(ep)))
-          {
-             KLDBG("e_client pointer from e_pixmap pointer  from surface is invalid ! Return error !\n");
-             return WL_KEYROUTER_ERROR_INVALID_SURFACE;
-          }
-     }
-
-   switch(mode)
-     {
-        case WL_KEYROUTER_MODE_EXCLUSIVE:
-           if (krt->HardKeys[key].excl_ptr)
-             {
-                KLDBG("key(%d) is already exclusive grabbed\n", key);
-                return WL_KEYROUTER_ERROR_GRABBED_ALREADY;
-             }
-           if (ec)
-             {
-                res = _e_keyrouter_prepend_to_keylist(ec, NULL, key, mode);
-             }
-           else
-             {
-                res = _e_keyrouter_prepend_to_keylist(NULL, client, key, mode);
-             }
-           CHECK_ERR_VAL(res);
-
-           break;
-
-        case WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE:
-           if (ec)
-             {
-                res = _e_keyrouter_prepend_to_keylist(ec, NULL, key, mode);
-             }
-           else
-             {
-                res = _e_keyrouter_prepend_to_keylist(NULL, client, key, mode);
-             }
-           CHECK_ERR_VAL(res);
-
-           KLDBG("Succeed to set keygrab information (E_Client:%p, key:%d, mode:OR_EXCLUSIVE)\n", ec, key);
-           break;
-
-        case WL_KEYROUTER_MODE_TOPMOST:
-           res = _e_keyrouter_prepend_to_keylist(ec, NULL, key, mode);
-           CHECK_ERR_VAL(res);
-
-           KLDBG("Succeed to set keygrab information (E_Client:%p, key:%d, mode:TOPMOST)\n", ec, key);
-           break;
-
-        case WL_KEYROUTER_MODE_SHARED:
-           if (ec)
-             {
-                res = _e_keyrouter_prepend_to_keylist(ec, NULL, key, mode);
-             }
-           else
-             {
-                res = _e_keyrouter_prepend_to_keylist(NULL, client, key, mode);
-             }
-           CHECK_ERR_VAL(res);
-
-           KLDBG("Succeed to set keygrab information (E_Client:%p, key:%d, mode:SHARED)\n", ec, key);
-           break;
-
-        default:
-           KLDBG("Unknown key(%d) grab mode(%d)\n", key, mode);
-           return WL_KEYROUTER_ERROR_INVALID_MODE;
-     }
-
-   //KLDBG("krt->HardKeys[%d].keycode: %d\n", key, krt->HardKeys[key].keycode);
-   return WL_KEYROUTER_ERROR_NONE;
-}
-
-
-/* Function for checking whether the key has been grabbed already by the same wl_surface or not */
-static int
-_e_keyrouter_find_duplicated_client(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode)
-{
-   Eina_List *keylist_ptr = NULL, *l = NULL;
-   E_Keyrouter_Key_List_NodePtr key_node_data = NULL;
-
-   switch(mode)
-     {
-        case WL_KEYROUTER_MODE_EXCLUSIVE:
-           return WL_KEYROUTER_ERROR_NONE;
-
-        case WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE:
-           keylist_ptr = krt->HardKeys[key].or_excl_ptr;
-           break;
-
-        case WL_KEYROUTER_MODE_TOPMOST:
-           keylist_ptr = krt->HardKeys[key].top_ptr;
-           break;
-
-        case WL_KEYROUTER_MODE_SHARED:
-           keylist_ptr = krt->HardKeys[key].shared_ptr;
-           break;
-
-        case WL_KEYROUTER_MODE_PRESSED:
-           keylist_ptr = krt->HardKeys[key].press_ptr;
-           break;
-
-        default:
-           KLDBG("Unknown key(%d) and grab mode(%d)\n", key, mode);
-           return WL_KEYROUTER_ERROR_INVALID_MODE;
-     }
-
-   EINA_LIST_FOREACH(keylist_ptr, l, key_node_data)
-     {
-        if (key_node_data)
-          {
-             if (ec)
-               {
-                  if (key_node_data->ec == ec)
-                    {
-                       KLDBG("The key(%d) is already grabbed same mode(%d) on the same E_Client(%p)\n", key, mode, ec);
-                       return WL_KEYROUTER_ERROR_GRABBED_ALREADY;
-                    }
-               }
-             else
-               {
-                  if (key_node_data->wc == wc)
-                    {
-                       KLDBG("The key(%d) is already grabbed same mode(%d) on the same Wl_Client(%p)\n", key, mode, wc);
-                       return WL_KEYROUTER_ERROR_GRABBED_ALREADY;
-                    }
-               }
-          }
-     }
-
-   return WL_KEYROUTER_ERROR_NONE;
-}
-
-/* Function for prepending a new key grab information in the keyrouting list */
-static int
-_e_keyrouter_prepend_to_keylist(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode)
-{
-   int res = WL_KEYROUTER_ERROR_NONE;
-
-   res = _e_keyrouter_find_duplicated_client(ec, wc, key, mode);
-   CHECK_ERR_VAL(res);
-
-   E_Keyrouter_Key_List_NodePtr new_keyptr = E_NEW(E_Keyrouter_Key_List_Node, 1);
-
-   if (!new_keyptr)
-     {
-        KLDBG("Failled to allocate memory for new_keyptr\n");
-        return WL_KEYROUTER_ERROR_NO_SYSTEM_RESOURCES;
-     }
-
-   new_keyptr->ec = ec;
-   new_keyptr->wc = wc;
-
-   if (ec)
-     {
-        KLDBG("Now it's going to add a key(%d) mode(%d) for ec(%p), wc(NULL)\n", key, mode, ec);
-     }
-   else
-     {
-        KLDBG("Now it's going to add a key(%d) mode(%d) for ec(NULL), wc(%p)\n", key, mode, wc);
-     }
-
-   switch(mode)
-     {
-        case WL_KEYROUTER_MODE_EXCLUSIVE:
-           krt->HardKeys[key].excl_ptr = eina_list_prepend(krt->HardKeys[key].excl_ptr, new_keyptr);
-
-           if (ec)
-             {
-                KLDBG("Succeed to set keygrab information (e_client:%p, wl_client:NULL, key:%d, mode:EXCLUSIVE)\n", ec, key);
-             }
-           else
-             {
-                KLDBG("Succeed to set keygrab information (e_client:NULL, wl_client:%p, key:%d, mode:EXCLUSIVE)\n", wc, key);
-             }
-           break;
-
-        case WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE:
-           krt->HardKeys[key].or_excl_ptr= eina_list_prepend(krt->HardKeys[key].or_excl_ptr, new_keyptr);
-
-           if (ec)
-             {
-                KLDBG("WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE, key=%d, e_client(%p), wl_client(NULL) has been set !\n", key, ec);
-             }
-           else
-             {
-                KLDBG("WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE, key=%d, e_client(NULL), wl_client(%p) has been set !\n", key, wc);
-             }
-           break;
-
-        case WL_KEYROUTER_MODE_TOPMOST:
-           krt->HardKeys[key].top_ptr = eina_list_prepend(krt->HardKeys[key].top_ptr, new_keyptr);
-
-           if (ec)
-             {
-                KLDBG("WL_KEYROUTER_MODE_TOPMOST, key=%d, e_client(%p), wl_client(NULL) has been set !\n", key, ec);
-             }
-           else
-             {
-                KLDBG("WL_KEYROUTER_MODE_TOPMOST, key=%d, e_client(NULL), wl_client(%p) has been set !\n", key, wc);
-             }
-           break;
-
-        case WL_KEYROUTER_MODE_SHARED:
-           krt->HardKeys[key].shared_ptr= eina_list_prepend(krt->HardKeys[key].shared_ptr, new_keyptr);
-
-           if (ec)
-             {
-                KLDBG("WL_KEYROUTER_MODE_SHARED, key=%d, e_client(%p), wl_client(NULL) has been set !\n", key, ec);
-             }
-           else
-             {
-                KLDBG("WL_KEYROUTER_MODE_SHARED, key=%d, e_client(NULL), wl_client(%p) has been set !\n", key, wc);
-             }
-           break;
-
-        case WL_KEYROUTER_MODE_PRESSED:
-           krt->HardKeys[key].press_ptr = eina_list_prepend(krt->HardKeys[key].press_ptr, new_keyptr);
-
-           if (ec)
-             {
-                KLDBG("WL_KEYROUTER_MODE_PRESSED, key=%d, e_client(%p), wl_client(NULL) has been set !\n", key, ec);
-             }
-           else
-             {
-                KLDBG("WL_KEYROUTER_MODE_PRESSED, key=%d, e_client(NULL), wl_client(%p) has been set !\n", key, wc);
-             }
-           break;
-
-        default:
-           KLDBG("Unknown key(%d) and grab mode(%d)\n", key, mode);
-           E_FREE(new_keyptr);
-           return WL_KEYROUTER_ERROR_INVALID_MODE;
-     }
-
-   if ( (wc) && (mode != WL_KEYROUTER_MODE_PRESSED) )
-     {
-        KLDBG("Add a client(%p) destory listener\n", wc);
-        _e_keyrouter_add_client_destroy_listener(wc);
-        /* TODO: if failed add client_destory_listener, remove keygrabs */
-     }
-
-   return WL_KEYROUTER_ERROR_NONE;
-}
-
-#define E_KEYROUTER_REMOVE_KEY_NODE_IN_LIST(list, ec, wc, l, l_next, key_node_data, key, mode_str) \
-         EINA_LIST_FOREACH_SAFE(list, l, l_next, key_node_data) \
-             { \
-                if (key_node_data) \
-                  { \
-                     if (ec) \
-                       { \
-                          if (ec == key_node_data->ec) \
-                            { \
-                               list = eina_list_remove_list(list, l); \
-                               KLDBG("Remove a %s Mode Grabbed key(%d) by ec(%p) wc(NULL)\n", mode_str, key, ec); \
-                            } \
-                       } \
-                     else \
-                       { \
-                          if (wc == key_node_data->wc) \
-                            { \
-                               list = eina_list_remove_list(list, l); \
-                               KLDBG("Remove a %s Mode Grabbed key(%d) by ec(NULL) wc(%p)\n", mode_str, key, wc); \
-                            } \
-                       } \
-                  } \
-             }
-
-/* Function for removing the existing key grab information from the list */
-static void
-_e_keyrouter_find_and_remove_client_from_list(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode)
-{
-   Eina_List *l = NULL, *l_next = NULL;
-   E_Keyrouter_Key_List_NodePtr key_node_data = NULL;
-
-   switch (mode)
-     {
-        case WL_KEYROUTER_MODE_EXCLUSIVE:
-           E_KEYROUTER_REMOVE_KEY_NODE_IN_LIST(krt->HardKeys[key].excl_ptr, ec, wc, l, l_next, key_node_data, key, "Exclusive");
-           break;
-
-        case WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE:
-           E_KEYROUTER_REMOVE_KEY_NODE_IN_LIST(krt->HardKeys[key].or_excl_ptr, ec, wc, l, l_next, key_node_data, key, "OR_Exclusive");
-           break;
-
-        case WL_KEYROUTER_MODE_TOPMOST:
-           E_KEYROUTER_REMOVE_KEY_NODE_IN_LIST(krt->HardKeys[key].top_ptr, ec, wc, l, l_next, key_node_data, key, "Top Position");
-           break;
-
-        case WL_KEYROUTER_MODE_SHARED:
-           E_KEYROUTER_REMOVE_KEY_NODE_IN_LIST(krt->HardKeys[key].shared_ptr, ec, wc, l, l_next, key_node_data, key, "Shared");
-           break;
-
-        default:
-           KLDBG("Unknown key(%d) and grab mode(%d)\n", key, mode);
-           return;
-     }
-}
-
-static void
-_e_keyrouter_remove_client_from_list(E_Client *ec, struct wl_client *wc)
-{
-   int index = 0;
-   if (!ec && !wc)
-     {
-        return;
-     }
-
-   for(index=0; index<MAX_HWKEYS; index++)
-     {
-        if (0 == krt->HardKeys[index].keycode)
-          {
-             continue;
-          }
-
-        /* exclusive grab */
-        _e_keyrouter_find_and_remove_client_from_list(ec, wc, index, WL_KEYROUTER_MODE_EXCLUSIVE);
-
-        /* or exclusive grab */
-        _e_keyrouter_find_and_remove_client_from_list(ec, wc, index, WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE);
-
-        /* top position grab */
-        _e_keyrouter_find_and_remove_client_from_list(ec, wc, index, WL_KEYROUTER_MODE_TOPMOST);
-
-        /* shared grab */
-        _e_keyrouter_find_and_remove_client_from_list(ec, wc, index, WL_KEYROUTER_MODE_SHARED);
-     }
-}
-
-static Eina_Bool
-_e_keyrouter_is_key_grabbed(int key)
-{
-   if (!krt->HardKeys[key].keycode)
-     {
-        return EINA_FALSE;
-     }
-   if (!krt->HardKeys[key].excl_ptr &&
-        !krt->HardKeys[key].or_excl_ptr &&
-        !krt->HardKeys[key].top_ptr &&
-        !krt->HardKeys[key].shared_ptr)
-     {
-        return EINA_FALSE;
-     }
-
-   return EINA_TRUE;
 }
 
 static const struct wl_keyrouter_interface _e_keyrouter_implementation = {
@@ -587,6 +241,24 @@ _e_keyrouter_cb_bind(struct wl_client *client, void *data, uint32_t version, uin
    wl_resource_set_implementation(resource, &_e_keyrouter_implementation, krt_instance, _e_keyrouter_cb_destory);
 
    KLDBG("wl_resource_set_implementation(..., _e_keyrouter_implementation, ...)\n");
+}
+
+static Eina_Bool
+_e_keyrouter_is_key_grabbed(int key)
+{
+   if (!krt->HardKeys[key].keycode)
+     {
+        return EINA_FALSE;
+     }
+   if (!krt->HardKeys[key].excl_ptr &&
+        !krt->HardKeys[key].or_excl_ptr &&
+        !krt->HardKeys[key].top_ptr &&
+        !krt->HardKeys[key].shared_ptr)
+     {
+        return EINA_FALSE;
+     }
+
+   return EINA_TRUE;
 }
 
 /* Function for checking the existing grab for a key and sending key event(s) */
@@ -835,7 +507,7 @@ _e_keyrouter_send_key_event(int type, E_Client *ec, struct wl_client *wc, Ecore_
 
    if (ECORE_EVENT_KEY_DOWN == type)
      {
-        _e_keyrouter_prepend_to_keylist(ec, wc, ev->keycode, WL_KEYROUTER_MODE_PRESSED);
+        e_keyrouter_prepend_to_keylist(ec, wc, ev->keycode, WL_KEYROUTER_MODE_PRESSED);
         evtype = WL_KEYBOARD_KEY_STATE_PRESSED;
      }
    else
@@ -1057,7 +729,7 @@ _e_keyrouter_client_cb_remove(void *data, int type, void *event)
 
    KLDBG("e_client: %p is died\n", ec);
 
-   _e_keyrouter_remove_client_from_list(ec, NULL);
+   e_keyrouter_remove_client_from_list(ec, NULL);
 
    return ECORE_CALLBACK_PASS_ON;
 }
@@ -1068,7 +740,7 @@ _e_keyrouter_wl_client_cb_destroy(struct wl_listener *l, void *data)
    struct wl_client *client = data;
 
    KLDBG("Listener(%p) called: wl_client: %p is died\n", l, client);
-   _e_keyrouter_remove_client_from_list(NULL, client);
+   e_keyrouter_remove_client_from_list(NULL, client);
 
    E_FREE(l);
    l = NULL;
