@@ -20,6 +20,7 @@ BuildRequires:  pkgconfig(utilX)
 %endif
 %if %{with wayland}
 BuildRequires:  pkgconfig(wayland-server)
+BuildRequires:  pkgconfig(tizen-extension-server)
 %endif
 BuildRequires:  pkgconfig(dlog)
 %if "%{?profile}" == "common"
