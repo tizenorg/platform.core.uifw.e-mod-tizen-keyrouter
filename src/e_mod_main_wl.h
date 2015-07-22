@@ -1,17 +1,19 @@
 #ifndef E_MOD_MAIN_H
 #define E_MOD_MAIN_H
 
+#include <tizen-extension-server-protocol.h>
+
 /* Temporary value of maximum number of HWKeys */
 #define MAX_HWKEYS 512
 
-#define CHECK_ERR(val) if (WL_KEYROUTER_ERROR_NONE != val) return;
-#define CHECK_ERR_VAL(val) if (WL_KEYROUTER_ERROR_NONE != val) return val;
+#define CHECK_ERR(val) if (TIZEN_KEYROUTER_ERROR_NONE != val) return;
+#define CHECK_ERR_VAL(val) if (TIZEN_KEYROUTER_ERROR_NONE != val) return val;
 #define CHECK_NULL(val) if (!val) return;
 #define CHECK_NULL_VAL(val) if (!val) return val;
 
-#define KLDBG(msg, ARG...) DBG("[wl_keyrouter][%s:%d] "msg, __FUNCTION__, __LINE__, ##ARG)
+#define KLDBG(msg, ARG...) DBG("[tizen_keyrouter][%s:%d] "msg, __FUNCTION__, __LINE__, ##ARG)
 #define WL_KEYGRAB_NOTIFY_WITH_VAL(resource,surface,key,mode,err) \
-        wl_keyrouter_send_keygrab_notify(resource, surface, key, mode, err); \
+        tizen_keyrouter_send_keygrab_notify(resource, surface, key, mode, err); \
         return
 
 typedef struct _E_Keyrouter E_Keyrouter;
@@ -21,7 +23,7 @@ typedef struct _E_Keyrouter_Key_List_Node* E_Keyrouter_Key_List_NodePtr;
 typedef struct _E_Keyrouter_Tizen_HWKey E_Keyrouter_Tizen_HWKey;
 typedef struct _E_Keyrouter_Grabbed_Key E_Keyrouter_Grabbed_Key;
 
-#define WL_KEYROUTER_MODE_PRESSED WL_KEYROUTER_MODE_EXCLUSIVE+1
+#define TIZEN_KEYROUTER_MODE_PRESSED TIZEN_KEYROUTER_MODE_EXCLUSIVE+1
 
 extern E_KeyrouterPtr krt;
 

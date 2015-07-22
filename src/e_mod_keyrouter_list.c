@@ -1,8 +1,6 @@
 #define E_COMP_WL
-
 #include "e.h"
 #include "e_mod_main_wl.h"
-#include "protocol/keyrouter-protocol.h"
 #include <string.h>
 
 static int _e_keyrouter_find_duplicated_client(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode);
@@ -16,30 +14,30 @@ e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *c
    E_Pixmap *ep = NULL;
    E_Client *ec = NULL;
 
-   int res = WL_KEYROUTER_ERROR_NONE;
+   int res = TIZEN_KEYROUTER_ERROR_NONE;
 
    if (surface)
      {
         if (!(ep = wl_resource_get_user_data(surface)))
           {
              KLDBG("Surface is valid and e_pixmap pointer from the surface is invalid ! Return error !\n");
-             return WL_KEYROUTER_ERROR_INVALID_SURFACE;
+             return TIZEN_KEYROUTER_ERROR_INVALID_SURFACE;
           }
 
         if (!(ec = e_pixmap_client_get(ep)))
           {
              KLDBG("e_client pointer from e_pixmap pointer  from surface is invalid ! Return error !\n");
-             return WL_KEYROUTER_ERROR_INVALID_SURFACE;
+             return TIZEN_KEYROUTER_ERROR_INVALID_SURFACE;
           }
      }
 
    switch(mode)
      {
-        case WL_KEYROUTER_MODE_EXCLUSIVE:
+        case TIZEN_KEYROUTER_MODE_EXCLUSIVE:
            if (krt->HardKeys[key].excl_ptr)
              {
                 KLDBG("key(%d) is already exclusive grabbed\n", key);
-                return WL_KEYROUTER_ERROR_GRABBED_ALREADY;
+                return TIZEN_KEYROUTER_ERROR_GRABBED_ALREADY;
              }
            if (ec)
              {
@@ -53,7 +51,7 @@ e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *c
 
            break;
 
-        case WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE:
+        case TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE:
            if (ec)
              {
                 res = e_keyrouter_prepend_to_keylist(ec, NULL, key, mode);
@@ -67,14 +65,14 @@ e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *c
            KLDBG("Succeed to set keygrab information (E_Client:%p, key:%d, mode:OR_EXCLUSIVE)\n", ec, key);
            break;
 
-        case WL_KEYROUTER_MODE_TOPMOST:
+        case TIZEN_KEYROUTER_MODE_TOPMOST:
            res = e_keyrouter_prepend_to_keylist(ec, NULL, key, mode);
            CHECK_ERR_VAL(res);
 
            KLDBG("Succeed to set keygrab information (E_Client:%p, key:%d, mode:TOPMOST)\n", ec, key);
            break;
 
-        case WL_KEYROUTER_MODE_SHARED:
+        case TIZEN_KEYROUTER_MODE_SHARED:
            if (ec)
              {
                 res = e_keyrouter_prepend_to_keylist(ec, NULL, key, mode);
@@ -90,11 +88,11 @@ e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *c
 
         default:
            KLDBG("Unknown key(%d) grab mode(%d)\n", key, mode);
-           return WL_KEYROUTER_ERROR_INVALID_MODE;
+           return TIZEN_KEYROUTER_ERROR_INVALID_MODE;
      }
 
    //KLDBG("krt->HardKeys[%d].keycode: %d\n", key, krt->HardKeys[key].keycode);
-   return WL_KEYROUTER_ERROR_NONE;
+   return TIZEN_KEYROUTER_ERROR_NONE;
 }
 
 
@@ -107,28 +105,28 @@ _e_keyrouter_find_duplicated_client(E_Client *ec, struct wl_client *wc, uint32_t
 
    switch(mode)
      {
-        case WL_KEYROUTER_MODE_EXCLUSIVE:
-           return WL_KEYROUTER_ERROR_NONE;
+        case TIZEN_KEYROUTER_MODE_EXCLUSIVE:
+           return TIZEN_KEYROUTER_ERROR_NONE;
 
-        case WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE:
+        case TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE:
            keylist_ptr = krt->HardKeys[key].or_excl_ptr;
            break;
 
-        case WL_KEYROUTER_MODE_TOPMOST:
+        case TIZEN_KEYROUTER_MODE_TOPMOST:
            keylist_ptr = krt->HardKeys[key].top_ptr;
            break;
 
-        case WL_KEYROUTER_MODE_SHARED:
+        case TIZEN_KEYROUTER_MODE_SHARED:
            keylist_ptr = krt->HardKeys[key].shared_ptr;
            break;
 
-        case WL_KEYROUTER_MODE_PRESSED:
+        case TIZEN_KEYROUTER_MODE_PRESSED:
            keylist_ptr = krt->HardKeys[key].press_ptr;
            break;
 
         default:
            KLDBG("Unknown key(%d) and grab mode(%d)\n", key, mode);
-           return WL_KEYROUTER_ERROR_INVALID_MODE;
+           return TIZEN_KEYROUTER_ERROR_INVALID_MODE;
      }
 
    EINA_LIST_FOREACH(keylist_ptr, l, key_node_data)
@@ -140,7 +138,7 @@ _e_keyrouter_find_duplicated_client(E_Client *ec, struct wl_client *wc, uint32_t
                   if (key_node_data->ec == ec)
                     {
                        KLDBG("The key(%d) is already grabbed same mode(%d) on the same E_Client(%p)\n", key, mode, ec);
-                       return WL_KEYROUTER_ERROR_GRABBED_ALREADY;
+                       return TIZEN_KEYROUTER_ERROR_GRABBED_ALREADY;
                     }
                }
              else
@@ -148,20 +146,20 @@ _e_keyrouter_find_duplicated_client(E_Client *ec, struct wl_client *wc, uint32_t
                   if (key_node_data->wc == wc)
                     {
                        KLDBG("The key(%d) is already grabbed same mode(%d) on the same Wl_Client(%p)\n", key, mode, wc);
-                       return WL_KEYROUTER_ERROR_GRABBED_ALREADY;
+                       return TIZEN_KEYROUTER_ERROR_GRABBED_ALREADY;
                     }
                }
           }
      }
 
-   return WL_KEYROUTER_ERROR_NONE;
+   return TIZEN_KEYROUTER_ERROR_NONE;
 }
 
 /* Function for prepending a new key grab information in the keyrouting list */
 int
 e_keyrouter_prepend_to_keylist(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode)
 {
-   int res = WL_KEYROUTER_ERROR_NONE;
+   int res = TIZEN_KEYROUTER_ERROR_NONE;
 
    res = _e_keyrouter_find_duplicated_client(ec, wc, key, mode);
    CHECK_ERR_VAL(res);
@@ -171,7 +169,7 @@ e_keyrouter_prepend_to_keylist(E_Client *ec, struct wl_client *wc, uint32_t key,
    if (!new_keyptr)
      {
         KLDBG("Failled to allocate memory for new_keyptr\n");
-        return WL_KEYROUTER_ERROR_NO_SYSTEM_RESOURCES;
+        return TIZEN_KEYROUTER_ERROR_NO_SYSTEM_RESOURCES;
      }
 
    new_keyptr->ec = ec;
@@ -188,7 +186,7 @@ e_keyrouter_prepend_to_keylist(E_Client *ec, struct wl_client *wc, uint32_t key,
 
    switch(mode)
      {
-        case WL_KEYROUTER_MODE_EXCLUSIVE:
+        case TIZEN_KEYROUTER_MODE_EXCLUSIVE:
            krt->HardKeys[key].excl_ptr = eina_list_prepend(krt->HardKeys[key].excl_ptr, new_keyptr);
 
            if (ec)
@@ -201,72 +199,72 @@ e_keyrouter_prepend_to_keylist(E_Client *ec, struct wl_client *wc, uint32_t key,
              }
            break;
 
-        case WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE:
+        case TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE:
            krt->HardKeys[key].or_excl_ptr= eina_list_prepend(krt->HardKeys[key].or_excl_ptr, new_keyptr);
 
            if (ec)
              {
-                KLDBG("WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE, key=%d, e_client(%p), wl_client(NULL) has been set !\n", key, ec);
+                KLDBG("TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE, key=%d, e_client(%p), wl_client(NULL) has been set !\n", key, ec);
              }
            else
              {
-                KLDBG("WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE, key=%d, e_client(NULL), wl_client(%p) has been set !\n", key, wc);
+                KLDBG("TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE, key=%d, e_client(NULL), wl_client(%p) has been set !\n", key, wc);
              }
            break;
 
-        case WL_KEYROUTER_MODE_TOPMOST:
+        case TIZEN_KEYROUTER_MODE_TOPMOST:
            krt->HardKeys[key].top_ptr = eina_list_prepend(krt->HardKeys[key].top_ptr, new_keyptr);
 
            if (ec)
              {
-                KLDBG("WL_KEYROUTER_MODE_TOPMOST, key=%d, e_client(%p), wl_client(NULL) has been set !\n", key, ec);
+                KLDBG("TIZEN_KEYROUTER_MODE_TOPMOST, key=%d, e_client(%p), wl_client(NULL) has been set !\n", key, ec);
              }
            else
              {
-                KLDBG("WL_KEYROUTER_MODE_TOPMOST, key=%d, e_client(NULL), wl_client(%p) has been set !\n", key, wc);
+                KLDBG("TIZEN_KEYROUTER_MODE_TOPMOST, key=%d, e_client(NULL), wl_client(%p) has been set !\n", key, wc);
              }
            break;
 
-        case WL_KEYROUTER_MODE_SHARED:
+        case TIZEN_KEYROUTER_MODE_SHARED:
            krt->HardKeys[key].shared_ptr= eina_list_prepend(krt->HardKeys[key].shared_ptr, new_keyptr);
 
            if (ec)
              {
-                KLDBG("WL_KEYROUTER_MODE_SHARED, key=%d, e_client(%p), wl_client(NULL) has been set !\n", key, ec);
+                KLDBG("TIZEN_KEYROUTER_MODE_SHARED, key=%d, e_client(%p), wl_client(NULL) has been set !\n", key, ec);
              }
            else
              {
-                KLDBG("WL_KEYROUTER_MODE_SHARED, key=%d, e_client(NULL), wl_client(%p) has been set !\n", key, wc);
+                KLDBG("TIZEN_KEYROUTER_MODE_SHARED, key=%d, e_client(NULL), wl_client(%p) has been set !\n", key, wc);
              }
            break;
 
-        case WL_KEYROUTER_MODE_PRESSED:
+        case TIZEN_KEYROUTER_MODE_PRESSED:
            krt->HardKeys[key].press_ptr = eina_list_prepend(krt->HardKeys[key].press_ptr, new_keyptr);
 
            if (ec)
              {
-                KLDBG("WL_KEYROUTER_MODE_PRESSED, key=%d, e_client(%p), wl_client(NULL) has been set !\n", key, ec);
+                KLDBG("TIZEN_KEYROUTER_MODE_PRESSED, key=%d, e_client(%p), wl_client(NULL) has been set !\n", key, ec);
              }
            else
              {
-                KLDBG("WL_KEYROUTER_MODE_PRESSED, key=%d, e_client(NULL), wl_client(%p) has been set !\n", key, wc);
+                KLDBG("TIZEN_KEYROUTER_MODE_PRESSED, key=%d, e_client(NULL), wl_client(%p) has been set !\n", key, wc);
              }
            break;
 
         default:
            KLDBG("Unknown key(%d) and grab mode(%d)\n", key, mode);
            E_FREE(new_keyptr);
-           return WL_KEYROUTER_ERROR_INVALID_MODE;
+           return TIZEN_KEYROUTER_ERROR_INVALID_MODE;
      }
 
-   if ( (wc) && (mode != WL_KEYROUTER_MODE_PRESSED) )
+   if ( (wc) && (mode != TIZEN_KEYROUTER_MODE_PRESSED) )
      {
         KLDBG("Add a client(%p) destory listener\n", wc);
         e_keyrouter_add_client_destroy_listener(wc);
         /* TODO: if failed add client_destory_listener, remove keygrabs */
      }
 
-   return WL_KEYROUTER_ERROR_NONE;
+   return TIZEN_KEYROUTER_ERROR_NONE;
 }
 
 #define E_KEYROUTER_REMOVE_KEY_NODE_IN_LIST(list, ec, wc, l, l_next, key_node_data, key, mode_str) \
@@ -304,19 +302,19 @@ e_keyrouter_find_and_remove_client_from_list(E_Client *ec, struct wl_client *wc,
 
    switch (mode)
      {
-        case WL_KEYROUTER_MODE_EXCLUSIVE:
+        case TIZEN_KEYROUTER_MODE_EXCLUSIVE:
            E_KEYROUTER_REMOVE_KEY_NODE_IN_LIST(krt->HardKeys[key].excl_ptr, ec, wc, l, l_next, key_node_data, key, "Exclusive");
            break;
 
-        case WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE:
+        case TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE:
            E_KEYROUTER_REMOVE_KEY_NODE_IN_LIST(krt->HardKeys[key].or_excl_ptr, ec, wc, l, l_next, key_node_data, key, "OR_Exclusive");
            break;
 
-        case WL_KEYROUTER_MODE_TOPMOST:
+        case TIZEN_KEYROUTER_MODE_TOPMOST:
            E_KEYROUTER_REMOVE_KEY_NODE_IN_LIST(krt->HardKeys[key].top_ptr, ec, wc, l, l_next, key_node_data, key, "Top Position");
            break;
 
-        case WL_KEYROUTER_MODE_SHARED:
+        case TIZEN_KEYROUTER_MODE_SHARED:
            E_KEYROUTER_REMOVE_KEY_NODE_IN_LIST(krt->HardKeys[key].shared_ptr, ec, wc, l, l_next, key_node_data, key, "Shared");
            break;
 
@@ -343,15 +341,15 @@ e_keyrouter_remove_client_from_list(E_Client *ec, struct wl_client *wc)
           }
 
         /* exclusive grab */
-        e_keyrouter_find_and_remove_client_from_list(ec, wc, index, WL_KEYROUTER_MODE_EXCLUSIVE);
+        e_keyrouter_find_and_remove_client_from_list(ec, wc, index, TIZEN_KEYROUTER_MODE_EXCLUSIVE);
 
         /* or exclusive grab */
-        e_keyrouter_find_and_remove_client_from_list(ec, wc, index, WL_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE);
+        e_keyrouter_find_and_remove_client_from_list(ec, wc, index, TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE);
 
         /* top position grab */
-        e_keyrouter_find_and_remove_client_from_list(ec, wc, index, WL_KEYROUTER_MODE_TOPMOST);
+        e_keyrouter_find_and_remove_client_from_list(ec, wc, index, TIZEN_KEYROUTER_MODE_TOPMOST);
 
         /* shared grab */
-        e_keyrouter_find_and_remove_client_from_list(ec, wc, index, WL_KEYROUTER_MODE_SHARED);
+        e_keyrouter_find_and_remove_client_from_list(ec, wc, index, TIZEN_KEYROUTER_MODE_SHARED);
      }
 }
