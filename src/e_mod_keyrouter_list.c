@@ -5,8 +5,6 @@
 
 static int _e_keyrouter_find_duplicated_client(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode);
 
-//extern E_KeyrouterPtr krt;
-
 /* Function for adding a new key grab information into the keyrouting list */
 int
 e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *client, uint32_t key, uint32_t mode)
@@ -333,7 +331,7 @@ e_keyrouter_remove_client_from_list(E_Client *ec, struct wl_client *wc)
         return;
      }
 
-   for(index=0; index<MAX_HWKEYS; index++)
+   for (index = 0; index < MAX_HWKEYS; index++)
      {
         if (0 == krt->HardKeys[index].keycode)
           {
