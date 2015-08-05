@@ -22,16 +22,13 @@ static Eina_Bool _e_keyrouter_client_cb_stack(void *data, int type, void *event)
 static Eina_Bool _e_keyrouter_client_cb_remove(void *data, int type, void *event);
 static void _e_keyrouter_wl_client_cb_destroy(struct wl_listener *l, void *data);
 
+static int _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, uint32_t key, uint32_t mode);
+static int _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface, uint32_t key);
 
-/* tizen_keyrouter_set_keygrab request handler */
-static void
-_e_keyrouter_cb_keygrab_set(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, uint32_t key, uint32_t mode)
+
+static int
+_e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, uint32_t key, uint32_t mode)
 {
-   (void) client;
-   (void) resource;
-   (void) surface;
-   (void) key;
-   (void) mode;
    int res=0;
 
    if (!surface)
@@ -41,7 +38,7 @@ _e_keyrouter_cb_keygrab_set(struct wl_client *client, struct wl_resource *resour
           {
              KLDBG("Invalid surface for TOPMOST grab mode ! (key=%d, mode=%d)\n", key, mode);
 
-             WL_KEYGRAB_NOTIFY_WITH_VAL(resource, surface, key, mode, TIZEN_KEYROUTER_ERROR_INVALID_SURFACE);
+             return TIZEN_KEYROUTER_ERROR_INVALID_SURFACE;
           }
         else
           {
@@ -53,7 +50,7 @@ _e_keyrouter_cb_keygrab_set(struct wl_client *client, struct wl_resource *resour
    if (0 > key || MAX_HWKEYS < key )
      {
         KLDBG("Invalid range of key ! (keycode:%d)\n", key);
-        WL_KEYGRAB_NOTIFY_WITH_VAL(resource, surface, key, mode, TIZEN_KEYROUTER_ERROR_INVALID_KEY);
+        return TIZEN_KEYROUTER_ERROR_INVALID_KEY;
      }
 
    /* Check whether the key can be grabbed or not !
@@ -61,14 +58,14 @@ _e_keyrouter_cb_keygrab_set(struct wl_client *client, struct wl_resource *resour
    if (0 == krt->HardKeys[key].keycode)
      {
         KLDBG("Invalid key ! Disabled to grab ! (keycode:%d)\n", key);
-        WL_KEYGRAB_NOTIFY_WITH_VAL(resource, surface, key, mode, TIZEN_KEYROUTER_ERROR_INVALID_KEY);
+        return TIZEN_KEYROUTER_ERROR_INVALID_KEY;
      }
 
    /* Check whether the mode is valid or not */
    if (TIZEN_KEYROUTER_MODE_NONE > mode || TIZEN_KEYROUTER_MODE_EXCLUSIVE < mode)
      {
         KLDBG("Invalid range of mode ! (mode:%d)\n", mode);
-        WL_KEYGRAB_NOTIFY_WITH_VAL(resource, surface, key, mode, TIZEN_KEYROUTER_ERROR_INVALID_MODE);
+        return  TIZEN_KEYROUTER_ERROR_INVALID_MODE;
      }
 
    /* Check whether the request key can be grabbed or not */
@@ -76,18 +73,12 @@ _e_keyrouter_cb_keygrab_set(struct wl_client *client, struct wl_resource *resour
 
    KLDBG("Result of grab check for a key (key:%d, mode:%d, res:%d)\n", key, mode, res);
 
-   WL_KEYGRAB_NOTIFY_WITH_VAL(resource, surface, key, mode, res);
+   return res;
 }
 
-/* tizen_keyrouter unset_keygrab request handler */
-static void
-_e_keyrouter_cb_keygrab_unset(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, uint32_t key)
+static int
+_e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface, uint32_t key)
 {
-   (void) client;
-   (void) resource;
-   (void) surface;
-   (void) key;
-
    E_Pixmap *ep = NULL;
    E_Client *ec = NULL;
 
@@ -105,19 +96,19 @@ _e_keyrouter_cb_keygrab_unset(struct wl_client *client, struct wl_resource *reso
         /* SHARED grab */
         e_keyrouter_find_and_remove_client_from_list(NULL, client, key, TIZEN_KEYROUTER_MODE_SHARED);
 
-        WL_KEYGRAB_NOTIFY_WITH_VAL(resource, surface, key, TIZEN_KEYROUTER_MODE_NONE, TIZEN_KEYROUTER_ERROR_NONE);
+        return TIZEN_KEYROUTER_ERROR_NONE;
      }
 
     if (!surface || !(ep = wl_resource_get_user_data(surface)))
      {
         KLDBG("Surface or E_Pixman from the surface is invalid ! Return error !\n");
-        WL_KEYGRAB_NOTIFY_WITH_VAL(resource, surface, key, TIZEN_KEYROUTER_MODE_NONE, TIZEN_KEYROUTER_ERROR_INVALID_SURFACE);
+        return TIZEN_KEYROUTER_ERROR_INVALID_SURFACE;
      }
 
    if (!(ec = e_pixmap_client_get(ep)))
      {
         KLDBG("E_Client pointer from E_Pixman from surface is invalid ! Return error !\n");
-        WL_KEYGRAB_NOTIFY_WITH_VAL(resource, surface, key, TIZEN_KEYROUTER_MODE_NONE, TIZEN_KEYROUTER_ERROR_INVALID_SURFACE);
+        return TIZEN_KEYROUTER_ERROR_INVALID_SURFACE;
      }
 
    /* EXCLUSIVE grab */
@@ -132,7 +123,33 @@ _e_keyrouter_cb_keygrab_unset(struct wl_client *client, struct wl_resource *reso
    /* SHARED grab */
    e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, TIZEN_KEYROUTER_MODE_SHARED);
 
-   WL_KEYGRAB_NOTIFY_WITH_VAL(resource, surface, key, TIZEN_KEYROUTER_MODE_NONE, TIZEN_KEYROUTER_ERROR_NONE);
+   return TIZEN_KEYROUTER_ERROR_NONE;
+}
+
+/* tizen_keyrouter_set_keygrab request handler */
+static void
+_e_keyrouter_cb_keygrab_set(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, uint32_t key, uint32_t mode)
+{
+   int res = 0;
+
+   KLDBG("Key grab request (key:%d, mode:%d)\n", key, mode);
+
+   res = _e_keyrouter_keygrab_set(client, surface, key, mode);
+
+   tizen_keyrouter_send_keygrab_notify(resource, surface, key, mode, res);
+}
+
+/* tizen_keyrouter unset_keygrab request handler */
+static void
+_e_keyrouter_cb_keygrab_unset(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, uint32_t key)
+{
+   int res = 0;
+
+   KLDBG("Key ungrab request (key:%d)\n", key);
+
+   res = _e_keyrouter_keygrab_unset(client, surface, key);
+
+   tizen_keyrouter_send_keygrab_notify(resource, surface, key, TIZEN_KEYROUTER_MODE_NONE, res);
 }
 
 /* tizen_keyrouter get_keygrab_status request handler */
@@ -166,8 +183,47 @@ _e_keyrouter_cb_get_keygrab_status(struct wl_client *client, struct wl_resource 
 
    /* TODO : Need to check key grab status for the requesting wl client */
 
-   WL_KEYGRAB_NOTIFY_WITH_VAL(resource, surface, key, TIZEN_KEYROUTER_MODE_NONE, TIZEN_KEYROUTER_ERROR_NONE);
+   tizen_keyrouter_send_keygrab_notify(resource, surface, key, TIZEN_KEYROUTER_MODE_NONE, TIZEN_KEYROUTER_ERROR_NONE);
 }
+
+static void
+_e_keyrouter_cb_keygrab_set_list(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, struct wl_array *grab_list)
+{
+   E_Keyrouter_Grab_List *grab_data = NULL;
+   int res = TIZEN_KEYROUTER_ERROR_NONE;
+
+   wl_array_for_each(grab_data, grab_list)
+     {
+        if (grab_data)
+          {
+             KLDBG("Grab request using list  [key: %d, mode: %d, res: %d]\n", grab_data->key, grab_data->mode, grab_data->err);
+             res = _e_keyrouter_keygrab_set(client, surface, grab_data->key, grab_data->mode);
+             grab_data->err = res;
+          }
+     }
+
+   tizen_keyrouter_send_keygrab_notify_list(resource, surface, grab_list);
+}
+
+static void
+_e_keyrouter_cb_keygrab_unset_list(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, struct wl_array *grab_list)
+{
+   E_Keyrouter_Grab_List *grab_data = NULL;
+   int res = TIZEN_KEYROUTER_ERROR_NONE;
+
+   wl_array_for_each(grab_data, grab_list)
+     {
+        if (grab_data)
+          {
+             KLDBG("Ungrab request using list  [key: %d, res: %d]\n", grab_data->key, grab_data->err);
+             res = _e_keyrouter_keygrab_unset(client, surface, grab_data->key);
+             grab_data->err = res;
+          }
+     }
+
+   tizen_keyrouter_send_keygrab_notify_list(resource, surface, grab_list);
+}
+
 
 /* Function for registering wl_client destroy listener */
 int
@@ -209,7 +265,9 @@ e_keyrouter_add_client_destroy_listener(struct wl_client *client)
 static const struct tizen_keyrouter_interface _e_keyrouter_implementation = {
    _e_keyrouter_cb_keygrab_set,
    _e_keyrouter_cb_keygrab_unset,
-   _e_keyrouter_cb_get_keygrab_status
+   _e_keyrouter_cb_get_keygrab_status,
+   _e_keyrouter_cb_keygrab_set_list,
+   _e_keyrouter_cb_keygrab_unset_list
 };
 
 /* tizen_keyrouter global object destroy function */
