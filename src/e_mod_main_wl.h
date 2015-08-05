@@ -12,9 +12,6 @@
 #define CHECK_NULL_VAL(val) if (!val) return val;
 
 #define KLDBG(msg, ARG...) DBG("[tizen_keyrouter][%s:%d] "msg, __FUNCTION__, __LINE__, ##ARG)
-#define WL_KEYGRAB_NOTIFY_WITH_VAL(resource,surface,key,mode,err) \
-        tizen_keyrouter_send_keygrab_notify(resource, surface, key, mode, err); \
-        return
 
 typedef struct _E_Keyrouter E_Keyrouter;
 typedef struct _E_Keyrouter* E_KeyrouterPtr;
@@ -22,6 +19,7 @@ typedef struct _E_Keyrouter_Key_List_Node E_Keyrouter_Key_List_Node;
 typedef struct _E_Keyrouter_Key_List_Node* E_Keyrouter_Key_List_NodePtr;
 typedef struct _E_Keyrouter_Tizen_HWKey E_Keyrouter_Tizen_HWKey;
 typedef struct _E_Keyrouter_Grabbed_Key E_Keyrouter_Grabbed_Key;
+typedef struct _E_Keyrouter_Grab_List E_Keyrouter_Grab_List;
 
 #define TIZEN_KEYROUTER_MODE_PRESSED TIZEN_KEYROUTER_MODE_EXCLUSIVE+1
 
@@ -65,6 +63,13 @@ struct _E_Keyrouter
    Eina_Bool isWindowStackChanged;
    int numTizenHWKeys;
 };
+
+struct _E_Keyrouter_Grab_List {
+   int key;
+   int mode;
+   int err;
+};
+
 
 /* E Module */
 EAPI extern E_Module_Api e_modapi;
