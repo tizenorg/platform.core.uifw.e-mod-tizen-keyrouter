@@ -24,7 +24,7 @@ e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *c
    if (mode == TIZEN_KEYROUTER_MODE_EXCLUSIVE)
      {
         EINA_SAFETY_ON_TRUE_RETURN_VAL
-          (krt->HardKeys[key].excl_ptr,
+          ((krt->HardKeys[key].excl_ptr != NULL),
            TIZEN_KEYROUTER_ERROR_GRABBED_ALREADY);
      }
 

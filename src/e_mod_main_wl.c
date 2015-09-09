@@ -408,7 +408,6 @@ static Eina_Bool
 _e_keyrouter_send_key_events_release(int type, Ecore_Event_Key *ev)
 {
    E_Keyrouter_Key_List_NodePtr key_node_data;
-   Eina_List *l = NULL;
 
    /* Deliver release  clean up pressed key list */
    EINA_LIST_FREE(krt->HardKeys[ev->keycode].press_ptr, key_node_data)
