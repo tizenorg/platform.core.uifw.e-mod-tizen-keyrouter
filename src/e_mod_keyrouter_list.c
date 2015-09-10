@@ -31,15 +31,10 @@ e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *c
    if (surface)
      {
         cp = wl_resource_get_user_data(surface);
-        EINA_SAFETY_ON_NULL_RETURN_VAL
-          (cp, TIZEN_KEYROUTER_ERROR_INVALID_SURFACE);
-
         ec = e_pixmap_client_get(cp);
-        EINA_SAFETY_ON_NULL_RETURN_VAL
-          (cp, TIZEN_KEYROUTER_ERROR_INVALID_SURFACE);
      }
 
-   if (mode == TIZEN_KEYROUTER_MODE_TOPMOST)
+   if (mode == TIZEN_KEYROUTER_MODE_TOPMOST && !surface)
      {
         EINA_SAFETY_ON_NULL_RETURN_VAL
           (ec, TIZEN_KEYROUTER_ERROR_INVALID_SURFACE);
