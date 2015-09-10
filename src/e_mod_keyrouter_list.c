@@ -31,15 +31,10 @@ e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *c
    if (surface)
      {
         cp = wl_resource_get_user_data(surface);
-        EINA_SAFETY_ON_NULL_RETURN_VAL
-          (cp, TIZEN_KEYROUTER_ERROR_INVALID_SURFACE);
-
         ec = e_pixmap_client_get(cp);
-        EINA_SAFETY_ON_NULL_RETURN_VAL
-          (cp, TIZEN_KEYROUTER_ERROR_INVALID_SURFACE);
      }
 
-   if (mode == TIZEN_KEYROUTER_MODE_TOPMOST)
+   if (mode == TIZEN_KEYROUTER_MODE_TOPMOST && !surface)
      {
         EINA_SAFETY_ON_NULL_RETURN_VAL
           (ec, TIZEN_KEYROUTER_ERROR_INVALID_SURFACE);
@@ -236,7 +231,6 @@ e_keyrouter_find_and_remove_client_from_list(E_Client *ec, struct wl_client *wc,
    Eina_List **list = NULL;
    Eina_List *l = NULL, *l_next = NULL;
    E_Keyrouter_Key_List_NodePtr key_node_data = NULL;
-   Eina_Bool removed;
 
    switch (mode)
      {
@@ -253,31 +247,17 @@ e_keyrouter_find_and_remove_client_from_list(E_Client *ec, struct wl_client *wc,
      {
         if (!key_node_data) continue;
 
-        removed = EINA_FALSE;
-
-        if (ec)
+        if ((ec) && (ec == key_node_data->ec))
           {
-             if (ec == key_node_data->ec)
-               {
-                  *list = eina_list_remove_list(*list, l);
-                  E_FREE(key_node_data);
-                  removed = EINA_TRUE;
-               }
+             *list = eina_list_remove_list(*list, l);
+             E_FREE(key_node_data);
+             KLDBG("Remove a %s Mode Grabbed key(%d) by ec(%p)\n", _mode_str_get(mode), key, ec);
           }
-        else
+        else if ((wc) && (wc == key_node_data->wc))
           {
-             if (wc == key_node_data->wc)
-               {
-                  *list = eina_list_remove_list(*list, l);
-                  E_FREE(key_node_data);
-                  removed = EINA_TRUE;
-               }
-          }
-
-        if (removed)
-          {
-             KLDBG("Remove a %s Mode Grabbed key(%d) by ec(%p) wc(NULL)\n",
-                   _mode_str_get(mode), key, ec);
+             *list = eina_list_remove_list(*list, l);
+             E_FREE(key_node_data);
+             KLDBG("Remove a %s Mode Grabbed key(%d) by wc(%p)\n", _mode_str_get(mode), key, wc);
           }
      }
 }

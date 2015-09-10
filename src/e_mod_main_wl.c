@@ -101,29 +101,27 @@ _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface
         return TIZEN_KEYROUTER_ERROR_NONE;
      }
 
-    if (!surface || !(ep = wl_resource_get_user_data(surface)))
+   if (!(ep = wl_resource_get_user_data(surface)))
      {
-        KLDBG("Surface or E_Pixman from the surface is invalid ! Return error !\n");
-        return TIZEN_KEYROUTER_ERROR_INVALID_SURFACE;
+        KLDBG("E_Pixman from the surface is invalid! Check this grab was requested before mapped!\n");
      }
 
    if (!(ec = e_pixmap_client_get(ep)))
      {
-        KLDBG("E_Client pointer from E_Pixman from surface is invalid ! Return error !\n");
-        return TIZEN_KEYROUTER_ERROR_INVALID_SURFACE;
+        KLDBG("E_Client pointer from E_Pixman from surface is invalid! Check this grab was requested before mapped!\n");
      }
 
    /* EXCLUSIVE grab */
-   e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, TIZEN_KEYROUTER_MODE_EXCLUSIVE);
+   e_keyrouter_find_and_remove_client_from_list(ec, client, key, TIZEN_KEYROUTER_MODE_EXCLUSIVE);
 
    /* OVERRIDABLE_EXCLUSIVE grab */
-   e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE);
+   e_keyrouter_find_and_remove_client_from_list(ec, client, key, TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE);
 
    /* TOPMOST(TOP_POSITION) grab */
-   e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, TIZEN_KEYROUTER_MODE_TOPMOST);
+   e_keyrouter_find_and_remove_client_from_list(ec, client, key, TIZEN_KEYROUTER_MODE_TOPMOST);
 
    /* SHARED grab */
-   e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, TIZEN_KEYROUTER_MODE_SHARED);
+   e_keyrouter_find_and_remove_client_from_list(ec, client, key, TIZEN_KEYROUTER_MODE_SHARED);
 
    return TIZEN_KEYROUTER_ERROR_NONE;
 }
