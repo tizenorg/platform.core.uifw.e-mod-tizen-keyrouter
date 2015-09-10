@@ -28,7 +28,7 @@ extern E_KeyrouterPtr krt;
 
 struct _E_Keyrouter_Key_List_Node
 {
-   E_Client *ec;
+   struct wl_resource *surface;
    struct wl_client *wc;
 };
 
@@ -59,6 +59,7 @@ struct _E_Keyrouter
 
    E_Keyrouter_Grabbed_Key HardKeys[MAX_HWKEYS];
    E_Keyrouter_Tizen_HWKey *TizenHWKeys;
+   Eina_List *surface_grab_client;
    Eina_List *none_surface_grab_client;
 
    Eina_Bool isWindowStackChanged;
@@ -83,10 +84,11 @@ EAPI int   e_modapi_shutdown(E_Module *m);
 EAPI int   e_modapi_save(E_Module *m);
 
 int e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *client, uint32_t key, uint32_t mode);
-int e_keyrouter_prepend_to_keylist(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode);
-void e_keyrouter_find_and_remove_client_from_list(E_Client *ec, struct wl_client *wc, uint32_t key, uint32_t mode);
-void e_keyrouter_remove_client_from_list(E_Client *ec, struct wl_client *wc);
+int e_keyrouter_prepend_to_keylist(struct wl_resource *surface, struct wl_client *wc, uint32_t key, uint32_t mode);
+void e_keyrouter_find_and_remove_client_from_list(struct wl_resource *surface, struct wl_client *wc, uint32_t key, uint32_t mode);
+void e_keyrouter_remove_client_from_list(struct wl_resource *surface, struct wl_client *wc);
 
 int e_keyrouter_add_client_destroy_listener(struct wl_client *client);
+int e_keyrouter_add_surface_destroy_listener(struct wl_resource *surface);
 
 #endif

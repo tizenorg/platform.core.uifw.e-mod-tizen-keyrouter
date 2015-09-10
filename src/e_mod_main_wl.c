@@ -13,16 +13,17 @@ static Eina_Bool _e_keyrouter_process_key_event(void *event, int type);
 static Eina_Bool _e_keyrouter_send_key_events(int type, Ecore_Event_Key *ev);
 static Eina_Bool _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev);
 static Eina_Bool _e_keyrouter_send_key_events_release(int type, Ecore_Event_Key *ev);
-static void _e_keyrouter_send_key_event(int type, E_Client *ec, struct wl_client *wc, Ecore_Event_Key *ev);
+static void _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_client *wc, Ecore_Event_Key *ev);
 static Eina_Bool _e_keyrouter_is_key_grabbed(int key);
 static Eina_Bool _e_keyrouter_check_top_visible_window(E_Comp *c, E_Client *ec_focus, int arr_idx);
 static void _e_keyrouter_query_tizen_key_table(void);
 static int _e_keyrouter_wl_array_length(const struct wl_array *array);
-
+static struct wl_resource *_e_keyrouter_util_get_surface_from_eclient(E_Client *client);
 
 static Eina_Bool _e_keyrouter_client_cb_stack(void *data, int type, void *event);
 static Eina_Bool _e_keyrouter_client_cb_remove(void *data, int type, void *event);
 static void _e_keyrouter_wl_client_cb_destroy(struct wl_listener *l, void *data);
+static void _e_keyrouter_wl_surface_cb_destroy(struct wl_listener *l, void *data);
 
 static int _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, uint32_t key, uint32_t mode);
 static int _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface, uint32_t key);
@@ -81,9 +82,6 @@ _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, 
 static int
 _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface, uint32_t key)
 {
-   E_Pixmap *ep = NULL;
-   E_Client *ec = NULL;
-
    if (!surface)
      {
         /* EXCLUSIVE grab */
@@ -101,29 +99,17 @@ _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface
         return TIZEN_KEYROUTER_ERROR_NONE;
      }
 
-    if (!surface || !(ep = wl_resource_get_user_data(surface)))
-     {
-        KLDBG("Surface or E_Pixman from the surface is invalid ! Return error !\n");
-        return TIZEN_KEYROUTER_ERROR_INVALID_SURFACE;
-     }
-
-   if (!(ec = e_pixmap_client_get(ep)))
-     {
-        KLDBG("E_Client pointer from E_Pixman from surface is invalid ! Return error !\n");
-        return TIZEN_KEYROUTER_ERROR_INVALID_SURFACE;
-     }
-
    /* EXCLUSIVE grab */
-   e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, TIZEN_KEYROUTER_MODE_EXCLUSIVE);
+   e_keyrouter_find_and_remove_client_from_list(surface, client, key, TIZEN_KEYROUTER_MODE_EXCLUSIVE);
 
    /* OVERRIDABLE_EXCLUSIVE grab */
-   e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE);
+   e_keyrouter_find_and_remove_client_from_list(surface, client, key, TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE);
 
    /* TOPMOST(TOP_POSITION) grab */
-   e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, TIZEN_KEYROUTER_MODE_TOPMOST);
+   e_keyrouter_find_and_remove_client_from_list(surface, client, key, TIZEN_KEYROUTER_MODE_TOPMOST);
 
    /* SHARED grab */
-   e_keyrouter_find_and_remove_client_from_list(ec, NULL, key, TIZEN_KEYROUTER_MODE_SHARED);
+   e_keyrouter_find_and_remove_client_from_list(surface, client, key, TIZEN_KEYROUTER_MODE_SHARED);
 
    return TIZEN_KEYROUTER_ERROR_NONE;
 }
@@ -292,6 +278,44 @@ e_keyrouter_add_client_destroy_listener(struct wl_client *client)
    return TIZEN_KEYROUTER_ERROR_NONE;
 }
 
+/* Function for registering wl_surface destroy listener */
+int
+e_keyrouter_add_surface_destroy_listener(struct wl_resource *surface)
+{
+   struct wl_listener *destroy_listener = NULL;
+   Eina_List *l;
+   struct wl_resource *surface_data;
+
+   EINA_LIST_FOREACH(krt->surface_grab_client, l, surface_data)
+     {
+        if (surface_data)
+          {
+             if (surface_data == surface)
+               {
+                  KLDBG("surface(%p)'s destroy listener is already added, wc_data(%p)\n", surface, surface_data);
+                  return TIZEN_KEYROUTER_ERROR_NONE;
+               }
+          }
+     }
+
+   destroy_listener = E_NEW(struct wl_listener, 1);
+
+   if (!destroy_listener)
+     {
+        KLDBG("Failed to allocate memory for wl_surface destroy listener !\n");
+        return TIZEN_KEYROUTER_ERROR_NO_SYSTEM_RESOURCES;
+     }
+
+   destroy_listener->notify = _e_keyrouter_wl_surface_cb_destroy;
+   wl_resource_add_destroy_listener(surface, destroy_listener);
+   krt->surface_grab_client = eina_list_append(krt->surface_grab_client, surface);
+
+   KLDBG("Add a surface(%p) destroy listener(%p)\n", surface, destroy_listener);
+
+   return TIZEN_KEYROUTER_ERROR_NONE;
+}
+
+
 static const struct tizen_keyrouter_interface _e_keyrouter_implementation = {
    _e_keyrouter_cb_keygrab_set,
    _e_keyrouter_cb_keygrab_unset,
@@ -414,9 +438,9 @@ _e_keyrouter_send_key_events_release(int type, Ecore_Event_Key *ev)
      {
         if (key_node_data)
           {
-             _e_keyrouter_send_key_event(type, key_node_data->ec, key_node_data->wc, ev);
+             _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
              KLDBG("Release Pair : Key %s(%d) ===> E_Client (%p) WL_Client (%p)\n",
-                      ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->ec, key_node_data->wc);
+                      ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->surface, key_node_data->wc);
              E_FREE(key_node_data);
           }
      }
@@ -429,6 +453,7 @@ static Eina_Bool
 _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
 {
    unsigned int keycode = ev->keycode;
+   struct wl_resource *surface_focus = NULL;
    E_Client *ec_focus = NULL;
    E_Comp *c = NULL;
 
@@ -439,9 +464,9 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
      {
         if (key_node_data)
           {
-             _e_keyrouter_send_key_event(type, key_node_data->ec, key_node_data->wc, ev);
-             KLDBG("EXCLUSIVE Mode : Key %s(%d) ===> E_Client (%p) WL_Client (%p)\n",
-                      ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->ec, key_node_data->wc);
+             _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
+             KLDBG("EXCLUSIVE Mode : Key %s(%d) ===> Surface (%p) WL_Client (%p)\n",
+                      ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->surface, key_node_data->wc);
 
              return EINA_TRUE;
           }
@@ -451,25 +476,26 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
      {
         if (key_node_data)
           {
-             _e_keyrouter_send_key_event(type, key_node_data->ec, key_node_data->wc, ev);
-             KLDBG("OVERRIDABLE_EXCLUSIVE Mode : Key %s(%d) ===> E_Client (%p) WL_Client (%p)\n",
-                     ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->ec, key_node_data->wc);
+             _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
+             KLDBG("OVERRIDABLE_EXCLUSIVE Mode : Key %s(%d) ===> Surface (%p) WL_Client (%p)\n",
+                     ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->surface, key_node_data->wc);
 
              return EINA_TRUE;
           }
      }
 
    ec_focus = e_client_focused_get();
+   surface_focus = _e_keyrouter_util_get_surface_from_eclient(ec_focus);
 
    EINA_LIST_FOREACH(krt->HardKeys[keycode].top_ptr, l, key_node_data)
      {
         if (key_node_data)
           {
-             if ((EINA_FALSE == krt->isWindowStackChanged) && (ec_focus == key_node_data->ec))
+             if ((EINA_FALSE == krt->isWindowStackChanged) && (surface_focus == key_node_data->surface))
                {
-                  _e_keyrouter_send_key_event(type, key_node_data->ec, NULL, ev);
-                  KLDBG("TOPMOST (TOP_POSITION) Mode : Key %s (%d) ===> Client (%p)\n",
-                           ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->ec);
+                  _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
+                  KLDBG("TOPMOST (TOP_POSITION) Mode : Key %s (%d) ===> Surface (%p)\n",
+                           ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->surface);
 
                   return EINA_TRUE;
                }
@@ -478,9 +504,9 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
              c = e_comp_find_by_window(ev->window);
              if (_e_keyrouter_check_top_visible_window(c, ec_focus, keycode))
                {
-                  _e_keyrouter_send_key_event(type, key_node_data->ec, NULL, ev);
-                  KLDBG("TOPMOST (TOP_POSITION) Mode : Key %s (%d) ===> Client (%p)\n",
-                        ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode,key_node_data->ec);
+                  _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
+                  KLDBG("TOPMOST (TOP_POSITION) Mode : Key %s (%d) ===> Surface (%p)\n",
+                        ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode,key_node_data->surface);
 
                   return EINA_TRUE;
                }
@@ -490,30 +516,30 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
 
    if (krt->HardKeys[keycode].shared_ptr)
      {
-        _e_keyrouter_send_key_event(type, ec_focus, NULL, ev);
-        KLDBG("SHARED [Focus client] : Key %s (%d) ===> Client (%p)\n",
-                 ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up "), ev->keycode, ec_focus);
+        _e_keyrouter_send_key_event(type, surface_focus, NULL, ev);
+        KLDBG("SHARED [Focus client] : Key %s (%d) ===> Surface (%p)\n",
+                 ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up "), ev->keycode, surface_focus);
 
         EINA_LIST_FOREACH(krt->HardKeys[keycode].shared_ptr, l, key_node_data)
           {
              if (key_node_data)
                {
-                  if (key_node_data->ec)
+                  if (key_node_data->surface)
                     {
-                       if (key_node_data->ec != ec_focus)
+                       if (key_node_data->surface != surface_focus)
                          {
-                            _e_keyrouter_send_key_event(type, key_node_data->ec, key_node_data->wc, ev);
-                            KLDBG("SHARED Mode : Key %s(%d) ===> E_Client (%p) WL_Client (%p)\n",
-                                     ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->ec, key_node_data->wc);
+                            _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
+                            KLDBG("SHARED Mode : Key %s(%d) ===> Surface (%p) WL_Client (%p)\n",
+                                     ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->surface, key_node_data->wc);
                          }
                     }
                   else
                     {
-                       if (key_node_data->wc != wl_resource_get_client(ec_focus->comp_data->wl_surface))
+                       if (key_node_data->wc != wl_resource_get_client(surface_focus))
                          {
-                            _e_keyrouter_send_key_event(type, key_node_data->ec, key_node_data->wc, ev);
-                            KLDBG("SHARED Mode : Key %s(%d) ===> E_Client (%p) WL_Client (%p)\n",
-                                     ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->ec, key_node_data->wc);
+                            _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
+                            KLDBG("SHARED Mode : Key %s(%d) ===> Surface (%p) WL_Client (%p)\n",
+                                     ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->surface, key_node_data->wc);
                          }
                     }
                }
@@ -549,7 +575,7 @@ _e_keyrouter_check_top_visible_window(E_Comp *c, E_Client *ec_focus, int arr_idx
           {
              if (key_node_data)
                {
-                  if (ec_top == key_node_data->ec)
+                  if (ec_top == e_pixmap_client_get(wl_resource_get_user_data(key_node_data->surface)))
                     {
                        krt->HardKeys[arr_idx].top_ptr = eina_list_promote_list(krt->HardKeys[arr_idx].top_ptr, l);
                        KLDBG("Move a client(%p) to first index of list(key: %d)\n",
@@ -573,7 +599,7 @@ _e_keyrouter_check_top_visible_window(E_Comp *c, E_Client *ec_focus, int arr_idx
 
 /* Function for sending key event to wl_client(s) */
 static void
-_e_keyrouter_send_key_event(int type, E_Client *ec, struct wl_client *wc, Ecore_Event_Key *ev)
+_e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_client *wc, Ecore_Event_Key *ev)
 {
    struct wl_client *wc_send;
    struct wl_resource *res;
@@ -582,18 +608,18 @@ _e_keyrouter_send_key_event(int type, E_Client *ec, struct wl_client *wc, Ecore_
    uint serial;
    Eina_List *l;
 
-   if (ec == NULL)
+   if (surface == NULL)
      {
         wc_send = wc;
      }
    else
      {
-        wc_send = wl_resource_get_client(ec->comp_data->wl_surface);
+        wc_send = wl_resource_get_client(surface);
      }
 
    if (ECORE_EVENT_KEY_DOWN == type)
      {
-        e_keyrouter_prepend_to_keylist(ec, wc, ev->keycode, TIZEN_KEYROUTER_MODE_PRESSED);
+        e_keyrouter_prepend_to_keylist(surface, wc, ev->keycode, TIZEN_KEYROUTER_MODE_PRESSED);
         evtype = WL_KEYBOARD_KEY_STATE_PRESSED;
      }
    else
@@ -779,6 +805,17 @@ _e_keyrouter_wl_array_length(const struct wl_array *array)
    return count;
 }
 
+static struct wl_resource *
+_e_keyrouter_util_get_surface_from_eclient(E_Client *client)
+{
+   EINA_SAFETY_ON_NULL_RETURN_VAL
+     (client, NULL);
+   EINA_SAFETY_ON_NULL_RETURN_VAL
+     (client->comp_data, NULL);
+
+   return client->comp_data->wl_surface;
+}
+
 static void
 _e_keyrouter_deinit_handlers(void)
 {
@@ -825,11 +862,12 @@ _e_keyrouter_client_cb_remove(void *data, int type, void *event)
 
    (void) data;
    (void) type;
-   (void) event;
+   (void) ev;
+   (void) ec;
 
-   KLDBG("e_client: %p is died\n", ec);
-
-   e_keyrouter_remove_client_from_list(ec, NULL);
+   /* FIXME: Remove this callback or do something others.
+    *             It was moved to _e_keyrouter_wl_surface_cb_destroy() where it had here.
+    */
 
    return ECORE_CALLBACK_PASS_ON;
 }
@@ -846,4 +884,18 @@ _e_keyrouter_wl_client_cb_destroy(struct wl_listener *l, void *data)
    l = NULL;
 
    krt->none_surface_grab_client = eina_list_remove(krt->none_surface_grab_client, client);
+}
+
+static void
+_e_keyrouter_wl_surface_cb_destroy(struct wl_listener *l, void *data)
+{
+   struct wl_resource *surface = data;
+
+   KLDBG("Listener(%p) called: surface: %p is died\n", l, surface);
+   e_keyrouter_remove_client_from_list(surface, NULL);
+
+   E_FREE(l);
+   l = NULL;
+
+   krt->surface_grab_client = eina_list_remove(krt->surface_grab_client, surface);
 }
