@@ -757,7 +757,7 @@ _e_keyrouter_query_tizen_key_table(void)
      }
 
    //KLDBG("Support Tizen Keymap\n");
-   while ( 0 < fscanf(fp_key_tables, "%s %d", keyname, &keycode))
+   while ( 0 < fscanf(fp_key_tables, "%s %d%*[^\n]c", keyname, &keycode))
      {
         key_count++;
         //KLDBG(" - [%s : %d]\n", keyname, keycode);
@@ -770,7 +770,7 @@ _e_keyrouter_query_tizen_key_table(void)
 
    for (i=0; i<key_count; i++)
      {
-        if (fscanf(fp_key_tables, "%s %d", keyname, &keycode) <= 0) continue;
+        if (fscanf(fp_key_tables, "%s %d%*[^\n]c", keyname, &keycode) <= 0) continue;
 
         key_size = sizeof(keyname);
 
