@@ -487,30 +487,34 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
    ec_focus = e_client_focused_get();
    surface_focus = _e_keyrouter_util_get_surface_from_eclient(ec_focus);
 
-   EINA_LIST_FOREACH(krt->HardKeys[keycode].top_ptr, l, key_node_data)
+   // Top position grab must need a focus surface.
+   if (surface_focus)
      {
-        if (key_node_data)
+        EINA_LIST_FOREACH(krt->HardKeys[keycode].top_ptr, l, key_node_data)
           {
-             if ((EINA_FALSE == krt->isWindowStackChanged) && (surface_focus == key_node_data->surface))
+             if (key_node_data)
                {
-                  _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
-                  KLDBG("TOPMOST (TOP_POSITION) Mode : Key %s (%d) ===> Surface (%p)\n",
-                           ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->surface);
+                  if ((EINA_FALSE == krt->isWindowStackChanged) && (surface_focus == key_node_data->surface))
+                    {
+                       _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
+                       KLDBG("TOPMOST (TOP_POSITION) Mode : Key %s (%d) ===> Surface (%p)\n",
+                                ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->surface);
 
-                  return EINA_TRUE;
+                       return EINA_TRUE;
+                    }
+                  krt->isWindowStackChanged = EINA_FALSE;
+
+                  c = e_comp_find_by_window(ev->window);
+                  if (_e_keyrouter_check_top_visible_window(c, ec_focus, keycode))
+                    {
+                       _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
+                       KLDBG("TOPMOST (TOP_POSITION) Mode : Key %s (%d) ===> Surface (%p)\n",
+                             ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode,key_node_data->surface);
+
+                       return EINA_TRUE;
+                    }
+                  break;
                }
-             krt->isWindowStackChanged = EINA_FALSE;
-
-             c = e_comp_find_by_window(ev->window);
-             if (_e_keyrouter_check_top_visible_window(c, ec_focus, keycode))
-               {
-                  _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
-                  KLDBG("TOPMOST (TOP_POSITION) Mode : Key %s (%d) ===> Surface (%p)\n",
-                        ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode,key_node_data->surface);
-
-                  return EINA_TRUE;
-               }
-             break;
           }
      }
 
@@ -535,7 +539,7 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
                     }
                   else
                     {
-                       if (key_node_data->wc != wl_resource_get_client(surface_focus))
+                       if ((surface_focus) && (key_node_data->wc != wl_resource_get_client(surface_focus)))
                          {
                             _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
                             KLDBG("SHARED Mode : Key %s(%d) ===> Surface (%p) WL_Client (%p)\n",
@@ -615,6 +619,12 @@ _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_cli
    else
      {
         wc_send = wl_resource_get_client(surface);
+     }
+
+   if (!wc_send)
+     {
+        KLDBG("surface: %p or wc: %p returns null wayland client\n", surface, wc);
+        return;
      }
 
    if (ECORE_EVENT_KEY_DOWN == type)
