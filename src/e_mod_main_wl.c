@@ -197,11 +197,11 @@ _e_keyrouter_cb_keygrab_set_list(struct wl_client *client, struct wl_resource *r
 
    wl_array_for_each(grab_request, grab_list)
      {
-        if (grab_request)
+        res = _e_keyrouter_keygrab_set(client, surface, grab_request->key, grab_request->mode);
+        KLDBG("Grab request using list  [key: %d, mode: %d, res: %d]\n", grab_request->key, grab_request->mode, res);
+        grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
+        if (grab_result)
           {
-             res = _e_keyrouter_keygrab_set(client, surface, grab_request->key, grab_request->mode);
-             KLDBG("Grab request using list  [key: %d, mode: %d, res: %d]\n", grab_request->key, grab_request->mode, res);
-             grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
              grab_result->request_data.key = grab_request->key;
              grab_result->request_data.mode = grab_request->mode;
              grab_result->err = res;
@@ -225,11 +225,11 @@ _e_keyrouter_cb_keygrab_unset_list(struct wl_client *client, struct wl_resource 
 
    wl_array_for_each(ungrab_request, ungrab_list)
      {
-        if (ungrab_request)
+        res = _e_keyrouter_keygrab_unset(client, surface, *ungrab_request);
+        KLDBG("Ungrab request using list  [key: %d, res: %d]\n", *ungrab_request, res);
+        grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
+        if (grab_result)
           {
-             res = _e_keyrouter_keygrab_unset(client, surface, *ungrab_request);
-             KLDBG("Ungrab request using list  [key: %d, res: %d]\n", *ungrab_request, res);
-             grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
              grab_result->request_data.key = *ungrab_request;
              grab_result->request_data.mode = TIZEN_KEYROUTER_MODE_NONE;
              grab_result->err = res;
@@ -828,7 +828,7 @@ _e_keyrouter_wl_array_length(const struct wl_array *array)
 
    wl_array_for_each(data, array)
      {
-        if (data) count++;
+        count++;
      }
 
    return count;
