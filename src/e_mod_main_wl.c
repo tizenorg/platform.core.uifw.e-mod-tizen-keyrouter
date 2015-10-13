@@ -50,7 +50,7 @@ _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, 
      }
 
    /* Check the given key range */
-   if (0 > key || MAX_HWKEYS < key )
+   if (MAX_HWKEYS <= key)
      {
         KLDBG("Invalid range of key ! (keycode:%d)\n", key);
         return TIZEN_KEYROUTER_ERROR_INVALID_KEY;
@@ -383,7 +383,7 @@ _e_keyrouter_process_key_event(void *event, int type)
 
    KLDBG("type=%s\n", (type == ECORE_EVENT_KEY_DOWN) ? "ECORE_EVENT_KEY_DOWN" : "ECORE_EVENT_KEY_UP");
 
-   if (0 > ev->keycode || MAX_HWKEYS < ev->keycode)
+   if (MAX_HWKEYS <= ev->keycode)
      {
         KLDBG("The key(%d) is too larger to process keyrouting: Invalid keycode\n", ev->keycode);
         return res;
@@ -773,6 +773,13 @@ _e_keyrouter_query_tizen_key_table(void)
         //KLDBG(" - [%s : %d]\n", keyname, keycode);
      }
 
+   if (MAX_HWKEYS <= key_count)
+     {
+        KLDBG("[ERR] key_count:%d exceeds limit of arrays!\n", key_count);
+        fclose(fp_key_tables);
+        return;
+     }
+
    krt->TizenHWKeys = E_NEW(E_Keyrouter_Tizen_HWKey, key_count);
    krt->numTizenHWKeys = key_count;
 
@@ -782,6 +789,15 @@ _e_keyrouter_query_tizen_key_table(void)
      {
         if (fscanf(fp_key_tables, "%s %d%*[^\n]c", keyname, &keycode) <= 0) continue;
 
+        if (MAX_HWKEYS <= (key_count + 8))
+          {
+             KLDBG("[ERR] keycode:%d exceeds limit of arrays!\n", keycode);
+             E_FREE(krt->TizenHWKeys);
+             krt->numTizenHWKeys = 0;
+             fclose(fp_key_tables);
+             return;
+          }
+
         key_size = sizeof(keyname);
 
         krt->TizenHWKeys[i].name = (char*)calloc(key_size, sizeof(char));
@@ -789,7 +805,10 @@ _e_keyrouter_query_tizen_key_table(void)
         if (!krt->TizenHWKeys[i].name)
           {
              KLDBG("Failed to allocate memory !\n");
-             continue;
+             E_FREE(krt->TizenHWKeys);
+             krt->numTizenHWKeys = 0;
+             fclose(fp_key_tables);
+             return;
           }
 
         strncpy(krt->TizenHWKeys[i].name, keyname, key_size);
