@@ -91,4 +91,6 @@ void e_keyrouter_remove_client_from_list(struct wl_resource *surface, struct wl_
 int e_keyrouter_add_client_destroy_listener(struct wl_client *client);
 int e_keyrouter_add_surface_destroy_listener(struct wl_resource *surface);
 
+Eina_Bool e_keyrouter_process_key_event(void *event, int type);
+
 #endif
