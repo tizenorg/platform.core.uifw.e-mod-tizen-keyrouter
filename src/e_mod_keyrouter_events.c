@@ -8,9 +8,12 @@ static Eina_Bool _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *e
 static Eina_Bool _e_keyrouter_send_key_events_release(int type, Ecore_Event_Key *ev);
 static void _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_client *wc, Ecore_Event_Key *ev);
 
+static Eina_Bool _e_keyrouter_send_key_events_register(int type, Ecore_Event_Key *ev);
+
 static Eina_Bool _e_keyrouter_is_key_grabbed(int key);
 static Eina_Bool _e_keyrouter_check_top_visible_window(E_Comp *c, E_Client *ec_focus, int arr_idx);
 static struct wl_resource *_e_keyrouter_util_get_surface_from_eclient(E_Client *client);
+static void _e_keyrouter_find_top_register_window(E_Comp *c, int arr_idx);
 
 static Eina_Bool
 _e_keyrouter_is_key_grabbed(int key)
@@ -19,15 +22,16 @@ _e_keyrouter_is_key_grabbed(int key)
      {
         return EINA_FALSE;
      }
-   if (!krt->HardKeys[key].excl_ptr &&
-        !krt->HardKeys[key].or_excl_ptr &&
-        !krt->HardKeys[key].top_ptr &&
-        !krt->HardKeys[key].shared_ptr)
+   if (krt->HardKeys[key].excl_ptr ||
+        krt->HardKeys[key].or_excl_ptr ||
+        krt->HardKeys[key].top_ptr ||
+        krt->HardKeys[key].shared_ptr ||
+        krt->HardKeys[key].registered_ptr)
      {
-        return EINA_FALSE;
+        return EINA_TRUE;
      }
 
-   return EINA_TRUE;
+   return EINA_FALSE;
 }
 
 /* Function for checking the existing grab for a key and sending key event(s) */
@@ -210,7 +214,89 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
         return EINA_TRUE;
      }
 
+   if (_e_keyrouter_send_key_events_register(type, ev))
+     {
+        return EINA_TRUE;
+     }
+
    return EINA_FALSE;
+}
+
+static Eina_Bool
+_e_keyrouter_send_key_events_register(int type, Ecore_Event_Key *ev)
+{
+   unsigned int keycode = ev->keycode;
+   E_Comp *c = NULL;
+
+   if (!krt->HardKeys[keycode].registered_ptr)
+     {
+        KLDBG("This keycode is not registered\n");
+        return EINA_FALSE;
+     }
+
+   c = e_comp_find_by_window(ev->window);
+
+   if (!krt->HardKeys[keycode].delivery_registered_surface)
+     {
+        _e_keyrouter_find_top_register_window(c, keycode);
+        KLDBG("Cannot find registered client for key(%d)\n", keycode);
+        if (!krt->HardKeys[keycode].delivery_registered_surface) return EINA_FALSE;
+     }
+
+   _e_keyrouter_send_key_event(type, krt->HardKeys[keycode].delivery_registered_surface, NULL, ev);
+   KLDBG("REGISTER Mode : Key %s(%d) ===> Surface (%p)\n",
+            ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, krt->HardKeys[keycode].delivery_registered_surface);
+
+   return EINA_TRUE;
+}
+
+static void
+_e_keyrouter_find_top_register_window(E_Comp *c, int arr_idx)
+{
+   E_Client *ec_top = NULL, *ec_focus = NULL;
+   Eina_List *l = NULL, *l_next = NULL;
+   E_Keyrouter_Key_List_NodePtr key_node_data = NULL;
+   Eina_Bool below_focus = EINA_FALSE;
+
+   ec_top = e_client_top_get(c);
+   ec_focus = e_client_focused_get();
+
+   while (ec_top)
+     {
+        KLDBG("Client: %p, surface: %p\n", ec_top, _e_keyrouter_util_get_surface_from_eclient(ec_top));
+
+        if (ec_top == ec_focus) below_focus = EINA_TRUE;
+
+        if (below_focus && !e_keyrouter_is_registered_window(_e_keyrouter_util_get_surface_from_eclient(ec_top)))
+          {
+             if (ec_top == ec_focus)
+               {
+                  KLDBG("%p surface is none registered surface and focus surface\n", _e_keyrouter_util_get_surface_from_eclient(ec_top));
+                  krt->HardKeys[arr_idx].delivery_registered_surface = NULL;
+                  return;
+               }
+             else
+               {
+                  KLDBG("%p surface is none registered surface and located above than registered window\n", _e_keyrouter_util_get_surface_from_eclient(ec_top));
+                  krt->HardKeys[arr_idx].delivery_registered_surface = _e_keyrouter_util_get_surface_from_eclient(ec_top);
+                  return;
+               }
+          }
+
+        EINA_LIST_FOREACH_SAFE(krt->HardKeys[arr_idx].registered_ptr, l, l_next, key_node_data)
+          {
+             if (!key_node_data) continue;
+
+             if (ec_top == e_pixmap_client_get(wl_resource_get_user_data(key_node_data->surface)))
+               {
+                  krt->HardKeys[arr_idx].delivery_registered_surface = key_node_data->surface;
+                  KLDBG("%p surface is a highest registered surface (key: %d)\n", key_node_data->surface, arr_idx);
+                  return;
+               }
+          }
+
+        ec_top = e_client_below_get(ec_top);
+     }
 }
 
 static Eina_Bool

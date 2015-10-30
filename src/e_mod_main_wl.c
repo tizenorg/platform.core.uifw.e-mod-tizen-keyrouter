@@ -233,6 +233,61 @@ _e_keyrouter_cb_keygrab_unset_list(struct wl_client *client, struct wl_resource 
    wl_array_release(&grab_result_list);
 }
 
+/* tizen_keyrouter_set_keyregister request handler */
+static void
+_e_keyrouter_cb_keyregister_set(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, uint32_t key)
+{
+   int res = 0;
+   int mode = 1;
+
+   KLDBG("Key set register request (surface: %p, key:%d)\n", surface, key);
+
+   if (!surface)
+     {
+        KLDBG("Key register do not support null surface\n");
+        res = TIZEN_KEYROUTER_ERROR_INVALID_SURFACE;
+        goto notify;
+     }
+
+   /* Check the given key range */
+   if (MAX_HWKEYS <= key)
+     {
+        KLDBG("Invalid range of key ! (keycode:%d)\n", key);
+        res =  TIZEN_KEYROUTER_ERROR_INVALID_KEY;
+        goto notify;
+     }
+
+   /* Check whether the key can be grabbed or not !
+    * Only key listed in Tizen key layout file can be grabbed. */
+   if (0 == krt->HardKeys[key].keycode)
+     {
+        KLDBG("Invalid key ! Disabled to register ! (keycode:%d)\n", key);
+        res =  TIZEN_KEYROUTER_ERROR_INVALID_KEY;
+        goto notify;
+     }
+
+   res = e_keyrouter_set_keyregister(client, resource, surface, key);
+
+notify:
+   KLDBG("Result of key set register request (surface: %p, key:%d): %d\n", surface, key, res);
+   tizen_keyrouter_send_keyregister_notify(resource, surface, key, mode, res);
+}
+
+/* tizen_keyrouter_unset_keyregister request handler */
+static void
+_e_keyrouter_cb_keyregister_unset(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, uint32_t key)
+{
+   int res = 0;
+   int mode = 0;
+
+   KLDBG("Key unset register request (surface: %p, key:%d)\n", surface, key);
+
+   res = e_keyrouter_unset_keyregister(client, resource, surface, key);
+   KLDBG("Result of key unset register request (surface: %p, key:%d): %d\n", surface, key, res);
+
+   tizen_keyrouter_send_keyregister_notify(resource, surface, key, mode, res);
+}
+
 
 /* Function for registering wl_client destroy listener */
 int
@@ -314,7 +369,9 @@ static const struct tizen_keyrouter_interface _e_keyrouter_implementation = {
    _e_keyrouter_cb_keygrab_unset,
    _e_keyrouter_cb_get_keygrab_status,
    _e_keyrouter_cb_keygrab_set_list,
-   _e_keyrouter_cb_keygrab_unset_list
+   _e_keyrouter_cb_keygrab_unset_list,
+   _e_keyrouter_cb_keyregister_set,
+   _e_keyrouter_cb_keyregister_unset
 };
 
 /* tizen_keyrouter global object destroy function */
@@ -564,6 +621,7 @@ _e_keyrouter_client_cb_stack(void *data, int type, void *event)
    //        ec, ec->visible, ec->focused, ec->take_focus, ec->want_focus, ec->bordername, ec->input_only);
 
    krt->isWindowStackChanged = EINA_TRUE;
+   e_keyrouter_clear_registered_window();
 
    return ECORE_CALLBACK_PASS_ON;
 }
