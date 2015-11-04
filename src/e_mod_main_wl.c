@@ -141,30 +141,11 @@ _e_keyrouter_cb_get_keygrab_status(struct wl_client *client, struct wl_resource 
    (void) resource;
    (void) surface;
    (void) key;
+   int mode = TIZEN_KEYROUTER_MODE_NONE;
 
-   if (!surface)
-     {
-        KLDBG("No surface !\n");
+   mode = e_keyrouter_find_key_in_list(surface, client, key);
 
-        /* Regarding exclusive mode, a client can request to grab a key without a surface.
-         * TODO : Need to check the (grab) mode */
-#if 0
-        if (mode < TIZEN_KEYROUTER_MODE_EXCLUSIVE)
-          {
-             KLDBG("Invalid surface ! (key=%d, mode=%d)\n", key, mode);
-             WL_KEYGRAB_NOTIFY_WITH_VAL(resource, surface, key, TIZEN_KEYROUTER_MODE_NONE, TIZEN_KEYROUTER_ERROR_INVALID_SURFACE);
-             return;
-          }
-        else
-          {
-             KLDBG("Null surface will be permitted only for EXCLUSIVE mode !\n");
-          }
-#endif
-     }
-
-   /* TODO : Need to check key grab status for the requesting wl client */
-
-   tizen_keyrouter_send_keygrab_notify(resource, surface, key, TIZEN_KEYROUTER_MODE_NONE, TIZEN_KEYROUTER_ERROR_NONE);
+   tizen_keyrouter_send_keygrab_notify(resource, surface, key, mode, TIZEN_KEYROUTER_ERROR_NONE);
 }
 
 static void
