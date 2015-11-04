@@ -5,6 +5,8 @@
 
 static int _e_keyrouter_find_duplicated_client(struct wl_resource *surface, struct wl_client *wc, uint32_t key, uint32_t mode);
 static const char *_mode_str_get(uint32_t mode);
+static Eina_Bool _e_keyrouter_find_key_in_list(struct wl_resource *surface, struct wl_client *wc, int key, int mode);
+static Eina_List **_e_keyrouter_get_list(int mode, int key);
 
 /* add a new key grab info to the list */
 int
@@ -103,6 +105,30 @@ _e_keyrouter_find_duplicated_client(struct wl_resource *surface, struct wl_clien
 
    return TIZEN_KEYROUTER_ERROR_NONE;
 }
+
+static Eina_Bool
+_e_keyrouter_find_key_in_list(struct wl_resource *surface, struct wl_client *wc, int key, int mode)
+{
+   Eina_List **list = NULL;
+   Eina_List *l = NULL, *l_next = NULL;
+   E_Keyrouter_Key_List_NodePtr key_node_data = NULL;
+
+   EINA_SAFETY_ON_TRUE_RETURN_VAL(((!surface) && (!wc)), EINA_FALSE);
+
+   list = _e_keyrouter_get_list(mode, key);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(list, EINA_FALSE);
+
+   EINA_LIST_FOREACH_SAFE(*list, l, l_next, key_node_data)
+     {
+        if (!key_node_data) continue;
+
+        if ((surface) && (surface == key_node_data->surface)) return EINA_TRUE;
+        else if ((wc == key_node_data->wc)) return EINA_TRUE;
+     }
+
+   return EINA_FALSE;
+}
+
 
 /* Function for prepending a new key grab information in the keyrouting list */
 int
@@ -233,28 +259,23 @@ e_keyrouter_find_and_remove_client_from_list(struct wl_resource *surface, struct
    Eina_List *l = NULL, *l_next = NULL;
    E_Keyrouter_Key_List_NodePtr key_node_data = NULL;
 
-   switch (mode)
-     {
-      case TIZEN_KEYROUTER_MODE_EXCLUSIVE:             list = &krt->HardKeys[key].excl_ptr;    break;
-      case TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE: list = &krt->HardKeys[key].or_excl_ptr; break;
-      case TIZEN_KEYROUTER_MODE_TOPMOST:               list = &krt->HardKeys[key].top_ptr;     break;
-      case TIZEN_KEYROUTER_MODE_SHARED:                list = &krt->HardKeys[key].shared_ptr;  break;
-      default:
-         KLDBG("Unknown key(%d) and grab mode(%d)\n", key, mode);
-         return;
-     }
+   list = _e_keyrouter_get_list(mode, key);
+   EINA_SAFETY_ON_NULL_RETURN(list);
 
    EINA_LIST_FOREACH_SAFE(*list, l, l_next, key_node_data)
      {
         if (!key_node_data) continue;
 
-        if ((surface) && (surface == key_node_data->surface))
+        if (surface)
           {
-             *list = eina_list_remove_list(*list, l);
-             E_FREE(key_node_data);
-             KLDBG("Remove a %s Mode Grabbed key(%d) by surface(%p)\n", _mode_str_get(mode), key, surface);
+             if (surface == key_node_data->surface)
+               {
+                  *list = eina_list_remove_list(*list, l);
+                  E_FREE(key_node_data);
+                  KLDBG("Remove a %s Mode Grabbed key(%d) by surface(%p)\n", _mode_str_get(mode), key, surface);
+               }
           }
-        else if ((wc) && (wc == key_node_data->wc))
+        else if ((wc == key_node_data->wc))
           {
              *list = eina_list_remove_list(*list, l);
              E_FREE(key_node_data);
@@ -267,6 +288,8 @@ void
 e_keyrouter_remove_client_from_list(struct wl_resource *surface, struct wl_client *wc)
 {
    int i = 0;
+   Eina_List *l = NULL, *l_next = NULL;
+   E_Keyrouter_Key_List_NodePtr key_node_data = NULL;
 
    EINA_SAFETY_ON_TRUE_RETURN(((!surface) && (!wc)));
 
@@ -274,12 +297,121 @@ e_keyrouter_remove_client_from_list(struct wl_resource *surface, struct wl_clien
      {
         if (0 == krt->HardKeys[i].keycode) continue;
 
-        e_keyrouter_find_and_remove_client_from_list(surface, wc, i, TIZEN_KEYROUTER_MODE_EXCLUSIVE);
-        e_keyrouter_find_and_remove_client_from_list(surface, wc, i, TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE);
-        e_keyrouter_find_and_remove_client_from_list(surface, wc, i, TIZEN_KEYROUTER_MODE_TOPMOST);
-        e_keyrouter_find_and_remove_client_from_list(surface, wc, i, TIZEN_KEYROUTER_MODE_SHARED);
+        EINA_LIST_FOREACH_SAFE(krt->HardKeys[i].excl_ptr, l, l_next, key_node_data)
+          {
+             if (!key_node_data) continue;
+
+             if (surface)
+               {
+                  if (surface == key_node_data->surface)
+                    {
+                       krt->HardKeys[i].excl_ptr = eina_list_remove_list(krt->HardKeys[i].excl_ptr, l);
+                       E_FREE(key_node_data);
+                       KLDBG("Remove a Exclusive Mode Grabbed key(%d) by surface(%p)\n", i, surface);
+                    }
+               }
+             else if ((wc == key_node_data->wc))
+               {
+                  krt->HardKeys[i].excl_ptr = eina_list_remove_list(krt->HardKeys[i].excl_ptr, l);
+                  E_FREE(key_node_data);
+                  KLDBG("Remove a Exclusive Mode Grabbed key(%d) by wc(%p)\n", i, wc);
+               }
+          }
+        EINA_LIST_FOREACH_SAFE(krt->HardKeys[i].or_excl_ptr, l, l_next, key_node_data)
+          {
+             if (!key_node_data) continue;
+
+             if (surface)
+               {
+                  if (surface == key_node_data->surface)
+                    {
+                       krt->HardKeys[i].or_excl_ptr = eina_list_remove_list(krt->HardKeys[i].or_excl_ptr, l);
+                       E_FREE(key_node_data);
+                       KLDBG("Remove a Overridable_Exclusive Mode Grabbed key(%d) by surface(%p)\n", i, surface);
+                    }
+               }
+             else if ((wc == key_node_data->wc))
+               {
+                  krt->HardKeys[i].or_excl_ptr = eina_list_remove_list(krt->HardKeys[i].or_excl_ptr, l);
+                  E_FREE(key_node_data);
+                  KLDBG("Remove a Overridable_Exclusive Mode Grabbed key(%d) by wc(%p)\n", i, wc);
+               }
+          }
+        EINA_LIST_FOREACH_SAFE(krt->HardKeys[i].top_ptr, l, l_next, key_node_data)
+          {
+             if (!key_node_data) continue;
+
+             if (surface)
+               {
+                  if (surface == key_node_data->surface)
+                    {
+                       krt->HardKeys[i].top_ptr = eina_list_remove_list(krt->HardKeys[i].top_ptr, l);
+                       E_FREE(key_node_data);
+                       KLDBG("Remove a Topmost Mode Grabbed key(%d) by surface(%p)\n", i, surface);
+                    }
+               }
+             else if ((wc == key_node_data->wc))
+               {
+                  krt->HardKeys[i].top_ptr = eina_list_remove_list(krt->HardKeys[i].top_ptr, l);
+                  E_FREE(key_node_data);
+                  KLDBG("Remove a Topmost Mode Grabbed key(%d) by wc(%p)\n", i, wc);
+               }
+          }
+        EINA_LIST_FOREACH_SAFE(krt->HardKeys[i].shared_ptr, l, l_next, key_node_data)
+          {
+             if (!key_node_data) continue;
+
+             if (surface)
+               {
+                  if (surface == key_node_data->surface)
+                    {
+                       krt->HardKeys[i].shared_ptr = eina_list_remove_list(krt->HardKeys[i].shared_ptr, l);
+                       E_FREE(key_node_data);
+                       KLDBG("Remove a Shared Mode Grabbed key(%d) by surface(%p)\n", i, surface);
+                    }
+               }
+             else if ((wc == key_node_data->wc))
+               {
+                  krt->HardKeys[i].shared_ptr = eina_list_remove_list(krt->HardKeys[i].shared_ptr, l);
+                  E_FREE(key_node_data);
+                  KLDBG("Remove a Shared Mode Grabbed key(%d) by wc(%p)\n", i, wc);
+               }
+          }
      }
 }
+
+int
+e_keyrouter_find_key_in_list(struct wl_resource *surface, struct wl_client *wc, uint32_t key)
+{
+   int mode = TIZEN_KEYROUTER_MODE_NONE;
+   Eina_Bool found = EINA_FALSE;
+
+   mode = TIZEN_KEYROUTER_MODE_EXCLUSIVE;
+   found = _e_keyrouter_find_key_in_list(surface, wc, key, mode);
+   if (found) goto finish;
+
+   mode = TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE;
+   found = _e_keyrouter_find_key_in_list(surface, wc, key, mode);
+   if (found) goto finish;
+
+   mode = TIZEN_KEYROUTER_MODE_TOPMOST;
+   found = _e_keyrouter_find_key_in_list(surface, wc, key, mode);
+   if (found) goto finish;
+
+   mode = TIZEN_KEYROUTER_MODE_SHARED;
+   found = _e_keyrouter_find_key_in_list(surface, wc, key, mode);
+   if (found) goto finish;
+
+   KLDBG("%d key is not grabbed by (surface: %p, wl_client: %p)\n",
+            key, surface, wc);
+   return TIZEN_KEYROUTER_MODE_NONE;
+
+finish:
+   KLDBG("Find %d key grabbed by (surface: %p, wl_client: %p) in %s mode\n",
+         key, surface, wc, _mode_str_get(mode));
+   return mode;
+}
+
 
 static const char *
 _mode_str_get(uint32_t mode)
@@ -296,4 +428,21 @@ _mode_str_get(uint32_t mode)
      }
 
    return str;
+}
+
+static Eina_List **
+_e_keyrouter_get_list(int mode, int key)
+{
+   Eina_List **list = NULL;
+
+   switch (mode)
+     {
+        case TIZEN_KEYROUTER_MODE_EXCLUSIVE:             list = &krt->HardKeys[key].excl_ptr;    break;
+        case TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE: list = &krt->HardKeys[key].or_excl_ptr; break;
+        case TIZEN_KEYROUTER_MODE_TOPMOST:               list = &krt->HardKeys[key].top_ptr;     break;
+        case TIZEN_KEYROUTER_MODE_SHARED:                list = &krt->HardKeys[key].shared_ptr;  break;
+        default: break;
+     }
+
+   return list;
 }
