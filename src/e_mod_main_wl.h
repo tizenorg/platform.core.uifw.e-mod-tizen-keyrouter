@@ -23,8 +23,7 @@ typedef struct _E_Keyrouter_Grab_Request E_Keyrouter_Grab_Request;
 typedef struct _E_Keyrouter_Grab_Result E_Keyrouter_Grab_Result;
 typedef struct _E_Keyrouter_Registered_Window_Info E_Keyrouter_Registered_Window_Info;
 
-#define TIZEN_KEYROUTER_MODE_PRESSED        TIZEN_KEYROUTER_MODE_EXCLUSIVE+1
-#define TIZEN_KEYROUTER_MODE_REGISTERED     TIZEN_KEYROUTER_MODE_PRESSED+1
+#define TIZEN_KEYROUTER_MODE_PRESSED        TIZEN_KEYROUTER_MODE_REGISTERED+1
 
 extern E_KeyrouterPtr krt;
 
@@ -56,8 +55,7 @@ struct _E_Keyrouter_Grabbed_Key
    Eina_List *top_ptr;
    Eina_List *shared_ptr;
    Eina_List *press_ptr;
-   Eina_List *registered_ptr;
-   struct wl_resource *delivery_registered_surface;
+   E_Keyrouter_Key_List_Node *registered_ptr;
 };
 
 struct _E_Keyrouter
@@ -105,9 +103,11 @@ int e_keyrouter_add_surface_destroy_listener(struct wl_resource *surface);
 
 Eina_Bool e_keyrouter_process_key_event(void *event, int type);
 
-int e_keyrouter_set_keyregister(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, uint32_t key);
-int e_keyrouter_unset_keyregister(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, uint32_t key);
+int e_keyrouter_set_keyregister(struct wl_client *client, struct wl_resource *surface, uint32_t key);
+int e_keyrouter_unset_keyregister(struct wl_resource *surface, struct wl_client *client, uint32_t key);
 Eina_Bool e_keyrouter_is_registered_window(struct wl_resource *surface);
 void e_keyrouter_clear_registered_window(void);
+
+struct wl_resource *e_keyrouter_util_get_surface_from_eclient(E_Client *client);
 
 #endif
