@@ -8,9 +8,11 @@ static Eina_Bool _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *e
 static Eina_Bool _e_keyrouter_send_key_events_release(int type, Ecore_Event_Key *ev);
 static void _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_client *wc, Ecore_Event_Key *ev);
 
+static Eina_Bool _e_keyrouter_send_key_events_register(int type, Ecore_Event_Key *ev);
+
 static Eina_Bool _e_keyrouter_is_key_grabbed(int key);
 static Eina_Bool _e_keyrouter_check_top_visible_window(E_Comp *c, E_Client *ec_focus, int arr_idx);
-static struct wl_resource *_e_keyrouter_util_get_surface_from_eclient(E_Client *client);
+static void _e_keyrouter_find_top_register_window(E_Comp *c, int arr_idx);
 
 static Eina_Bool
 _e_keyrouter_is_key_grabbed(int key)
@@ -19,15 +21,16 @@ _e_keyrouter_is_key_grabbed(int key)
      {
         return EINA_FALSE;
      }
-   if (!krt->HardKeys[key].excl_ptr &&
-        !krt->HardKeys[key].or_excl_ptr &&
-        !krt->HardKeys[key].top_ptr &&
-        !krt->HardKeys[key].shared_ptr)
+   if (krt->HardKeys[key].excl_ptr ||
+        krt->HardKeys[key].or_excl_ptr ||
+        krt->HardKeys[key].top_ptr ||
+        krt->HardKeys[key].shared_ptr ||
+        krt->HardKeys[key].registered_ptr)
      {
-        return EINA_FALSE;
+        return EINA_TRUE;
      }
 
-   return EINA_TRUE;
+   return EINA_FALSE;
 }
 
 /* Function for checking the existing grab for a key and sending key event(s) */
@@ -143,7 +146,7 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
      }
 
    ec_focus = e_client_focused_get();
-   surface_focus = _e_keyrouter_util_get_surface_from_eclient(ec_focus);
+   surface_focus = e_keyrouter_util_get_surface_from_eclient(ec_focus);
 
    // Top position grab must need a focus surface.
    if (surface_focus)
@@ -210,7 +213,31 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
         return EINA_TRUE;
      }
 
+   if (_e_keyrouter_send_key_events_register(type, ev))
+     {
+        return EINA_TRUE;
+     }
+
    return EINA_FALSE;
+}
+
+static Eina_Bool
+_e_keyrouter_send_key_events_register(int type, Ecore_Event_Key *ev)
+{
+   unsigned int keycode = ev->keycode;
+   E_Comp *c = NULL;
+
+   if (!krt->HardKeys[keycode].registered_ptr)
+     {
+        KLDBG("This keycode is not registered\n");
+        return EINA_FALSE;
+     }
+
+   _e_keyrouter_send_key_event(type, krt->HardKeys[keycode].registered_ptr->surface, NULL, ev);
+   KLDBG("REGISTER Mode : Key %s(%d) ===> Surface (%p)\n",
+            ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, krt->HardKeys[keycode].registered_ptr->surface);
+
+   return EINA_TRUE;
 }
 
 static Eina_Bool
@@ -308,8 +335,8 @@ _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_cli
      }
 }
 
-static struct wl_resource *
-_e_keyrouter_util_get_surface_from_eclient(E_Client *client)
+struct wl_resource *
+e_keyrouter_util_get_surface_from_eclient(E_Client *client)
 {
    EINA_SAFETY_ON_NULL_RETURN_VAL
      (client, NULL);

@@ -58,7 +58,7 @@ _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, 
      }
 
    /* Check whether the mode is valid or not */
-   if (TIZEN_KEYROUTER_MODE_NONE > mode || TIZEN_KEYROUTER_MODE_EXCLUSIVE < mode)
+   if (TIZEN_KEYROUTER_MODE_NONE > mode || TIZEN_KEYROUTER_MODE_REGISTERED < mode)
      {
         KLDBG("Invalid range of mode ! (mode:%d)\n", mode);
         return  TIZEN_KEYROUTER_ERROR_INVALID_MODE;
@@ -103,6 +103,9 @@ _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface
 
    /* SHARED grab */
    e_keyrouter_find_and_remove_client_from_list(surface, client, key, TIZEN_KEYROUTER_MODE_SHARED);
+
+   /* REGISTERED grab */
+   e_keyrouter_unset_keyregister(surface, client, key);
 
    return TIZEN_KEYROUTER_ERROR_NONE;
 }
@@ -545,6 +548,7 @@ _e_keyrouter_client_cb_stack(void *data, int type, void *event)
    //        ec, ec->visible, ec->focused, ec->take_focus, ec->want_focus, ec->bordername, ec->input_only);
 
    krt->isWindowStackChanged = EINA_TRUE;
+   e_keyrouter_clear_registered_window();
 
    return ECORE_CALLBACK_PASS_ON;
 }
