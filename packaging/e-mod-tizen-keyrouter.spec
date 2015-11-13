@@ -25,7 +25,7 @@ BuildRequires:  pkgconfig(tizen-extension-server)
 BuildRequires:  pkgconfig(dlog)
 %if "%{?profile}" == "common"
 %else
-BuildRequires:  xkb-data
+Requires:  xkb-tizen-data
 %endif
 %description
 This package is a the Enlightenment Keyrouter Module for Tizen.
