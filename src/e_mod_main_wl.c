@@ -58,7 +58,7 @@ _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, 
      }
 
    /* Check whether the mode is valid or not */
-   if (TIZEN_KEYROUTER_MODE_NONE > mode || TIZEN_KEYROUTER_MODE_REGISTERED < mode)
+   if (TIZEN_KEYROUTER_MODE_REGISTERED < mode)
      {
         KLDBG("Invalid range of mode ! (mode:%d)\n", mode);
         return  TIZEN_KEYROUTER_ERROR_INVALID_MODE;
