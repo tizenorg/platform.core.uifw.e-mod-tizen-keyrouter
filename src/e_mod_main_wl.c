@@ -469,13 +469,10 @@ _e_keyrouter_query_tizen_key_table(void)
      {
         if (fscanf(fp_key_tables, "%s %d%*[^\n]c", keyname, &keycode) <= 0) continue;
 
-        if (MAX_HWKEYS <= (key_count + 8))
+        if ((0 > keycode) || (MAX_HWKEYS <= (keycode + 8)))
           {
-             KLDBG("[ERR] keycode:%d exceeds limit of arrays!\n", keycode);
-             E_FREE(krt->TizenHWKeys);
-             krt->numTizenHWKeys = 0;
-             fclose(fp_key_tables);
-             return;
+             KLDBG("[ERR] Given keycode(%d) is invalid. It must be bigger than zero, smaller than the maximum value or equal to it.\n", keycode);
+             continue;
           }
 
         key_size = sizeof(keyname);
