@@ -44,19 +44,19 @@ e_keyrouter_process_key_event(void *event, int type)
 
    KLDBG("type=%s\n", (type == ECORE_EVENT_KEY_DOWN) ? "ECORE_EVENT_KEY_DOWN" : "ECORE_EVENT_KEY_UP");
 
-   if (MAX_HWKEYS <= ev->keycode)
+   if (krt->max_tizen_hwkeys < ev->keycode)
      {
         KLDBG("The key(%d) is too larger to process keyrouting: Invalid keycode\n", ev->keycode);
         return res;
      }
 
-   if ( (ECORE_EVENT_KEY_DOWN == type) && (!_e_keyrouter_is_key_grabbed(ev->keycode)) )
+   if ((ECORE_EVENT_KEY_DOWN == type) && (!_e_keyrouter_is_key_grabbed(ev->keycode)))
      {
         KLDBG("The press key(%d) isn't a grabbable key or has not been grabbed yet !\n", ev->keycode);
         return res;
      }
 
-   if ( (ECORE_EVENT_KEY_UP == type) && (!krt->HardKeys[ev->keycode].press_ptr) )
+   if ((ECORE_EVENT_KEY_UP == type) && (!krt->HardKeys[ev->keycode].press_ptr))
      {
         KLDBG("The release key(%d) isn't a grabbable key or has not been grabbed yet !\n", ev->keycode);
         return res;
