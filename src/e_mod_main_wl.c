@@ -6,7 +6,7 @@
 E_KeyrouterPtr krt = NULL;
 EAPI E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Keyrouter Module of Window Manager" };
 
-static Eina_Bool _e_keyrouter_init();
+static E_Keyrouter_Config_Data *_e_keyrouter_init(E_Module *m);
 static void _e_keyrouter_init_handlers(void);
 static void _e_keyrouter_deinit_handlers(void);
 
@@ -43,7 +43,7 @@ _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, 
      }
 
    /* Check the given key range */
-   if (MAX_HWKEYS <= key)
+   if (krt->maxTizenHWKeys < key)
      {
         KLDBG("Invalid range of key ! (keycode:%d)\n", key);
         return TIZEN_KEYROUTER_ERROR_INVALID_KEY;
@@ -347,15 +347,16 @@ _event_filter(void *data, void *loop_data EINA_UNUSED, int type, void *event)
    return EINA_TRUE;
 }
 
-static Eina_Bool
-_e_keyrouter_init()
+static E_Keyrouter_Config_Data *
+_e_keyrouter_init(E_Module *m)
 {
+   E_Keyrouter_Config_Data *kconfig = NULL;
    krt = E_NEW(E_Keyrouter, 1);
 
    if (!krt)
      {
         KLDBG("Failed to allocate memory for krt !\n");
-        return EINA_FALSE;
+        return NULL;
      }
 
    if (!e_comp)
@@ -374,46 +375,49 @@ _e_keyrouter_init()
 
    krt->cdata = cdata;
    krt->global = wl_global_create(cdata->wl.disp, &tizen_keyrouter_interface, 1, krt, _e_keyrouter_cb_bind);
-
    if (!krt->global)
      {
         KLDBG("Failed to create global !\n");
         goto err;
      }
 
+   kconfig = E_NEW(E_Keyrouter_Config_Data, 1);
+   EINA_SAFETY_ON_NULL_GOTO(kconfig, err);
+
+   kconfig->module = m;
+
+   e_keyrouter_conf_init(kconfig);
+   EINA_SAFETY_ON_NULL_GOTO(kconfig->conf, err);
+   krt->conf = kconfig;
+
    /* Get keyname and keycode pair from Tizen Key Layout file */
    _e_keyrouter_query_tizen_key_table();
-
-#if 0
-   int i = 0;
-   for (i=0 ; i < krt->numTizenHWKeys ; i++)
-     {
-        KLDBG("keycode[%d], keyname[%s] : Enabled to grab\n", krt->TizenHWKeys[i].keycode, krt->TizenHWKeys[i].name);
-     }
-#endif
 
    /* Add filtering mechanism */
    krt->ef_handler = ecore_event_filter_add(NULL, _event_filter, NULL, NULL);
    _e_keyrouter_init_handlers();
 
-   return EINA_TRUE;
+   return kconfig;
 
 err:
+   if (kconfig) E_FREE(kconfig);
    if (krt && krt->ef_handler) ecore_event_filter_del(krt->ef_handler);
    if (krt) E_FREE(krt);
 
-   return EINA_FALSE;
+   return NULL;
 }
 
 EAPI void *
 e_modapi_init(E_Module *m)
 {
-   return (_e_keyrouter_init() ? m : NULL);
+   return _e_keyrouter_init(m);
 }
 
 EAPI int
-e_modapi_shutdown(E_Module *m EINA_UNUSED)
+e_modapi_shutdown(E_Module *m)
 {
+   E_Keyrouter_Config_Data *kconfig = m->data;
+   e_keyrouter_conf_deinit(kconfig);
    _e_keyrouter_deinit_handlers();
    /* TODO: free allocated memory */
 
@@ -421,9 +425,14 @@ e_modapi_shutdown(E_Module *m EINA_UNUSED)
 }
 
 EAPI int
-e_modapi_save(E_Module *m EINA_UNUSED)
+e_modapi_save(E_Module *m)
 {
    /* Save something to be kept */
+   E_Keyrouter_Config_Data *kconfig = m->data;
+   e_config_domain_save("module.keyrouter",
+                        kconfig->conf_edd,
+                        kconfig->conf);
+
    return 1;
 }
 
@@ -431,70 +440,31 @@ e_modapi_save(E_Module *m EINA_UNUSED)
 static void
 _e_keyrouter_query_tizen_key_table(void)
 {
-   FILE *fp_key_tables = NULL;
-   char keyname[64] = {0, };
-   int key_count = 0;
-   int key_size = 0;
-   int keycode = 0;
-   int i = 0;
+   E_Keyrouter_Conf_Edd *kconf = krt->conf->conf;
+   Eina_List *l;
+   E_Keyrouter_Tizen_HWKey *data;
 
-   fp_key_tables = fopen(KEYLAYOUT_PATH, "r");
+   /* TODO: Make struct in HardKeys to pointer.
+                  If a key is defined, allocate memory to pointer,
+                  that makes to save unnecessary memory */
+   krt->HardKeys = E_NEW(E_Keyrouter_Grabbed_Key, kconf->max_keycode + KEYCAP + 1);
 
-   if (!fp_key_tables)
+   krt->numTizenHWKeys = kconf->num_keycode;
+   krt->maxTizenHWKeys = kconf->max_keycode + KEYCAP;
+
+   EINA_LIST_FOREACH(kconf->KeyList, l, data)
      {
-        KLDBG("Failed to read file (%s)\n", KEYLAYOUT_PATH);
-        return;
-     }
+        if (!data) continue;
 
-   //KLDBG("Support Tizen Keymap\n");
-   while ( 0 < fscanf(fp_key_tables, "%s %d%*[^\n]c", keyname, &keycode))
-     {
-        key_count++;
-        //KLDBG(" - [%s : %d]\n", keyname, keycode);
-     }
-
-   if (MAX_HWKEYS <= key_count)
-     {
-        KLDBG("[ERR] key_count:%d exceeds limit of arrays!\n", key_count);
-        fclose(fp_key_tables);
-        return;
-     }
-
-   krt->TizenHWKeys = E_NEW(E_Keyrouter_Tizen_HWKey, key_count);
-   krt->numTizenHWKeys = key_count;
-
-   fseek(fp_key_tables, 0, SEEK_SET);
-
-   for (i=0; i<key_count; i++)
-     {
-        if (fscanf(fp_key_tables, "%s %d%*[^\n]c", keyname, &keycode) <= 0) continue;
-
-        if ((0 > keycode) || (MAX_HWKEYS <= (keycode + 8)))
+        if (0 > data->keycode)
           {
-             KLDBG("[ERR] Given keycode(%d) is invalid. It must be bigger than zero, smaller than the maximum value or equal to it.\n", keycode);
+             KLDBG("[ERR] Given keycode(%d) is invalid. It must be bigger than zero, smaller than the maximum value or equal to it.\n", data->keycode);
              continue;
           }
 
-        key_size = sizeof(keyname);
-
-        krt->TizenHWKeys[i].name = (char*)calloc(key_size, sizeof(char));
-
-        if (!krt->TizenHWKeys[i].name)
-          {
-             KLDBG("Failed to allocate memory !\n");
-             E_FREE(krt->TizenHWKeys);
-             krt->numTizenHWKeys = 0;
-             fclose(fp_key_tables);
-             return;
-          }
-
-        strncpy(krt->TizenHWKeys[i].name, keyname, key_size);
-
-        krt->TizenHWKeys[i].keycode = keycode+8;
-        krt->HardKeys[keycode+8].keycode = keycode+8;
+        krt->HardKeys[data->keycode + KEYCAP].keycode = data->keycode + KEYCAP;
+        krt->HardKeys[data->keycode + KEYCAP].keyname = eina_stringshare_add(data->name);
      }
-
-   fclose(fp_key_tables);
 }
 
 static int

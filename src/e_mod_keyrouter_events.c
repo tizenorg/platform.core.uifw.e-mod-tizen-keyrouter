@@ -44,7 +44,7 @@ e_keyrouter_process_key_event(void *event, int type)
 
    KLDBG("type=%s\n", (type == ECORE_EVENT_KEY_DOWN) ? "ECORE_EVENT_KEY_DOWN" : "ECORE_EVENT_KEY_UP");
 
-   if (MAX_HWKEYS <= ev->keycode)
+   if (krt->maxTizenHWKeys < ev->keycode)
      {
         KLDBG("The key(%d) is too larger to process keyrouting: Invalid keycode\n", ev->keycode);
         return res;
