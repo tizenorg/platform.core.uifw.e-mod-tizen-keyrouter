@@ -4,7 +4,6 @@
 #include <tizen-extension-server-protocol.h>
 
 /* Temporary value of maximum number of HWKeys */
-#define MAX_HWKEYS 512
 
 #define CHECK_ERR(val) if (TIZEN_KEYROUTER_ERROR_NONE != val) return;
 #define CHECK_ERR_VAL(val) if (TIZEN_KEYROUTER_ERROR_NONE != val) return val;
@@ -12,6 +11,8 @@
 #define CHECK_NULL_VAL(val) if (!val) return val;
 
 #define KLDBG(msg, ARG...) DBG("[tizen_keyrouter][%s:%d] "msg, __FUNCTION__, __LINE__, ##ARG)
+
+#define KEYCAP 8
 
 typedef struct _E_Keyrouter E_Keyrouter;
 typedef struct _E_Keyrouter* E_KeyrouterPtr;
@@ -23,9 +24,27 @@ typedef struct _E_Keyrouter_Grab_Request E_Keyrouter_Grab_Request;
 typedef struct _E_Keyrouter_Grab_Result E_Keyrouter_Grab_Result;
 typedef struct _E_Keyrouter_Registered_Window_Info E_Keyrouter_Registered_Window_Info;
 
+typedef struct _E_Keyrouter_Conf_Edd E_Keyrouter_Conf_Edd;
+typedef struct _E_Keyrouter_Config_Data E_Keyrouter_Config_Data;
+
 #define TIZEN_KEYROUTER_MODE_PRESSED        TIZEN_KEYROUTER_MODE_REGISTERED+1
 
 extern E_KeyrouterPtr krt;
+
+struct _E_Keyrouter_Conf_Edd
+{
+   int num_keycode;
+   int max_keycode;
+   Eina_List *KeyList;
+};
+
+struct _E_Keyrouter_Config_Data
+{
+   E_Module *module;
+   E_Config_DD     *conf_edd;
+   E_Config_DD     *conf_hwkeys_edd;
+   E_Keyrouter_Conf_Edd          *conf;
+};
 
 struct _E_Keyrouter_Registered_Window_Info
 {
@@ -65,8 +84,9 @@ struct _E_Keyrouter
    Ecore_Event_Filter *ef_handler;
    Eina_List *handlers;
 
-   E_Keyrouter_Grabbed_Key HardKeys[MAX_HWKEYS];
-   E_Keyrouter_Tizen_HWKey *TizenHWKeys;
+   E_Keyrouter_Config_Data *conf;
+
+   E_Keyrouter_Grabbed_Key *HardKeys;
    Eina_List *surface_grab_client;
    Eina_List *none_surface_grab_client;
 
@@ -74,6 +94,7 @@ struct _E_Keyrouter
 
    Eina_Bool isWindowStackChanged;
    int numTizenHWKeys;
+   int maxTizenHWKeys;
 };
 
 struct _E_Keyrouter_Grab_Request {
@@ -110,5 +131,8 @@ Eina_Bool e_keyrouter_is_registered_window(struct wl_resource *surface);
 void e_keyrouter_clear_registered_window(void);
 
 struct wl_resource *e_keyrouter_util_get_surface_from_eclient(E_Client *client);
+
+void e_keyrouter_conf_init(E_Keyrouter_Config_Data *kconfig);
+void e_keyrouter_conf_deinit(E_Keyrouter_Config_Data *kconfig);
 
 #endif
