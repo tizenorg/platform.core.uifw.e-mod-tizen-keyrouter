@@ -21,6 +21,8 @@ BuildRequires:  pkgconfig(utilX)
 %if %{with wayland}
 BuildRequires:  pkgconfig(wayland-server)
 BuildRequires:  pkgconfig(tizen-extension-server)
+BuildRequires:  pkgconfig(cynara-client)
+BuildRequires:  pkgconfig(cynara-creds-socket)
 %endif
 BuildRequires:  pkgconfig(dlog)
 %if "%{?profile}" == "common"

@@ -2,6 +2,9 @@
 #define E_MOD_MAIN_H
 
 #include <tizen-extension-server-protocol.h>
+#include <cynara-session.h>
+#include <cynara-client.h>
+#include <cynara-creds-socket.h>
 
 /* Temporary value of maximum number of HWKeys */
 
@@ -85,14 +88,16 @@ struct _E_Keyrouter
    E_Keyrouter_Config_Data *conf;
 
    E_Keyrouter_Grabbed_Key *HardKeys;
-   Eina_List *surface_grab_client;
-   Eina_List *none_surface_grab_client;
+   Eina_List *grab_surface_list;
+   Eina_List *grab_client_list;
 
    Eina_List *registered_window_list;
 
    Eina_Bool isWindowStackChanged;
    int numTizenHWKeys;
    int max_tizen_hwkeys;
+
+   cynara *p_cynara;
 };
 
 struct _E_Keyrouter_Grab_Request {
