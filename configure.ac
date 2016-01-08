@@ -111,6 +111,7 @@ dnl ========================================================================
 dnl ========================================================================
 if test "x${have_wayland_only}" = "xyes"; then
   PKG_CHECK_MODULES(WAYLAND, [wayland-server, tizen-extension-server])
+  PKG_CHECK_MODULES(CYNARA, [cynara-client, cynara-creds-socket, cynara-session])
 fi
 
 release=$(pkg-config --variable=release enlightenment)

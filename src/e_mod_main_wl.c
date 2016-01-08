@@ -21,11 +21,30 @@ static void _e_keyrouter_wl_surface_cb_destroy(struct wl_listener *l, void *data
 static int _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, uint32_t key, uint32_t mode);
 static int _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface, uint32_t key);
 
+static void _e_keyrouter_util_cynara_log(const char *func_name, int err);
+static Eina_Bool _e_keyrouter_util_do_privilege_check(int socket_fd);
+
+#define E_KEYROUTER_CYNARA_ERROR_CHECK_GOTO(func_name, ret, label) \
+  do \
+    { \
+       if (EINA_UNLIKELY(CYNARA_API_SUCCESS != ret)) \
+          { \
+             _e_keyrouter_util_cynara_log(func_name, ret); \
+             goto label; \
+          } \
+    } \
+  while (0)
 
 static int
 _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, uint32_t key, uint32_t mode)
 {
    int res=0;
+
+   if (EINA_FALSE ==
+       _e_keyrouter_util_do_privilege_check(wl_client_connection_get_fd(wl_client_get_connection(client))))
+     {
+        return TIZEN_KEYROUTER_ERROR_NO_PERMISSION;
+     }
 
    if (!surface)
      {
@@ -75,6 +94,12 @@ _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, 
 static int
 _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface, uint32_t key)
 {
+   if (EINA_FALSE ==
+       _e_keyrouter_util_do_privilege_check(wl_client_connection_get_fd(wl_client_get_connection(client))))
+     {
+        return TIZEN_KEYROUTER_ERROR_NO_PERMISSION;
+     }
+
    if (!surface)
      {
         /* EXCLUSIVE grab */
@@ -353,6 +378,7 @@ _e_keyrouter_init(E_Module *m)
    E_Keyrouter_Config_Data *kconfig = NULL;
    krt = E_NEW(E_Keyrouter, 1);
    Eina_Bool res = EINA_FALSE;
+   int ret;
 
    if (!krt)
      {
@@ -400,6 +426,9 @@ _e_keyrouter_init(E_Module *m)
         goto err;
      }
 
+   ret = cynara_initialize(&krt->p_cynara, NULL);
+   E_KEYROUTER_CYNARA_ERROR_CHECK_GOTO("cynara_initialize", ret, err);
+
    return kconfig;
 
 err:
@@ -409,6 +438,7 @@ err:
         E_FREE(kconfig);
      }
    _e_keyrouter_deinit_handlers();
+   if (krt && krt->global) wl_global_destroy(krt->global);
    if (krt && krt->ef_handler) ecore_event_filter_del(krt->ef_handler);
    if (krt) E_FREE(krt);
 
@@ -427,6 +457,8 @@ e_modapi_shutdown(E_Module *m)
    E_Keyrouter_Config_Data *kconfig = m->data;
    e_keyrouter_conf_deinit(kconfig);
    _e_keyrouter_deinit_handlers();
+
+   cynara_finish(krt->p_cynara);
    /* TODO: free allocated memory */
 
    return 1;
@@ -574,4 +606,50 @@ _e_keyrouter_wl_surface_cb_destroy(struct wl_listener *l, void *data)
    l = NULL;
 
    krt->surface_grab_client = eina_list_remove(krt->surface_grab_client, surface);
+}
+
+static void
+_e_keyrouter_util_cynara_log(const char *func_name, int err)
+{
+#define CYNARA_BUFSIZE 128
+   char buf[CYNARA_BUFSIZE] = "\0";
+   int ret;
+
+   ret = cynara_strerror(err, buf, CYNARA_BUFSIZE);
+   if (ret != CYNARA_API_SUCCESS)
+     {
+        KLDBG("Failed to cynara_strerror: %d (error log about %s: %d)\n", ret, func_name, err);
+        return;
+     }
+   KLDBG("%s is failed: %s\n", func_name, buf);
+}
+
+static Eina_Bool
+_e_keyrouter_util_do_privilege_check(int socket_fd)
+{
+   int ret, pid;
+   char *clientSmack=NULL, *uid=NULL, *client_session=NULL;
+   Eina_Bool res = EINA_FALSE;
+
+   ret = cynara_creds_socket_get_client(socket_fd, CLIENT_METHOD_SMACK, &clientSmack);
+   E_KEYROUTER_CYNARA_ERROR_CHECK_GOTO("cynara_creds_socket_get_client", ret, finish);
+
+   ret = cynara_creds_socket_get_user(socket_fd, USER_METHOD_UID, &uid);
+   E_KEYROUTER_CYNARA_ERROR_CHECK_GOTO("cynara_creds_socket_get_user", ret, finish);
+
+   ret = cynara_creds_socket_get_pid(socket_fd, &pid);
+   E_KEYROUTER_CYNARA_ERROR_CHECK_GOTO("cynara_creds_socket_get_pid", ret, finish);
+
+   client_session = cynara_session_from_pid(pid);
+
+   ret = cynara_check(krt->p_cynara, clientSmack, client_session, uid, "http://tizen.org/privilege/keygrab");
+   if (CYNARA_API_ACCESS_ALLOWED == ret)
+     res = EINA_TRUE;
+
+finish:
+   E_FREE(client_session);
+   E_FREE(clientSmack);
+   E_FREE(uid);
+
+   return res;
 }
