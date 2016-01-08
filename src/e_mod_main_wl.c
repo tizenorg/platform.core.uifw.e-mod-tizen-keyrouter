@@ -21,11 +21,18 @@ static void _e_keyrouter_wl_surface_cb_destroy(struct wl_listener *l, void *data
 static int _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, uint32_t key, uint32_t mode);
 static int _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface, uint32_t key);
 
+static Eina_Bool _e_keyrouter_util_do_privilege_check(int socket_fd);
 
 static int
 _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, uint32_t key, uint32_t mode)
 {
    int res=0;
+
+   if (EINA_FALSE ==
+       _e_keyrouter_util_do_privilege_check(wl_client_connection_get_fd(wl_client_get_connection(client))))
+     {
+        return TIZEN_KEYROUTER_ERROR_NO_PERMISSION;
+     }
 
    if (!surface)
      {
@@ -75,6 +82,12 @@ _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, 
 static int
 _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface, uint32_t key)
 {
+   if (EINA_FALSE ==
+       _e_keyrouter_util_do_privilege_check(wl_client_connection_get_fd(wl_client_get_connection(client))))
+     {
+        return TIZEN_KEYROUTER_ERROR_NO_PERMISSION;
+     }
+
    if (!surface)
      {
         /* EXCLUSIVE grab */
@@ -400,6 +413,11 @@ _e_keyrouter_init(E_Module *m)
         goto err;
      }
 
+   if (CYNARA_API_SUCCESS != cynara_initialize(&krt->p_cynara, NULL))
+     {
+        KLDBG("Failed to initialize cynara\n");
+        goto err;
+     }
    return kconfig;
 
 err:
@@ -409,6 +427,7 @@ err:
         E_FREE(kconfig);
      }
    _e_keyrouter_deinit_handlers();
+   if (krt && krt->global) wl_global_destroy(krt->global);
    if (krt && krt->ef_handler) ecore_event_filter_del(krt->ef_handler);
    if (krt) E_FREE(krt);
 
@@ -427,6 +446,8 @@ e_modapi_shutdown(E_Module *m)
    E_Keyrouter_Config_Data *kconfig = m->data;
    e_keyrouter_conf_deinit(kconfig);
    _e_keyrouter_deinit_handlers();
+
+   cynara_finish(krt->p_cynara);
    /* TODO: free allocated memory */
 
    return 1;
@@ -574,4 +595,28 @@ _e_keyrouter_wl_surface_cb_destroy(struct wl_listener *l, void *data)
    l = NULL;
 
    krt->surface_grab_client = eina_list_remove(krt->surface_grab_client, surface);
+}
+
+static Eina_Bool
+_e_keyrouter_util_do_privilege_check(int socket_fd)
+{
+   int ret;
+   char *clientSmack=NULL, *uid=NULL, *client_session="";
+   Eina_Bool res = EINA_FALSE;
+
+   ret = cynara_creds_socket_get_client(socket_fd, CLIENT_METHOD_SMACK, &clientSmack);
+   EINA_SAFETY_ON_TRUE_GOTO(CYNARA_API_SUCCESS != ret, finish);
+
+   ret = cynara_creds_socket_get_user(socket_fd, USER_METHOD_UID, &uid);
+   EINA_SAFETY_ON_TRUE_GOTO(CYNARA_API_SUCCESS != ret, finish);
+
+   ret = cynara_check(krt->p_cynara, clientSmack, client_session, uid, "http://tizen.org/privilege/keygrab");
+   if (CYNARA_API_ACCESS_ALLOWED == ret)
+     res = EINA_TRUE;
+
+finish:
+   E_FREE(clientSmack);
+   E_FREE(uid);
+
+   return res;
 }
