@@ -106,6 +106,11 @@ if test "x${have_wayland_only}" != "xno"; then
   AC_DEFINE_UNQUOTED([HAVE_WAYLAND_ONLY],[1],[enable wayland-only version of enlightenment])
 fi
 
+# to include e_comp_wl.h
+if test "x${have_wayland_only}" != "xno"; then
+  AC_DEFINE_UNQUOTED([HAVE_WAYLAND],[1],[enable wayland support])
+fi
+
 dnl ========================================================================
 # checks for wayland only argument
 dnl ========================================================================

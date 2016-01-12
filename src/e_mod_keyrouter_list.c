@@ -458,7 +458,7 @@ _e_keyrouter_build_register_list(void)
    struct wl_resource *surface = NULL;
    Eina_Bool below_focus = EINA_FALSE;
 
-   ec_top = e_client_top_get(e_comp);
+   ec_top = e_client_top_get();
    ec_focus = e_client_focused_get();
 
    while (ec_top)

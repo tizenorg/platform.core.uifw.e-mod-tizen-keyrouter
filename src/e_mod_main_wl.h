@@ -77,7 +77,6 @@ struct _E_Keyrouter_Grabbed_Key
 
 struct _E_Keyrouter
 {
-   E_Comp_Data *cdata;
    struct wl_global *global;
    Ecore_Event_Filter *ef_handler;
    Eina_List *handlers;
@@ -107,10 +106,10 @@ struct _E_Keyrouter_Grab_Result {
 
 
 /* E Module */
-EAPI extern E_Module_Api e_modapi;
-EAPI void *e_modapi_init(E_Module *m);
-EAPI int   e_modapi_shutdown(E_Module *m);
-EAPI int   e_modapi_save(E_Module *m);
+E_API extern E_Module_Api e_modapi;
+E_API void *e_modapi_init(E_Module *m);
+E_API int   e_modapi_shutdown(E_Module *m);
+E_API int   e_modapi_save(E_Module *m);
 
 int e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *client, uint32_t key, uint32_t mode);
 int e_keyrouter_prepend_to_keylist(struct wl_resource *surface, struct wl_client *wc, uint32_t key, uint32_t mode);
