@@ -4,7 +4,7 @@
 #include <string.h>
 
 E_KeyrouterPtr krt = NULL;
-EAPI E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Keyrouter Module of Window Manager" };
+E_API E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Keyrouter Module of Window Manager" };
 
 static E_Keyrouter_Config_Data *_e_keyrouter_init(E_Module *m);
 static void _e_keyrouter_init_handlers(void);
@@ -366,16 +366,6 @@ _e_keyrouter_init(E_Module *m)
         goto err;
      }
 
-   E_Comp_Data *cdata = e_comp->wl_comp_data;
-
-   if (!cdata)
-     {
-        KLDBG("Failed to get wl_comp_data ! (e_comp->wl_comp_data == NULL)\n");
-        goto err;
-     }
-
-   krt->cdata = cdata;
-
    kconfig = E_NEW(E_Keyrouter_Config_Data, 1);
    EINA_SAFETY_ON_NULL_GOTO(kconfig, err);
 
@@ -393,7 +383,7 @@ _e_keyrouter_init(E_Module *m)
    krt->ef_handler = ecore_event_filter_add(NULL, _event_filter, NULL, NULL);
    _e_keyrouter_init_handlers();
 
-   krt->global = wl_global_create(cdata->wl.disp, &tizen_keyrouter_interface, 1, krt, _e_keyrouter_cb_bind);
+   krt->global = wl_global_create(e_comp_wl->wl.disp, &tizen_keyrouter_interface, 1, krt, _e_keyrouter_cb_bind);
    if (!krt->global)
      {
         KLDBG("Failed to create global !\n");
@@ -415,13 +405,13 @@ err:
    return NULL;
 }
 
-EAPI void *
+E_API void *
 e_modapi_init(E_Module *m)
 {
    return _e_keyrouter_init(m);
 }
 
-EAPI int
+E_API int
 e_modapi_shutdown(E_Module *m)
 {
    E_Keyrouter_Config_Data *kconfig = m->data;
@@ -432,7 +422,7 @@ e_modapi_shutdown(E_Module *m)
    return 1;
 }
 
-EAPI int
+E_API int
 e_modapi_save(E_Module *m)
 {
    /* Save something to be kept */

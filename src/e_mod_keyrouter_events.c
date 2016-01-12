@@ -11,8 +11,8 @@ static void _e_keyrouter_send_key_event(int type, struct wl_resource *surface, s
 static Eina_Bool _e_keyrouter_send_key_events_register(int type, Ecore_Event_Key *ev);
 
 static Eina_Bool _e_keyrouter_is_key_grabbed(int key);
-static Eina_Bool _e_keyrouter_check_top_visible_window(E_Comp *c, E_Client *ec_focus, int arr_idx);
-static void _e_keyrouter_find_top_register_window(E_Comp *c, int arr_idx);
+static Eina_Bool _e_keyrouter_check_top_visible_window(E_Client *ec_focus, int arr_idx);
+static void _e_keyrouter_find_top_register_window(int arr_idx);
 
 static Eina_Bool
 _e_keyrouter_is_key_grabbed(int key)
@@ -116,7 +116,6 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
    unsigned int keycode = ev->keycode;
    struct wl_resource *surface_focus = NULL;
    E_Client *ec_focus = NULL;
-   E_Comp *c = NULL;
 
    E_Keyrouter_Key_List_NodePtr key_node_data;
    Eina_List *l = NULL;
@@ -165,8 +164,7 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
                     }
                   krt->isWindowStackChanged = EINA_FALSE;
 
-                  c = e_comp_find_by_window(ev->window);
-                  if (_e_keyrouter_check_top_visible_window(c, ec_focus, keycode))
+                  if (_e_keyrouter_check_top_visible_window(ec_focus, keycode))
                     {
                        _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
                        KLDBG("TOPMOST (TOP_POSITION) Mode : Key %s (%d) ===> Surface (%p)\n",
@@ -225,7 +223,6 @@ static Eina_Bool
 _e_keyrouter_send_key_events_register(int type, Ecore_Event_Key *ev)
 {
    unsigned int keycode = ev->keycode;
-   E_Comp *c = NULL;
 
    if (!krt->HardKeys[keycode].registered_ptr)
      {
@@ -241,13 +238,13 @@ _e_keyrouter_send_key_events_register(int type, Ecore_Event_Key *ev)
 }
 
 static Eina_Bool
-_e_keyrouter_check_top_visible_window(E_Comp *c, E_Client *ec_focus, int arr_idx)
+_e_keyrouter_check_top_visible_window(E_Client *ec_focus, int arr_idx)
 {
    E_Client *ec_top = NULL;
    Eina_List *l = NULL, *l_next = NULL;
    E_Keyrouter_Key_List_NodePtr key_node_data = NULL;
 
-   ec_top = e_client_top_get(c);
+   ec_top = e_client_top_get();
    KLDBG("Top Client: %p\n", ec_top);
 
    while (ec_top)
@@ -264,7 +261,7 @@ _e_keyrouter_check_top_visible_window(E_Comp *c, E_Client *ec_focus, int arr_idx
           {
              if (key_node_data)
                {
-                  if (ec_top == e_pixmap_client_get(wl_resource_get_user_data(key_node_data->surface)))
+                  if (ec_top == wl_resource_get_user_data(key_node_data->surface))
                     {
                        krt->HardKeys[arr_idx].top_ptr = eina_list_promote_list(krt->HardKeys[arr_idx].top_ptr, l);
                        KLDBG("Move a client(%p) to first index of list(key: %d)\n",
@@ -322,8 +319,8 @@ _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_cli
         evtype = WL_KEYBOARD_KEY_STATE_RELEASED;
      }
 
-   serial = wl_display_next_serial(krt->cdata->wl.disp);
-   EINA_LIST_FOREACH(krt->cdata->kbd.resources, l, res)
+   serial = wl_display_next_serial(e_comp_wl->wl.disp);
+   EINA_LIST_FOREACH(e_comp_wl->kbd.resources, l, res)
      {
         if (res)
           {
