@@ -253,7 +253,13 @@ e_keyrouter_prepend_to_keylist(struct wl_resource *surface, struct wl_client *wc
              e_keyrouter_add_surface_destroy_listener(surface);
              /* TODO: if failed add surface_destory_listener, remove keygrabs */
           }
+        /* Add a client destroy listener if cynara is not enabled.
+           If cynara is enabled, client destroy listener is added at privilege checking time */
+#ifdef ENABLE_CYNARA
+        else if (!krt->p_cynara && wc)
+#else
         else if (wc)
+#endif
           {
              KLDBG("Add a client(%p) destory listener\n", wc);
              e_keyrouter_add_client_destroy_listener(wc);
