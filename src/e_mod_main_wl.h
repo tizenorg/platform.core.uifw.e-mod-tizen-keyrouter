@@ -16,6 +16,9 @@
 #define CHECK_NULL(val) if (!val) return;
 #define CHECK_NULL_VAL(val) if (!val) return val;
 
+#define KLERR(msg, ARG...) ERR("[tizen_keyrouter][%s:%d] "msg, __FUNCTION__, __LINE__, ##ARG)
+#define KLWRN(msg, ARG...) WRN("[tizen_keyrouter][%s:%d] "msg, __FUNCTION__, __LINE__, ##ARG)
+#define KLINF(msg, ARG...) INF("[tizen_keyrouter][%s:%d] "msg, __FUNCTION__, __LINE__, ##ARG)
 #define KLDBG(msg, ARG...) DBG("[tizen_keyrouter][%s:%d] "msg, __FUNCTION__, __LINE__, ##ARG)
 
 typedef struct _E_Keyrouter E_Keyrouter;
