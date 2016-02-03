@@ -2,6 +2,7 @@
 #define E_MOD_MAIN_H
 
 #include <tizen-extension-server-protocol.h>
+#include <e.h>
 #ifdef ENABLE_CYNARA
 #include <cynara-session.h>
 #include <cynara-client.h>

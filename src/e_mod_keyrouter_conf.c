@@ -1,5 +1,4 @@
 #define E_COMP_WL
-#include "e.h"
 #include "e_mod_main_wl.h"
 
 void
