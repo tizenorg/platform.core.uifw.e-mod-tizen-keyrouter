@@ -9,6 +9,16 @@
 #include <cynara-creds-socket.h>
 #endif
 
+#ifdef ENABLE_TTRACE
+#include <ttrace.h>
+
+#define TRACE_BEGIN(NAME) traceBegin(TTRACE_TAG_INPUT, "INPUT:KRT:"#NAME)
+#define TRACE_END() traceEnd(TTRACE_TAG_INPUT)
+#else
+#define TRACE_BEGIN(NAME)
+#define TRACE_END()
+#endif
+
 /* Temporary value of maximum number of HWKeys */
 
 #define CHECK_ERR(val) if (TIZEN_KEYROUTER_ERROR_NONE != val) return;

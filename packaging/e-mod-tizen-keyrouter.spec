@@ -11,6 +11,7 @@ Source0: %{name}-%{version}.tar.gz
 License: BSD-2-Clause
 BuildRequires: pkgconfig(enlightenment)
 BuildRequires:  gettext
+BuildRequires:  pkgconfig(ttrace)
 %if %{with x}
 BuildRequires:  pkgconfig(x11)
 BuildRequires:  pkgconfig(xi)
