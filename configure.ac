@@ -91,6 +91,14 @@ AC_SUBST(ENLIGHTENMENT_LIBS)
 #AC_MSG_CHECKING([Which edje_cc to use])
 #AC_MSG_RESULT(${EDJE_CC})
 
+# Checks for ttrace header files
+PKG_CHECK_MODULES(TTRACE,
+		[ttrace],
+		[have_ttrace="yes"], [have_ttrace="no"])
+
+if test "x$have_ttrace" = "xyes"; then
+	AC_DEFINE(ENABLE_TTRACE, 1, [ttrace available])
+fi
 
 dnl ========================================================================
 # checks for wayland only argument
