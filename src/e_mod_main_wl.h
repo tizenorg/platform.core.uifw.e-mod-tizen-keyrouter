@@ -9,6 +9,13 @@
 #include <cynara-creds-socket.h>
 #endif
 
+#ifdef TRACE_BEGIN
+#undef TRACE_BEGIN
+#endif
+#ifdef TRACE_END
+#undef TRACE_END
+#endif
+
 #ifdef ENABLE_TTRACE
 #include <ttrace.h>
 
