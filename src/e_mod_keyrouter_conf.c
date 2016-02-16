@@ -15,6 +15,7 @@ e_keyrouter_conf_init(E_Keyrouter_Config_Data *kconfig)
 #define D kconfig->conf_hwkeys_edd
    E_CONFIG_VAL(D, T, name, STR);
    E_CONFIG_VAL(D, T, keycode, INT);
+   E_CONFIG_VAL(D, T, privcheck, INT);
 
    kconfig->conf_edd = E_CONFIG_DD_NEW("Keyrouter_Config", E_Keyrouter_Conf_Edd);
 #undef T

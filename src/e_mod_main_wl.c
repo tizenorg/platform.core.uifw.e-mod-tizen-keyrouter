@@ -22,7 +22,7 @@ static int _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resour
 
 #ifdef ENABLE_CYNARA
 static void _e_keyrouter_util_cynara_log(const char *func_name, int err);
-static Eina_Bool _e_keyrouter_util_do_privilege_check(struct wl_client *client, int socket_fd, uint32_t mode);
+static Eina_Bool _e_keyrouter_util_do_privilege_check(struct wl_client *client, int socket_fd, uint32_t mode, uint32_t keycode);
 
 #define E_KEYROUTER_CYNARA_ERROR_CHECK_GOTO(func_name, ret, label) \
   do \
@@ -43,7 +43,7 @@ _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, 
 
 #ifdef ENABLE_CYNARA
    if (EINA_FALSE == _e_keyrouter_util_do_privilege_check(client,
-                       wl_client_get_fd(client), mode))
+                       wl_client_get_fd(client), mode, key))
      {
         return TIZEN_KEYROUTER_ERROR_NO_PERMISSION;
      }
@@ -99,7 +99,7 @@ _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface
 
 #ifdef ENABLE_CYNARA
    if (EINA_FALSE == _e_keyrouter_util_do_privilege_check(client,
-                       wl_client_get_fd(client), TIZEN_KEYROUTER_MODE_NONE))
+                       wl_client_get_fd(client), TIZEN_KEYROUTER_MODE_NONE, key))
      {
         return TIZEN_KEYROUTER_ERROR_NONE;
      }
@@ -512,6 +512,7 @@ _e_keyrouter_query_tizen_key_table(void)
 
         krt->HardKeys[data->keycode].keycode = data->keycode;
         krt->HardKeys[data->keycode].keyname = eina_stringshare_add(data->name);
+        krt->HardKeys[data->keycode].privcheck = data->privcheck ? EINA_TRUE : EINA_FALSE;
      }
 
    TRACE_END();
@@ -635,7 +636,7 @@ _e_keyrouter_util_cynara_log(const char *func_name, int err)
 }
 
 static Eina_Bool
-_e_keyrouter_util_do_privilege_check(struct wl_client *client, int socket_fd, uint32_t mode)
+_e_keyrouter_util_do_privilege_check(struct wl_client *client, int socket_fd, uint32_t mode, uint32_t keycode)
 {
    int ret, pid, retry_cnt=0;
    char *clientSmack=NULL, *uid=NULL, *client_session=NULL;
@@ -646,6 +647,9 @@ _e_keyrouter_util_do_privilege_check(struct wl_client *client, int socket_fd, ui
 
    /* Top position grab is always allowed. This mode do not need privilege.*/
    if (mode == TIZEN_KEYROUTER_MODE_TOPMOST)
+     return EINA_TRUE;
+
+   if (krt->HardKeys[keycode].privcheck == EINA_FALSE)
      return EINA_TRUE;
 
    /* If initialize cynara is failed, allow keygrabs regardless of the previlege permition. */
