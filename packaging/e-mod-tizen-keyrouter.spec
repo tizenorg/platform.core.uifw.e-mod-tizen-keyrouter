@@ -46,6 +46,7 @@ export LDFLAGS+=" -Wl,--hash-style=both -Wl,--as-needed -Wl,--rpath=/usr/lib"
 %if %{with wayland}
 %configure --prefix=/usr \
            --enable-wayland-only \
+           --enable-cynara \
            --with-tizen-keylayout-file=/usr/share/X11/xkb/tizen_key_layout.txt
 %else
 %configure --prefix=/usr \
