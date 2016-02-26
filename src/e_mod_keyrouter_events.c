@@ -39,8 +39,6 @@ e_keyrouter_process_key_event(void *event, int type)
    Eina_Bool res = EINA_TRUE;
    Ecore_Event_Key *ev = event;
 
-   TRACE_BEGIN(e_keyrouter_process_key_event);
-
    if (!ev) goto finish;
 
    KLDBG("[%s] keyname: %s, key: %s, keycode: %d\n", (type == ECORE_EVENT_KEY_DOWN) ? "KEY_PRESS" : "KEY_RELEASE", ev->keyname, ev->key, ev->keycode);
@@ -69,7 +67,6 @@ e_keyrouter_process_key_event(void *event, int type)
     res = EINA_FALSE;
 
 finish:
-   TRACE_END();
    return res;
 }
 
@@ -99,12 +96,10 @@ _e_keyrouter_send_key_events_release(int type, Ecore_Event_Key *ev)
      {
         if (key_node_data)
           {
-             TRACE_BEGIN(_e_keyrouter_send_key_event_release);
              _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
              KLINF("Release Pair : Key %s(%s:%d) ===> E_Client (%p) WL_Client (%p)\n",
                       ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode, key_node_data->surface, key_node_data->wc);
              E_FREE(key_node_data);
-             TRACE_END();
           }
      }
    krt->HardKeys[ev->keycode].press_ptr = NULL;
@@ -126,13 +121,10 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
      {
         if (key_node_data)
           {
-             TRACE_BEGIN(_e_keyrouter_send_key_event_exclusive);
-
              _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
              KLINF("EXCLUSIVE Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p)\n",
                       ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode, key_node_data->surface, key_node_data->wc);
 
-             TRACE_END();
              return EINA_TRUE;
           }
      }
@@ -141,12 +133,10 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
      {
         if (key_node_data)
           {
-             TRACE_BEGIN(_e_keyrouter_send_key_event_or_exclusive);
              _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
              KLINF("OVERRIDABLE_EXCLUSIVE Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p)\n",
                      ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode, key_node_data->surface, key_node_data->wc);
 
-             TRACE_END();
              return EINA_TRUE;
           }
      }
@@ -163,24 +153,20 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
                {
                   if ((EINA_FALSE == krt->isWindowStackChanged) && (surface_focus == key_node_data->surface))
                     {
-                       TRACE_BEGIN(_e_keyrouter_send_key_event_topposition);
                        _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
                        KLINF("TOPMOST (TOP_POSITION) Mode : Key %s (%s:%d) ===> Surface (%p)\n",
                                 ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode, key_node_data->surface);
 
-                       TRACE_END();
                        return EINA_TRUE;
                     }
                   krt->isWindowStackChanged = EINA_FALSE;
 
                   if (_e_keyrouter_check_top_visible_window(ec_focus, keycode))
                     {
-                       TRACE_BEGIN(_e_keyrouter_send_key_event_topposition);
                        _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
                        KLINF("TOPMOST (TOP_POSITION) Mode : Key %s (%s:%d) ===> Surface (%p)\n",
                              ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,key_node_data->surface);
 
-                       TRACE_END();
                        return EINA_TRUE;
                     }
                   break;
@@ -202,22 +188,18 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
                     {
                        if (key_node_data->surface != surface_focus)
                          {
-                            TRACE_BEGIN(_e_keyrouter_send_key_event_shared);
                             _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
                             KLINF("SHARED Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p)\n",
                                      ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode, key_node_data->surface, key_node_data->wc);
-                            TRACE_END();
                          }
                     }
                   else
                     {
                        if ((surface_focus) && (key_node_data->wc != wl_resource_get_client(surface_focus)))
                          {
-                            TRACE_BEGIN(_e_keyrouter_send_key_event_shared);
                             _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
                             KLINF("SHARED Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p)\n",
                                      ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode, key_node_data->surface, key_node_data->wc);
-                            TRACE_END();
                          }
                     }
                }
@@ -245,13 +227,9 @@ _e_keyrouter_send_key_events_register(int type, Ecore_Event_Key *ev)
         return EINA_FALSE;
      }
 
-   TRACE_BEGIN(_e_keyrouter_send_key_event_register);
-
    _e_keyrouter_send_key_event(type, krt->HardKeys[keycode].registered_ptr->surface, NULL, ev);
    KLINF("REGISTER Mode : Key %s(%s:%d) ===> Surface (%p)\n",
             ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode, krt->HardKeys[keycode].registered_ptr->surface);
-
-   TRACE_END();
 
    return EINA_TRUE;
 }
@@ -344,7 +322,9 @@ _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_cli
              if (wl_resource_get_client(res) != wc_send) continue;
 
              KLDBG("[time: %d] res: %p, serial: %d send a key(%d):%d to wl_client:%p\n", ev->timestamp, res, serial, (ev->keycode)-8, evtype, wc_send);
+             TRACE_INPUT_BEGIN(_e_keyrouter_send_key_event);
              wl_keyboard_send_key(res, serial, ev->timestamp, ev->keycode-8, evtype);
+             TRACE_INPUT_END();
           }
      }
 }

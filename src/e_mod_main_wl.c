@@ -140,12 +140,12 @@ _e_keyrouter_cb_keygrab_set(struct wl_client *client, struct wl_resource *resour
 {
    int res = 0;
 
-   TRACE_BEGIN(_e_keyrouter_cb_keygrab_set);
+   TRACE_INPUT_BEGIN(_e_keyrouter_cb_keygrab_set);
    KLINF("Key grab request (client: %p, surface: %p, key:%d, mode:%d)\n", client, surface, key, mode);
 
    res = _e_keyrouter_keygrab_set(client, surface, key, mode);
 
-   TRACE_END();
+   TRACE_INPUT_END();
    tizen_keyrouter_send_keygrab_notify(resource, surface, key, mode, res);
 }
 
@@ -155,12 +155,12 @@ _e_keyrouter_cb_keygrab_unset(struct wl_client *client, struct wl_resource *reso
 {
    int res = 0;
 
-   TRACE_BEGIN(_e_keyrouter_cb_keygrab_unset);
+   TRACE_INPUT_BEGIN(_e_keyrouter_cb_keygrab_unset);
    KLINF("Key ungrab request (client: %p, surface: %p, key:%d)\n", client, surface, key);
 
    res = _e_keyrouter_keygrab_unset(client, surface, key);
 
-   TRACE_END();
+   TRACE_INPUT_END();
    tizen_keyrouter_send_keygrab_notify(resource, surface, key, TIZEN_KEYROUTER_MODE_NONE, res);
 }
 
@@ -174,10 +174,10 @@ _e_keyrouter_cb_get_keygrab_status(struct wl_client *client, struct wl_resource 
    (void) key;
    int mode = TIZEN_KEYROUTER_MODE_NONE;
 
-   TRACE_BEGIN(_e_keyrouter_cb_get_keygrab_status);
+   TRACE_INPUT_BEGIN(_e_keyrouter_cb_get_keygrab_status);
    mode = e_keyrouter_find_key_in_list(surface, client, key);
 
-   TRACE_END();
+   TRACE_INPUT_END();
    tizen_keyrouter_send_keygrab_notify(resource, surface, key, mode, TIZEN_KEYROUTER_ERROR_NONE);
 }
 
@@ -189,7 +189,7 @@ _e_keyrouter_cb_keygrab_set_list(struct wl_client *client, struct wl_resource *r
    E_Keyrouter_Grab_Request *grab_request = NULL;
    int res = TIZEN_KEYROUTER_ERROR_NONE;
 
-   TRACE_BEGIN(_e_keyrouter_cb_keygrab_set_list);
+   TRACE_INPUT_BEGIN(_e_keyrouter_cb_keygrab_set_list);
 
    wl_array_init(&grab_result_list);
 
@@ -218,7 +218,7 @@ _e_keyrouter_cb_keygrab_set_list(struct wl_client *client, struct wl_resource *r
      }
 
 send_notify:
-   TRACE_END();
+   TRACE_INPUT_END();
    tizen_keyrouter_send_keygrab_notify_list(resource, surface, &grab_result_list);
    wl_array_release(&grab_result_list);
 }
@@ -231,7 +231,7 @@ _e_keyrouter_cb_keygrab_unset_list(struct wl_client *client, struct wl_resource 
    int *ungrab_request = NULL;
    int res = TIZEN_KEYROUTER_ERROR_NONE;
 
-   TRACE_BEGIN(_e_keyrouter_cb_keygrab_unset_list);
+   TRACE_INPUT_BEGIN(_e_keyrouter_cb_keygrab_unset_list);
 
    wl_array_init(&grab_result_list);
 
@@ -248,7 +248,7 @@ _e_keyrouter_cb_keygrab_unset_list(struct wl_client *client, struct wl_resource 
           }
      }
 
-   TRACE_END();
+   TRACE_INPUT_END();
    tizen_keyrouter_send_keygrab_notify_list(resource, surface, &grab_result_list);
    wl_array_release(&grab_result_list);
 }
@@ -383,12 +383,12 @@ _e_keyrouter_init(E_Module *m)
    Eina_Bool res = EINA_FALSE;
    int ret;
 
-   TRACE_BEGIN(_e_keyrouter_init);
+   TRACE_INPUT_BEGIN(_e_keyrouter_init);
 
    if (!krt)
      {
         KLERR("Failed to allocate memory for krt !\n");
-        TRACE_END();
+        TRACE_INPUT_END();
         return NULL;
      }
 
@@ -431,7 +431,7 @@ _e_keyrouter_init(E_Module *m)
      }
 #endif
 
-   TRACE_END();
+   TRACE_INPUT_END();
    return kconfig;
 
 err:
@@ -444,7 +444,7 @@ err:
    if (krt && krt->ef_handler) ecore_event_filter_del(krt->ef_handler);
    if (krt) E_FREE(krt);
 
-   TRACE_END();
+   TRACE_INPUT_END();
    return NULL;
 }
 
@@ -489,8 +489,6 @@ _e_keyrouter_query_tizen_key_table(void)
    Eina_List *l;
    E_Keyrouter_Tizen_HWKey *data;
 
-   TRACE_BEGIN(_e_keyrouter_query_tizen_key_table);
-
    /* TODO: Make struct in HardKeys to pointer.
                   If a key is defined, allocate memory to pointer,
                   that makes to save unnecessary memory */
@@ -515,7 +513,6 @@ _e_keyrouter_query_tizen_key_table(void)
         krt->HardKeys[data->keycode].no_privcheck = data->no_privcheck ? EINA_TRUE : EINA_FALSE;
      }
 
-   TRACE_END();
    return EINA_TRUE;
 }
 
