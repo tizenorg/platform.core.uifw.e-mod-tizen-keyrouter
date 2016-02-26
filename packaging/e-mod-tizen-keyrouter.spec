@@ -28,7 +28,7 @@ BuildRequires:  pkgconfig(cynara-creds-socket)
 BuildRequires:  pkgconfig(dlog)
 %if "%{?profile}" == "common"
 %else
-Requires:  xkb-tizen-data
+BuildRequires:  xkb-tizen-data
 %endif
 %description
 This package is a the Enlightenment Keyrouter Module for Tizen.
