@@ -1,4 +1,3 @@
-%bcond_with x
 %bcond_with wayland
 
 Name: e-mod-tizen-keyrouter
@@ -12,13 +11,6 @@ License: BSD-2-Clause
 BuildRequires: pkgconfig(enlightenment)
 BuildRequires:  gettext
 BuildRequires:  pkgconfig(ttrace)
-%if %{with x}
-BuildRequires:  pkgconfig(x11)
-BuildRequires:  pkgconfig(xi)
-BuildRequires:  pkgconfig(xtst)
-BuildRequires:  pkgconfig(xrandr)
-BuildRequires:  pkgconfig(utilX)
-%endif
 %if %{with wayland}
 BuildRequires:  pkgconfig(wayland-server)
 BuildRequires:  pkgconfig(tizen-extension-server)
@@ -47,9 +39,6 @@ export LDFLAGS+=" -Wl,--hash-style=both -Wl,--as-needed -Wl,--rpath=/usr/lib"
 %configure --prefix=/usr \
            --enable-wayland-only \
            --enable-cynara \
-           --with-tizen-keylayout-file=/usr/share/X11/xkb/tizen_key_layout.txt
-%else
-%configure --prefix=/usr \
            --with-tizen-keylayout-file=/usr/share/X11/xkb/tizen_key_layout.txt
 %endif
 
