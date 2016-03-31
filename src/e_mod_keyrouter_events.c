@@ -195,7 +195,8 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
                     }
                   else
                     {
-                       if ((surface_focus) && (key_node_data->wc != wl_resource_get_client(surface_focus)))
+                       if (((surface_focus) && (key_node_data->wc != wl_resource_get_client(surface_focus))) ||
+                           (!surface_focus))
                          {
                             _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
                             KLINF("SHARED Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p)\n",
