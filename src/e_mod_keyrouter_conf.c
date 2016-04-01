@@ -4,9 +4,6 @@
 void
 e_keyrouter_conf_init(E_Keyrouter_Config_Data *kconfig)
 {
-   E_Keyrouter_Tizen_HWKey *data;
-   Eina_List *l;
-
    kconfig->conf_hwkeys_edd= E_CONFIG_DD_NEW("E_Keyrouter_Config_Key",
                                                E_Keyrouter_Tizen_HWKey);
 #undef T

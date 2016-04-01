@@ -509,7 +509,7 @@ _e_keyrouter_query_tizen_key_table(void)
           }
 
         krt->HardKeys[data->keycode].keycode = data->keycode;
-        krt->HardKeys[data->keycode].keyname = eina_stringshare_add(data->name);
+        krt->HardKeys[data->keycode].keyname = (char *)eina_stringshare_add(data->name);
         krt->HardKeys[data->keycode].no_privcheck = data->no_privcheck ? EINA_TRUE : EINA_FALSE;
      }
 

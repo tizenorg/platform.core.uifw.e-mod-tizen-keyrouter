@@ -11,7 +11,6 @@ static Eina_Bool _e_keyrouter_send_key_events_register(int type, Ecore_Event_Key
 
 static Eina_Bool _e_keyrouter_is_key_grabbed(int key);
 static Eina_Bool _e_keyrouter_check_top_visible_window(E_Client *ec_focus, int arr_idx);
-static void _e_keyrouter_find_top_register_window(int arr_idx);
 
 static Eina_Bool
 _e_keyrouter_is_key_grabbed(int key)
