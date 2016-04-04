@@ -159,6 +159,7 @@ Eina_Bool e_keyrouter_is_registered_window(struct wl_resource *surface);
 void e_keyrouter_clear_registered_window(void);
 
 struct wl_resource *e_keyrouter_util_get_surface_from_eclient(E_Client *client);
+int e_keyrouter_util_get_pid(struct wl_client *client, struct wl_resource *surface);
 
 void e_keyrouter_conf_init(E_Keyrouter_Config_Data *kconfig);
 void e_keyrouter_conf_deinit(E_Keyrouter_Config_Data *kconfig);
