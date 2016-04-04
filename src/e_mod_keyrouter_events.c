@@ -278,12 +278,44 @@ _e_keyrouter_check_top_visible_window(E_Client *ec_focus, int arr_idx)
    return EINA_FALSE;
 }
 
+static void
+_e_keyrouter_send_event_device(struct wl_client *wc, uint32_t timestamp, const char *dev_name, uint32_t serial)
+{
+   const char *last_dev_name;
+   E_Comp_Wl_Input_Device *input_dev;
+   struct wl_resource *dev_res;
+   Eina_List *l, *ll;
+
+   last_dev_name = e_comp_wl->input_device_manager.last_device_name;
+   if (!last_dev_name || (last_dev_name && (strcmp(last_dev_name, dev_name))))
+     {
+        if (last_dev_name)
+          eina_stringshare_del(last_dev_name);
+        last_dev_name = eina_stringshare_add(dev_name);
+        e_comp_wl->input_device_manager.last_device_name = last_dev_name;
+
+        EINA_LIST_FOREACH(e_comp_wl->input_device_manager.device_list, l, input_dev)
+          {
+             if ((strcmp(input_dev->identifier, dev_name)) ||
+                 (input_dev->capability != ECORE_DEVICE_KEYBOARD))
+               continue;
+             e_comp_wl->input_device_manager.last_device_cap = input_dev->capability;
+             EINA_LIST_FOREACH(input_dev->resources, ll, dev_res)
+               {
+                  if (wl_resource_get_client(dev_res) != wc) continue;
+                  tizen_input_device_send_event_device(dev_res, serial, input_dev->identifier, timestamp);
+               }
+          }
+     }
+}
+
 /* Function for sending key event to wl_client(s) */
 static void
 _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_client *wc, Ecore_Event_Key *ev)
 {
    struct wl_client *wc_send;
    struct wl_resource *res;
+   const char *dev_name;
 
    uint evtype;
    uint serial;
@@ -321,6 +353,12 @@ _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_cli
           {
              if (wl_resource_get_client(res) != wc_send) continue;
 
+             if (ev->dev)
+               {
+                  dev_name = ecore_device_identifier_get(ev->dev);
+                  if (dev_name)
+                    _e_keyrouter_send_event_device(wc_send, ev->timestamp, dev_name, serial);
+               }
              KLDBG("[time: %d] res: %p, serial: %d send a key(%d):%d to wl_client:%p\n", ev->timestamp, res, serial, (ev->keycode)-8, evtype, wc_send);
              TRACE_INPUT_BEGIN(_e_keyrouter_send_key_event);
              wl_keyboard_send_key(res, serial, ev->timestamp, ev->keycode-8, evtype);
