@@ -141,7 +141,7 @@ _e_keyrouter_cb_keygrab_set(struct wl_client *client, struct wl_resource *resour
    int res = 0;
 
    TRACE_INPUT_BEGIN(_e_keyrouter_cb_keygrab_set);
-   KLINF("Key grab request (client: %p, surface: %p, key:%d, mode:%d)\n", client, surface, key, mode);
+   KLINF("Key grab request (client: %p, surface: %p, pid: %d, key:%d, mode:%d)\n", client, surface, e_keyrouter_util_get_pid(client, surface), key, mode);
 
    res = _e_keyrouter_keygrab_set(client, surface, key, mode);
 
@@ -156,7 +156,7 @@ _e_keyrouter_cb_keygrab_unset(struct wl_client *client, struct wl_resource *reso
    int res = 0;
 
    TRACE_INPUT_BEGIN(_e_keyrouter_cb_keygrab_unset);
-   KLINF("Key ungrab request (client: %p, surface: %p, key:%d)\n", client, surface, key);
+   KLINF("Key ungrab request (client: %p, surface: %p, pid: %d, key:%d)\n", client, surface, e_keyrouter_util_get_pid(client, surface), key);
 
    res = _e_keyrouter_keygrab_unset(client, surface, key);
 
@@ -206,7 +206,7 @@ _e_keyrouter_cb_keygrab_set_list(struct wl_client *client, struct wl_resource *r
 
    wl_array_for_each(grab_request, grab_list)
      {
-        KLINF("Grab request using list  (client: %p, surface: %p, key: %d, mode: %d]\n", client, surface, grab_request->key, grab_request->mode);
+        KLINF("Grab request using list  (client: %p, surface: %p, pid: %d, key: %d, mode: %d]\n", client, surface, e_keyrouter_util_get_pid(client, surface), grab_request->key, grab_request->mode);
         res = _e_keyrouter_keygrab_set(client, surface, grab_request->key, grab_request->mode);
         grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
         if (grab_result)
@@ -237,7 +237,7 @@ _e_keyrouter_cb_keygrab_unset_list(struct wl_client *client, struct wl_resource 
 
    wl_array_for_each(ungrab_request, ungrab_list)
      {
-        KLINF("Ungrab request using list  (client: %p, surface: %p, key: %d, res: %d]\n", client, surface, *ungrab_request, res);
+        KLINF("Ungrab request using list  (client: %p, surface: %p, pid: %d, key: %d, res: %d]\n", client, surface, e_keyrouter_util_get_pid(client, surface), *ungrab_request, res);
         res = _e_keyrouter_keygrab_unset(client, surface, *ungrab_request);
         grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
         if (grab_result)

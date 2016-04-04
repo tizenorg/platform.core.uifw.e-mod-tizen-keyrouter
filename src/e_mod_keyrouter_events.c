@@ -96,8 +96,9 @@ _e_keyrouter_send_key_events_release(int type, Ecore_Event_Key *ev)
         if (key_node_data)
           {
              _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
-             KLINF("Release Pair : Key %s(%s:%d) ===> E_Client (%p) WL_Client (%p)\n",
-                      ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode, key_node_data->surface, key_node_data->wc);
+             KLINF("Release Pair : Key %s(%s:%d) ===> E_Client (%p) WL_Client (%p) (pid: %d)\n",
+                      ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
+                      key_node_data->surface, key_node_data->wc, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
              E_FREE(key_node_data);
           }
      }
@@ -121,8 +122,9 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
         if (key_node_data)
           {
              _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
-             KLINF("EXCLUSIVE Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p)\n",
-                      ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode, key_node_data->surface, key_node_data->wc);
+             KLINF("EXCLUSIVE Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p) (pid: %d)\n",
+                      ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
+                      key_node_data->surface, key_node_data->wc, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
 
              return EINA_TRUE;
           }
@@ -133,8 +135,9 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
         if (key_node_data)
           {
              _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
-             KLINF("OVERRIDABLE_EXCLUSIVE Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p)\n",
-                     ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode, key_node_data->surface, key_node_data->wc);
+             KLINF("OVERRIDABLE_EXCLUSIVE Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p) (pid: %d)\n",
+                     ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
+                     key_node_data->surface, key_node_data->wc, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
 
              return EINA_TRUE;
           }
@@ -153,8 +156,9 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
                   if ((EINA_FALSE == krt->isWindowStackChanged) && (surface_focus == key_node_data->surface))
                     {
                        _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
-                       KLINF("TOPMOST (TOP_POSITION) Mode : Key %s (%s:%d) ===> Surface (%p)\n",
-                                ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode, key_node_data->surface);
+                       KLINF("TOPMOST (TOP_POSITION) Mode : Key %s (%s:%d) ===> Surface (%p) (pid: %d)\n",
+                                ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
+                                key_node_data->surface, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
 
                        return EINA_TRUE;
                     }
@@ -163,8 +167,9 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
                   if (_e_keyrouter_check_top_visible_window(ec_focus, keycode))
                     {
                        _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
-                       KLINF("TOPMOST (TOP_POSITION) Mode : Key %s (%s:%d) ===> Surface (%p)\n",
-                             ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,key_node_data->surface);
+                       KLINF("TOPMOST (TOP_POSITION) Mode : Key %s (%s:%d) ===> Surface (%p) (pid: %d)\n",
+                             ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
+                             key_node_data->surface, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
 
                        return EINA_TRUE;
                     }
@@ -176,8 +181,9 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
    if (krt->HardKeys[keycode].shared_ptr)
      {
         _e_keyrouter_send_key_event(type, surface_focus, NULL, ev);
-        KLINF("SHARED [Focus client] : Key %s (%s:%d) ===> Surface (%p)\n",
-                 ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up "), ev->keyname, ev->keycode, surface_focus);
+        KLINF("SHARED [Focus client] : Key %s (%s:%d) ===> Surface (%p) (pid: %d)\n",
+                 ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up "), ev->keyname, ev->keycode,
+                 surface_focus, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
 
         EINA_LIST_FOREACH(krt->HardKeys[keycode].shared_ptr, l, key_node_data)
           {
@@ -188,8 +194,9 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
                        if (key_node_data->surface != surface_focus)
                          {
                             _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
-                            KLINF("SHARED Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p)\n",
-                                     ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode, key_node_data->surface, key_node_data->wc);
+                            KLINF("SHARED Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p) (pid: %d)\n",
+                                     ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
+                                     key_node_data->surface, key_node_data->wc, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
                          }
                     }
                   else
@@ -198,8 +205,9 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
                            (!surface_focus))
                          {
                             _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
-                            KLINF("SHARED Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p)\n",
-                                     ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode, key_node_data->surface, key_node_data->wc);
+                            KLINF("SHARED Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p) (pid: %d)\n",
+                                     ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
+                                     key_node_data->surface, key_node_data->wc, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
                          }
                     }
                }
@@ -228,8 +236,9 @@ _e_keyrouter_send_key_events_register(int type, Ecore_Event_Key *ev)
      }
 
    _e_keyrouter_send_key_event(type, krt->HardKeys[keycode].registered_ptr->surface, NULL, ev);
-   KLINF("REGISTER Mode : Key %s(%s:%d) ===> Surface (%p)\n",
-            ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode, krt->HardKeys[keycode].registered_ptr->surface);
+   KLINF("REGISTER Mode : Key %s(%s:%d) ===> Surface (%p) (pid: %d)\n",
+            ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
+            krt->HardKeys[keycode].registered_ptr->surface, e_keyrouter_util_get_pid(NULL, krt->HardKeys[keycode].registered_ptr->surface));
 
    return EINA_TRUE;
 }
@@ -338,4 +347,21 @@ e_keyrouter_util_get_surface_from_eclient(E_Client *client)
      (client->comp_data, NULL);
 
    return client->comp_data->wl_surface;
+}
+
+int
+e_keyrouter_util_get_pid(struct wl_client *client, struct wl_resource *surface)
+{
+   pid_t pid = 0;
+   uid_t uid = 0;
+   gid_t gid = 0;
+   struct wl_client *cur_client = NULL;
+
+   if (client) cur_client = client;
+   else cur_client = wl_resource_get_client(surface);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(cur_client, 0);
+
+   wl_client_get_credentials(cur_client, &pid, &uid, &gid);
+
+   return pid;
 }
