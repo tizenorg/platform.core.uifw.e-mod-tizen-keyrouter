@@ -396,7 +396,7 @@ e_keyrouter_util_get_pid(struct wl_client *client, struct wl_resource *surface)
    struct wl_client *cur_client = NULL;
 
    if (client) cur_client = client;
-   else cur_client = wl_resource_get_client(surface);
+   else if (surface) cur_client = wl_resource_get_client(surface);
    EINA_SAFETY_ON_NULL_RETURN_VAL(cur_client, 0);
 
    wl_client_get_credentials(cur_client, &pid, &uid, &gid);
