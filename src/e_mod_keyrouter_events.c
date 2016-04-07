@@ -183,7 +183,7 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
         _e_keyrouter_send_key_event(type, surface_focus, NULL, ev);
         KLINF("SHARED [Focus client] : Key %s (%s:%d) ===> Surface (%p) (pid: %d)\n",
                  ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up "), ev->keyname, ev->keycode,
-                 surface_focus, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
+                 surface_focus, e_keyrouter_util_get_pid(NULL, surface_focus));
 
         EINA_LIST_FOREACH(krt->HardKeys[keycode].shared_ptr, l, key_node_data)
           {
