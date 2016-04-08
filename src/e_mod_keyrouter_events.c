@@ -5,7 +5,7 @@
 static Eina_Bool _e_keyrouter_send_key_events(int type, Ecore_Event_Key *ev);
 static Eina_Bool _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev);
 static Eina_Bool _e_keyrouter_send_key_events_release(int type, Ecore_Event_Key *ev);
-static void _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_client *wc, Ecore_Event_Key *ev);
+static Eina_Bool _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_client *wc, Ecore_Event_Key *ev);
 
 static Eina_Bool _e_keyrouter_send_key_events_register(int type, Ecore_Event_Key *ev);
 
@@ -89,22 +89,24 @@ static Eina_Bool
 _e_keyrouter_send_key_events_release(int type, Ecore_Event_Key *ev)
 {
    E_Keyrouter_Key_List_NodePtr key_node_data;
+   Eina_Bool res = EINA_TRUE, ret = EINA_TRUE;
 
    /* Deliver release  clean up pressed key list */
    EINA_LIST_FREE(krt->HardKeys[ev->keycode].press_ptr, key_node_data)
      {
         if (key_node_data)
           {
-             _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
+             res = _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
              KLINF("Release Pair : Key %s(%s:%d) ===> E_Client (%p) WL_Client (%p) (pid: %d)\n",
                       ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
                       key_node_data->surface, key_node_data->wc, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
              E_FREE(key_node_data);
+             if (res == EINA_FALSE) ret = EINA_FALSE;
           }
      }
    krt->HardKeys[ev->keycode].press_ptr = NULL;
 
-   return EINA_TRUE;
+   return ret;
 }
 
 static Eina_Bool
@@ -113,6 +115,7 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
    unsigned int keycode = ev->keycode;
    struct wl_resource *surface_focus = NULL;
    E_Client *ec_focus = NULL;
+   Eina_Bool res = EINA_TRUE, ret = EINA_TRUE;
 
    E_Keyrouter_Key_List_NodePtr key_node_data;
    Eina_List *l = NULL;
@@ -121,12 +124,12 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
      {
         if (key_node_data)
           {
-             _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
+             res = _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
              KLINF("EXCLUSIVE Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p) (pid: %d)\n",
                       ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
                       key_node_data->surface, key_node_data->wc, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
 
-             return EINA_TRUE;
+             return res;
           }
      }
 
@@ -134,12 +137,12 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
      {
         if (key_node_data)
           {
-             _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
+             res = _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev);
              KLINF("OVERRIDABLE_EXCLUSIVE Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p) (pid: %d)\n",
                      ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
                      key_node_data->surface, key_node_data->wc, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
 
-             return EINA_TRUE;
+             return res;
           }
      }
 
@@ -155,23 +158,23 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
                {
                   if ((EINA_FALSE == krt->isWindowStackChanged) && (surface_focus == key_node_data->surface))
                     {
-                       _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
+                       res = _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
                        KLINF("TOPMOST (TOP_POSITION) Mode : Key %s (%s:%d) ===> Surface (%p) (pid: %d)\n",
                                 ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
                                 key_node_data->surface, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
 
-                       return EINA_TRUE;
+                       return res;
                     }
                   krt->isWindowStackChanged = EINA_FALSE;
 
                   if (_e_keyrouter_check_top_visible_window(ec_focus, keycode))
                     {
-                       _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
+                       res = _e_keyrouter_send_key_event(type, key_node_data->surface, NULL, ev);
                        KLINF("TOPMOST (TOP_POSITION) Mode : Key %s (%s:%d) ===> Surface (%p) (pid: %d)\n",
                              ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
                              key_node_data->surface, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
 
-                       return EINA_TRUE;
+                       return res;
                     }
                   break;
                }
@@ -180,7 +183,7 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
 
    if (krt->HardKeys[keycode].shared_ptr)
      {
-        _e_keyrouter_send_key_event(type, surface_focus, NULL, ev);
+        res = _e_keyrouter_send_key_event(type, surface_focus, NULL, ev);
         KLINF("SHARED [Focus client] : Key %s (%s:%d) ===> Surface (%p) (pid: %d)\n",
                  ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up "), ev->keyname, ev->keycode,
                  surface_focus, e_keyrouter_util_get_pid(NULL, surface_focus));
@@ -213,7 +216,7 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
                }
           }
 
-        return EINA_TRUE;
+        return res;
      }
 
    if (_e_keyrouter_send_key_events_register(type, ev))
@@ -228,6 +231,7 @@ static Eina_Bool
 _e_keyrouter_send_key_events_register(int type, Ecore_Event_Key *ev)
 {
    unsigned int keycode = ev->keycode;
+   Eina_Bool res = EINA_TRUE;
 
    if (!krt->HardKeys[keycode].registered_ptr)
      {
@@ -235,12 +239,12 @@ _e_keyrouter_send_key_events_register(int type, Ecore_Event_Key *ev)
         return EINA_FALSE;
      }
 
-   _e_keyrouter_send_key_event(type, krt->HardKeys[keycode].registered_ptr->surface, NULL, ev);
+   res = _e_keyrouter_send_key_event(type, krt->HardKeys[keycode].registered_ptr->surface, NULL, ev);
    KLINF("REGISTER Mode : Key %s(%s:%d) ===> Surface (%p) (pid: %d)\n",
             ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
             krt->HardKeys[keycode].registered_ptr->surface, e_keyrouter_util_get_pid(NULL, krt->HardKeys[keycode].registered_ptr->surface));
 
-   return EINA_TRUE;
+   return res;
 }
 
 static Eina_Bool
@@ -319,16 +323,21 @@ _e_keyrouter_send_event_device(struct wl_client *wc, uint32_t timestamp, const c
 }
 
 /* Function for sending key event to wl_client(s) */
-static void
+static Eina_Bool
 _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_client *wc, Ecore_Event_Key *ev)
 {
-   struct wl_client *wc_send;
-   struct wl_resource *res;
+   struct wl_client *wc_send, *wc_focus = NULL;
+   struct wl_resource *res, *surface_focus;
    const char *dev_name;
+   E_Client *ec_focus;
 
    uint evtype;
    uint serial;
    Eina_List *l;
+
+   ec_focus = e_client_focused_get();
+   surface_focus = e_keyrouter_util_get_surface_from_eclient(ec_focus);
+   if (surface_focus) wc_focus = wl_resource_get_client(surface_focus);
 
    if (surface == NULL)
      {
@@ -342,7 +351,7 @@ _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_cli
    if (!wc_send)
      {
         KLWRN("surface: %p or wc: %p returns null wayland client\n", surface, wc);
-        return;
+        return EINA_FALSE;
      }
 
    if (ECORE_EVENT_KEY_DOWN == type)
@@ -353,6 +362,12 @@ _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_cli
    else
      {
         evtype = WL_KEYBOARD_KEY_STATE_RELEASED;
+     }
+
+   if (wc_send == wc_focus)
+     {
+        KLINF("Focused client: Send this key to compositor\n");
+        return EINA_FALSE;
      }
 
    serial = wl_display_next_serial(e_comp_wl->wl.disp);
@@ -374,6 +389,7 @@ _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_cli
              TRACE_INPUT_END();
           }
      }
+   return EINA_TRUE;
 }
 
 struct wl_resource *
