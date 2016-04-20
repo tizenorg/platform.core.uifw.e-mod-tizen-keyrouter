@@ -80,6 +80,7 @@ struct _E_Keyrouter_Key_List_Node
 {
    struct wl_resource *surface;
    struct wl_client *wc;
+   Eina_Bool focused;
 };
 
 struct _E_Keyrouter_Tizen_HWKey
@@ -143,7 +144,7 @@ E_API int   e_modapi_shutdown(E_Module *m);
 E_API int   e_modapi_save(E_Module *m);
 
 int e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *client, uint32_t key, uint32_t mode);
-int e_keyrouter_prepend_to_keylist(struct wl_resource *surface, struct wl_client *wc, uint32_t key, uint32_t mode);
+int e_keyrouter_prepend_to_keylist(struct wl_resource *surface, struct wl_client *wc, uint32_t key, uint32_t mode, Eina_Bool focused);
 void e_keyrouter_find_and_remove_client_from_list(struct wl_resource *surface, struct wl_client *wc, uint32_t key, uint32_t mode);
 void e_keyrouter_remove_client_from_list(struct wl_resource *surface, struct wl_client *wc);
 int e_keyrouter_find_key_in_list(struct wl_resource *surface, struct wl_client *wc, uint32_t key);
