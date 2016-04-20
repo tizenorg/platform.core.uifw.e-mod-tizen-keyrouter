@@ -47,7 +47,8 @@ e_keyrouter_set_keygrab_in_list(struct wl_resource *surface, struct wl_client *c
         res = e_keyrouter_prepend_to_keylist(surface,
                                         surface ? NULL : client,
                                         key,
-                                        mode);
+                                        mode,
+                                        EINA_FALSE);
      }
 
    EINA_SAFETY_ON_FALSE_RETURN_VAL(res == TIZEN_KEYROUTER_ERROR_NONE, res);
@@ -144,7 +145,7 @@ _e_keyrouter_find_key_in_list(struct wl_resource *surface, struct wl_client *wc,
 
 /* Function for prepending a new key grab information in the keyrouting list */
 int
-e_keyrouter_prepend_to_keylist(struct wl_resource *surface, struct wl_client *wc, uint32_t key, uint32_t mode)
+e_keyrouter_prepend_to_keylist(struct wl_resource *surface, struct wl_client *wc, uint32_t key, uint32_t mode, Eina_Bool focused)
 {
    int res = TIZEN_KEYROUTER_ERROR_NONE;
 
@@ -161,6 +162,7 @@ e_keyrouter_prepend_to_keylist(struct wl_resource *surface, struct wl_client *wc
 
    new_keyptr->surface = surface;
    new_keyptr->wc = wc;
+   new_keyptr->focused = focused;
 
    switch(mode)
      {
@@ -437,6 +439,7 @@ _e_keyrouter_build_register_list(void)
                        node = E_NEW(E_Keyrouter_Key_List_Node, 1);
                        node->surface = surface;
                        node->wc = NULL;
+                       node->focused = EINA_FALSE;
                        krt->HardKeys[*ddata].registered_ptr = node;
 
                        KLDBG("%d key's register surface is %p\n", *ddata, surface);
