@@ -341,6 +341,26 @@ e_keyrouter_remove_client_from_list(struct wl_resource *surface, struct wl_clien
                   KLINF("Remove a Shared Mode Grabbed key(%d) by wc(%p)\n", i, wc);
                }
           }
+        EINA_LIST_FOREACH_SAFE(krt->HardKeys[i].press_ptr, l, l_next, key_node_data)
+          {
+             if (!key_node_data) continue;
+
+             if (surface)
+               {
+                  if (surface == key_node_data->surface)
+                    {
+                       krt->HardKeys[i].press_ptr = eina_list_remove_list(krt->HardKeys[i].press_ptr, l);
+                       E_FREE(key_node_data);
+                       KLINF("Remove a Pressed  key(%d) by surface(%p)\n", i, surface);
+                    }
+               }
+             else if ((wc == key_node_data->wc))
+               {
+                  krt->HardKeys[i].press_ptr = eina_list_remove_list(krt->HardKeys[i].press_ptr, l);
+                  E_FREE(key_node_data);
+                  KLINF("Remove a Pressed key(%d) by wc(%p)\n", i, wc);
+               }
+          }
      }
 
    _e_keyrouter_remove_registered_surface_in_list(surface);
