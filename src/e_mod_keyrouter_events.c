@@ -208,7 +208,7 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
                        if (key_node_data->surface != surface_focus)
                          {
                             _e_keyrouter_send_key_event(type, key_node_data->surface,
-                                                        key_node_data->wc, ev, key_node_data->focused,
+                                                        key_node_data->wc, ev, EINA_FALSE,
                                                         TIZEN_KEYROUTER_MODE_SHARED);
                             KLINF("SHARED Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p) (pid: %d)\n",
                                      ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
@@ -221,7 +221,7 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
                            (!surface_focus))
                          {
                             _e_keyrouter_send_key_event(type, key_node_data->surface,
-                                                        key_node_data->wc, ev, key_node_data->focused,
+                                                        key_node_data->wc, ev, EINA_FALSE,
                                                         TIZEN_KEYROUTER_MODE_SHARED);
                             KLINF("SHARED Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p) (pid: %d)\n",
                                      ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
@@ -312,9 +312,15 @@ _e_keyrouter_check_top_visible_window(E_Client *ec_focus, int arr_idx)
 static Eina_Bool
 _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_client *wc, Ecore_Event_Key *ev, Eina_Bool focused, unsigned int mode)
 {
-   struct wl_client *wc_send = NULL;
+   struct wl_client *wc_send, *wc_focus = NULL;
+   struct wl_resource *surface_focus;
+   E_Client *ec_focus;
    Ecore_Event_Key *ev_cpy;
    int len;
+
+   ec_focus = e_client_focused_get();
+   surface_focus = e_keyrouter_util_get_surface_from_eclient(ec_focus);
+   if (surface_focus) wc_focus = wl_resource_get_client(surface_focus);
 
    if (surface == NULL)
      {
@@ -341,6 +347,10 @@ _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_cli
              focused = EINA_TRUE;
              ev->data = wc_send;
              KLDBG("Send only one key! wc_send: %p(%d)\n", wc_send, e_keyrouter_util_get_pid(wc_send, NULL));
+          }
+        else if (focused == EINA_TRUE)
+          {
+             ev->data = wc_send;
           }
         e_keyrouter_prepend_to_keylist(surface, wc, ev->keycode, TIZEN_KEYROUTER_MODE_PRESSED, focused);
      }
