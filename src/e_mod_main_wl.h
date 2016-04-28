@@ -88,6 +88,7 @@ struct _E_Keyrouter_Tizen_HWKey
    char *name;
    int keycode;
    int no_privcheck;
+   int repeat;
 };
 
 struct _E_Keyrouter_Grabbed_Key
@@ -95,6 +96,7 @@ struct _E_Keyrouter_Grabbed_Key
    int keycode;
    char* keyname;
    Eina_Bool no_privcheck;
+   Eina_Bool repeat;
 
    Eina_List *excl_ptr;
    Eina_List *or_excl_ptr;
