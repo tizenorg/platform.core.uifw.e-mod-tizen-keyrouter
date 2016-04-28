@@ -262,6 +262,8 @@ e_keyrouter_add_client_destroy_listener(struct wl_client *client)
    Eina_List *l;
    struct wl_client *wc_data;
 
+   if (!client) return TIZEN_KEYROUTER_ERROR_NONE;
+
    EINA_LIST_FOREACH(krt->grab_client_list, l, wc_data)
      {
         if (wc_data)
@@ -295,6 +297,8 @@ e_keyrouter_add_surface_destroy_listener(struct wl_resource *surface)
    struct wl_listener *destroy_listener = NULL;
    Eina_List *l;
    struct wl_resource *surface_data;
+
+   if (!surface) return TIZEN_KEYROUTER_ERROR_NONE;
 
    EINA_LIST_FOREACH(krt->grab_surface_list, l, surface_data)
      {
