@@ -492,6 +492,8 @@ _e_keyrouter_query_tizen_key_table(void)
    E_Keyrouter_Conf_Edd *kconf = krt->conf->conf;
    Eina_List *l;
    E_Keyrouter_Tizen_HWKey *data;
+   int res;
+   struct xkb_rule_names names={0,};
 
    /* TODO: Make struct in HardKeys to pointer.
                   If a key is defined, allocate memory to pointer,
@@ -515,7 +517,30 @@ _e_keyrouter_query_tizen_key_table(void)
         krt->HardKeys[data->keycode].keycode = data->keycode;
         krt->HardKeys[data->keycode].keyname = (char *)eina_stringshare_add(data->name);
         krt->HardKeys[data->keycode].no_privcheck = data->no_privcheck ? EINA_TRUE : EINA_FALSE;
+        krt->HardKeys[data->keycode].repeat = data->repeat ? EINA_TRUE : EINA_FALSE;
+
+        if (e_comp_wl_input_keymap_cache_file_use_get() == EINA_FALSE)
+          {
+             if (krt->HardKeys[data->keycode].repeat == EINA_FALSE)
+               {
+                  res = xkb_keymap_key_set_repeats(e_comp_wl->xkb.keymap, data->keycode, 0);
+                  if (!res)
+                    {
+                       KLWRN("Failed to set repeat key(%d), value(%d)\n", data->keycode, 0);
+                    }
+               }
+          }
      }
+
+   if (e_comp_wl_input_keymap_cache_file_use_get() == EINA_FALSE)
+     {
+        KLINF("Server create a new cache file: %s\n", e_comp_wl_input_keymap_path_get(names));
+        res = unlink(e_comp_wl_input_keymap_path_get(names));
+
+        e_comp_wl_input_keymap_set(NULL, NULL, NULL, xkb_context_ref(e_comp_wl->xkb.context), e_comp_wl->xkb.keymap);
+     }
+   else
+     KLINF("Currently cache file is exist. Do not change it.\n");
 
    return EINA_TRUE;
 }
