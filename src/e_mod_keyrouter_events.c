@@ -364,7 +364,7 @@ _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_cli
 
    KLDBG("Generate new key event! wc_send: %p(%d)\n", wc_send, e_keyrouter_util_get_pid(wc_send, NULL));
 
-   ev_cpy = (Ecore_Event_Key *)calloc(1, sizeof(ev));
+   ev_cpy = (Ecore_Event_Key *)calloc(1, sizeof(Ecore_Event_Key));
    len = sizeof(Ecore_Event_Key) + strlen(ev->key) + strlen(ev->keyname) + ((ev->compose) ? strlen(ev->compose) : 0) + 3;
    ev_cpy = calloc(1, len);
    memcpy(ev_cpy, ev, len);
