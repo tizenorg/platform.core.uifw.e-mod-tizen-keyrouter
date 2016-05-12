@@ -16,8 +16,11 @@ BuildRequires:  pkgconfig(wayland-server)
 BuildRequires:  pkgconfig(tizen-extension-server)
 BuildRequires:  pkgconfig(cynara-client)
 BuildRequires:  pkgconfig(cynara-creds-socket)
+BuildRequires:  pkgconfig(capi-system-device)
 %endif
 BuildRequires:  pkgconfig(dlog)
+BuildRequires:  pkgconfig(dbus-glib-1)
+BuildRequires: pkgconfig(libtzplatform-config)
 %if "%{?profile}" == "common"
 %else
 BuildRequires:  xkb-tizen-data
