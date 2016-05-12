@@ -113,7 +113,7 @@ dnl ========================================================================
 # checks for wayland only argument
 dnl ========================================================================
 if test "x${have_wayland_only}" = "xyes"; then
-  PKG_CHECK_MODULES(WAYLAND, [wayland-server, tizen-extension-server])
+  PKG_CHECK_MODULES(WAYLAND, [wayland-server, tizen-extension-server, deviced])
 fi
 
 release=$(pkg-config --variable=release enlightenment)
