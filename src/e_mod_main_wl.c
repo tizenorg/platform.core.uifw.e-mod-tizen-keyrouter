@@ -1,6 +1,9 @@
 #define E_COMP_WL
 #include "e_mod_main_wl.h"
 #include <string.h>
+#include <device/power.h>
+#include <device/callback.h>
+#include <device/display.h>
 
 E_KeyrouterPtr krt = NULL;
 E_API E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Keyrouter Module of Window Manager" };
@@ -19,6 +22,8 @@ static void _e_keyrouter_wl_surface_cb_destroy(struct wl_listener *l, void *data
 
 static int _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, uint32_t key, uint32_t mode);
 static int _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface, uint32_t key);
+
+static void _e_keyrouter_cb_power_change(device_callback_e type, void *value, void *user_data);
 
 #ifdef ENABLE_CYNARA
 static void _e_keyrouter_util_cynara_log(const char *func_name, int err);
@@ -76,7 +81,7 @@ _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, 
      }
 
    /* Check whether the mode is valid or not */
-   if (TIZEN_KEYROUTER_MODE_REGISTERED < mode)
+   if (TIZEN_KEYROUTER_MODE_DISPLAYOFF < mode)
      {
         KLWRN("Invalid range of mode ! (mode:%d)\n", mode);
         return  TIZEN_KEYROUTER_ERROR_INVALID_MODE;
@@ -129,7 +134,7 @@ _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface
    e_keyrouter_find_and_remove_client_from_list(surface, client, key, TIZEN_KEYROUTER_MODE_SHARED);
 
    /* REGISTERED grab */
-   e_keyrouter_unset_keyregister(surface, client, key);
+   e_keyrouter_find_and_remove_client_from_list(surface, client, key, TIZEN_KEYROUTER_MODE_REGISTERED);
 
    return TIZEN_KEYROUTER_ERROR_NONE;
 }
@@ -253,6 +258,178 @@ _e_keyrouter_cb_keygrab_unset_list(struct wl_client *client, struct wl_resource 
    wl_array_release(&grab_result_list);
 }
 
+static int
+_e_keyrouter_none_register_set(struct wl_resource *surface, Eina_Bool enable)
+{
+   int res = TIZEN_KEYROUTER_ERROR_NONE;
+   Eina_List *l, *l_next;
+   struct wl_resource *data;
+
+   if (enable == EINA_TRUE)
+     {
+        EINA_LIST_FOREACH(krt->none_registered_window_list, l, data)
+          {
+             if (surface == data)
+               {
+                  KLINF("%p surface already request none registerd_window\n", surface);
+                  res = EINA_TRUE;
+                  goto finish;
+               }
+          }
+        krt->none_registered_window_list = eina_list_append(krt->none_registered_window_list, surface);
+        e_keyrouter_add_surface_destroy_listener(surface);
+     }
+   else
+     {
+        EINA_LIST_FOREACH_SAFE(krt->none_registered_window_list, l, l_next, data)
+          {
+             if (surface == data)
+               {
+                  krt->none_registered_window_list = eina_list_remove(krt->none_registered_window_list, data);
+                  res = EINA_TRUE;
+                  goto finish;
+               }
+          }
+     }
+
+finish:
+   return res;
+}
+
+static int
+_e_keyrouter_register_pass_set(struct wl_resource *surface, Eina_Bool enable)
+{
+   int res = TIZEN_KEYROUTER_ERROR_NONE;
+   Eina_List *l, *l_next;
+   struct wl_resource *data;
+
+   if (enable == EINA_TRUE)
+     {
+        EINA_LIST_FOREACH(krt->register_pass_window_list, l, data)
+          {
+             if (surface == data)
+               {
+                  KLINF("%p surface already request pass register\n", surface);
+                  res = EINA_TRUE;
+                  goto finish;
+               }
+          }
+        krt->register_pass_window_list = eina_list_append(krt->register_pass_window_list, surface);
+        e_keyrouter_add_surface_destroy_listener(surface);
+     }
+   else
+     {
+        EINA_LIST_FOREACH_SAFE(krt->register_pass_window_list, l, l_next, data)
+          {
+             if (surface == data)
+               {
+                  krt->register_pass_window_list = eina_list_remove(krt->register_pass_window_list, data);
+                  res = EINA_TRUE;
+                  goto finish;
+               }
+          }
+     }
+
+finish:
+   return res;
+}
+
+static int
+_e_keyrouter_register_grab_set(struct wl_resource *surface, Eina_Bool enable)
+{
+   int res = TIZEN_KEYROUTER_ERROR_NONE;
+   Eina_List *l, *l_next;
+   struct wl_resource *data;
+
+   if (enable == EINA_TRUE)
+     {
+        EINA_LIST_FOREACH(krt->register_grab_window_list, l, data)
+          {
+             if (surface == data)
+               {
+                  KLINF("%p surface already request grab register\n", surface);
+                  res = EINA_TRUE;
+                  goto finish;
+               }
+          }
+        krt->register_grab_window_list = eina_list_append(krt->register_grab_window_list, surface);
+        e_keyrouter_add_surface_destroy_listener(surface);
+     }
+   else
+     {
+        EINA_LIST_FOREACH_SAFE(krt->register_grab_window_list, l, l_next, data)
+          {
+             if (surface == data)
+               {
+                  krt->register_grab_window_list = eina_list_remove(krt->register_grab_window_list, data);
+                  res = EINA_TRUE;
+                  goto finish;
+               }
+          }
+     }
+
+finish:
+   return res;
+}
+
+static void
+_e_keyrouter_cb_register_mode_config(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, uint32_t mode, uint32_t enable)
+{
+   int res = TIZEN_KEYROUTER_ERROR_NONE;
+
+   switch (mode)
+     {
+        case TIZEN_KEYROUTER_REGISTER_MODE_NONE_REGISTER:
+           res = _e_keyrouter_none_register_set(surface, enable);
+           break;
+        case TIZEN_KEYROUTER_REGISTER_MODE_PASS_REGISTER:
+           res = _e_keyrouter_register_pass_set(surface, enable);
+           break;
+        case TIZEN_KEYROUTER_REGISTER_MODE_GRAB_REGISTER:
+           res = _e_keyrouter_register_grab_set(surface, enable);
+           break;
+     }
+
+   KLINF("%p surface request registerd mode config window (mode: %d, enable: %d, res: %d)\n", surface, mode, enable, res);
+   tizen_keyrouter_send_register_mode_config_notify(resource, surface, mode, enable, res);
+}
+
+static void
+_e_keyrouter_cb_key_monitor(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, uint32_t enable)
+{
+   Eina_List *l, *l_next;
+   struct wl_resource *data;
+   int res = TIZEN_KEYROUTER_ERROR_NONE;
+
+   if ((Eina_Bool)!!enable == EINA_TRUE)
+     {
+        EINA_LIST_FOREACH(krt->monitor_window_list, l, data)
+          {
+             if (surface == data)
+               {
+                  KLINF("%p surface already request key monitor window\n", surface);
+                  goto notify;
+               }
+          }
+        krt->monitor_window_list = eina_list_append(krt->monitor_window_list, surface);
+        e_keyrouter_add_surface_destroy_listener(surface);
+     }
+   else
+     {
+        EINA_LIST_FOREACH_SAFE(krt->monitor_window_list, l, l_next, data)
+          {
+             if (surface == data)
+               {
+                  krt->monitor_window_list = eina_list_remove(krt->monitor_window_list, data);
+                  goto notify;
+               }
+          }
+     }  
+
+notify:
+   KLINF("%p surface request key monitor window (res: %d)\n", surface, res);
+   tizen_keyrouter_send_key_monitor_notify(resource, surface, enable, res);
+}
 
 /* Function for registering wl_client destroy listener */
 int
@@ -326,13 +503,14 @@ e_keyrouter_add_surface_destroy_listener(struct wl_resource *surface)
    return TIZEN_KEYROUTER_ERROR_NONE;
 }
 
-
 static const struct tizen_keyrouter_interface _e_keyrouter_implementation = {
    _e_keyrouter_cb_keygrab_set,
    _e_keyrouter_cb_keygrab_unset,
    _e_keyrouter_cb_get_keygrab_status,
    _e_keyrouter_cb_keygrab_set_list,
-   _e_keyrouter_cb_keygrab_unset_list
+   _e_keyrouter_cb_keygrab_unset_list,
+   _e_keyrouter_cb_register_mode_config,
+   _e_keyrouter_cb_key_monitor
 };
 
 /* tizen_keyrouter global object destroy function */
@@ -415,6 +593,8 @@ _e_keyrouter_init(E_Module *m)
    res = _e_keyrouter_query_tizen_key_table();
    EINA_SAFETY_ON_FALSE_GOTO(res, err);
 
+   e_keyrouter_modkey_init();
+
    /* Add filtering mechanism */
    krt->ef_handler = ecore_event_filter_add(NULL, _event_filter, NULL, NULL);
    _e_keyrouter_init_handlers();
@@ -434,6 +614,8 @@ _e_keyrouter_init(E_Module *m)
         krt->p_cynara = NULL;
      }
 #endif
+
+   krt->display_off = EINA_FALSE;
 
    TRACE_INPUT_END();
    return kconfig;
@@ -503,6 +685,7 @@ _e_keyrouter_query_tizen_key_table(void)
 
    krt->numTizenHWKeys = kconf->num_keycode;
    krt->max_tizen_hwkeys = kconf->max_keycode;
+   krt->display_key_filter_mode = kconf->display_key_filter_mode;
 
    EINA_LIST_FOREACH(kconf->KeyList, l, data)
      {
@@ -518,6 +701,7 @@ _e_keyrouter_query_tizen_key_table(void)
         krt->HardKeys[data->keycode].keyname = (char *)eina_stringshare_add(data->name);
         krt->HardKeys[data->keycode].no_privcheck = data->no_privcheck ? EINA_TRUE : EINA_FALSE;
         krt->HardKeys[data->keycode].repeat = data->repeat ? EINA_TRUE : EINA_FALSE;
+        krt->HardKeys[data->keycode].display_filter = data->display_filter ? EINA_TRUE : EINA_FALSE;
 
         if (e_comp_wl_input_keymap_cache_file_use_get() == EINA_FALSE)
           {
@@ -575,6 +759,7 @@ _e_keyrouter_init_handlers(void)
 {
    E_LIST_HANDLER_APPEND(krt->handlers, E_EVENT_CLIENT_STACK, _e_keyrouter_client_cb_stack, NULL);
    E_LIST_HANDLER_APPEND(krt->handlers, E_EVENT_CLIENT_REMOVE, _e_keyrouter_client_cb_remove, NULL);
+   device_add_callback(DEVICE_CALLBACK_DISPLAY_STATE,_e_keyrouter_cb_power_change,NULL);
 }
 
 static Eina_Bool
@@ -593,7 +778,6 @@ _e_keyrouter_client_cb_stack(void *data, int type, void *event)
    //        ec, ec->visible, ec->focused, ec->take_focus, ec->want_focus, ec->bordername, ec->input_only);
 
    krt->isWindowStackChanged = EINA_TRUE;
-   e_keyrouter_clear_registered_window();
 
    return ECORE_CALLBACK_PASS_ON;
 }
@@ -642,6 +826,36 @@ _e_keyrouter_wl_surface_cb_destroy(struct wl_listener *l, void *data)
    l = NULL;
 
    krt->grab_surface_list = eina_list_remove(krt->grab_surface_list, surface);
+}
+
+static void
+_e_keyrouter_cb_power_change(device_callback_e type, void *value, void *user_data)
+{
+   display_state_e state;
+
+   if (type != DEVICE_CALLBACK_DISPLAY_STATE)
+     {
+        return;
+     }
+
+     state = (display_state_e)value;
+     switch (state)
+       {
+          case DISPLAY_STATE_SCREEN_OFF:
+             krt->display_off = EINA_TRUE;
+             break;
+          case DISPLAY_STATE_NORMAL:
+             krt->display_off = EINA_FALSE;
+             break;
+          /* FIXME: Check a state change is possible
+           *        screen off to screen dim state
+           */
+          case DISPLAY_STATE_SCREEN_DIM:
+             krt->display_off = EINA_FALSE;
+             break;
+          default:
+             break;
+       }
 }
 
 #ifdef ENABLE_CYNARA
