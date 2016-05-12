@@ -83,10 +83,13 @@ _e_keyrouter_send_key_events(int type, Ecore_Event_Key *ev)
    if (ECORE_EVENT_KEY_DOWN == type)
      {
         res = _e_keyrouter_send_key_events_press(type, ev);
+        e_keyrouter_modkey_check(ev);
      }
   else
      {
         res = _e_keyrouter_send_key_events_release(type, ev);
+        e_keyrouter_modkey_mod_clean_up();
+        e_keyrouter_stepkey_check(ev);
      }
   return res;
 }
@@ -376,32 +379,4 @@ _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_cli
      ecore_event_add(ECORE_EVENT_KEY_UP, ev_cpy, NULL, NULL);
 
    return EINA_TRUE;
-}
-
-struct wl_resource *
-e_keyrouter_util_get_surface_from_eclient(E_Client *client)
-{
-   EINA_SAFETY_ON_NULL_RETURN_VAL
-     (client, NULL);
-   EINA_SAFETY_ON_NULL_RETURN_VAL
-     (client->comp_data, NULL);
-
-   return client->comp_data->wl_surface;
-}
-
-int
-e_keyrouter_util_get_pid(struct wl_client *client, struct wl_resource *surface)
-{
-   pid_t pid = 0;
-   uid_t uid = 0;
-   gid_t gid = 0;
-   struct wl_client *cur_client = NULL;
-
-   if (client) cur_client = client;
-   else if (surface) cur_client = wl_resource_get_client(surface);
-   EINA_SAFETY_ON_NULL_RETURN_VAL(cur_client, 0);
-
-   wl_client_get_credentials(cur_client, &pid, &uid, &gid);
-
-   return pid;
 }

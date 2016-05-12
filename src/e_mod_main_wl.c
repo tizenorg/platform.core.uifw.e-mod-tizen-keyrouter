@@ -415,6 +415,8 @@ _e_keyrouter_init(E_Module *m)
    res = _e_keyrouter_query_tizen_key_table();
    EINA_SAFETY_ON_FALSE_GOTO(res, err);
 
+   e_keyrouter_modkey_init();
+
    /* Add filtering mechanism */
    krt->ef_handler = ecore_event_filter_add(NULL, _event_filter, NULL, NULL);
    _e_keyrouter_init_handlers();

@@ -18,6 +18,7 @@ BuildRequires:  pkgconfig(cynara-client)
 BuildRequires:  pkgconfig(cynara-creds-socket)
 %endif
 BuildRequires:  pkgconfig(dlog)
+BuildRequires:  pkgconfig(dbus-glib-1)
 %if "%{?profile}" == "common"
 %else
 BuildRequires:  xkb-tizen-data
