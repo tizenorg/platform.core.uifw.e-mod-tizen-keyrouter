@@ -313,15 +313,9 @@ _e_keyrouter_check_top_visible_window(E_Client *ec_focus, int arr_idx)
 static Eina_Bool
 _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_client *wc, Ecore_Event_Key *ev, Eina_Bool focused, unsigned int mode)
 {
-   struct wl_client *wc_send, *wc_focus = NULL;
-   struct wl_resource *surface_focus;
-   E_Client *ec_focus;
+   struct wl_client *wc_send;
    Ecore_Event_Key *ev_cpy;
    int len;
-
-   ec_focus = e_client_focused_get();
-   surface_focus = e_keyrouter_util_get_surface_from_eclient(ec_focus);
-   if (surface_focus) wc_focus = wl_resource_get_client(surface_focus);
 
    if (surface == NULL)
      {
