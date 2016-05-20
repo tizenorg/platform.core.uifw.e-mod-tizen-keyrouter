@@ -163,6 +163,9 @@ void e_keyrouter_clear_registered_window(void);
 
 struct wl_resource *e_keyrouter_util_get_surface_from_eclient(E_Client *client);
 int e_keyrouter_util_get_pid(struct wl_client *client, struct wl_resource *surface);
+char *e_keyrouter_util_cmd_get_from_pid(int pid);
+int e_keyrouter_util_keycode_get_from_string(char *name);
+char *e_keyrouter_util_keyname_get_from_keycode(int keycode);
 
 void e_keyrouter_conf_init(E_Keyrouter_Config_Data *kconfig);
 void e_keyrouter_conf_deinit(E_Keyrouter_Config_Data *kconfig);
