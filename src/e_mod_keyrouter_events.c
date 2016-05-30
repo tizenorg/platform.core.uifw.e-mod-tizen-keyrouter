@@ -7,7 +7,7 @@ static Eina_Bool _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *e
 static Eina_Bool _e_keyrouter_send_key_events_release(int type, Ecore_Event_Key *ev);
 static Eina_Bool _e_keyrouter_send_key_event(int type, struct wl_resource *surface, struct wl_client *wc, Ecore_Event_Key *ev, Eina_Bool focused, unsigned int mode);
 
-static Eina_Bool _e_keyrouter_send_key_events_register(int type, Ecore_Event_Key *ev);
+static Eina_Bool _e_keyrouter_send_key_events_focus(int type, struct wl_resource *surface, Ecore_Event_Key *ev, struct wl_resource *delivered_surface);
 
 static Eina_Bool _e_keyrouter_is_key_grabbed(int key);
 static Eina_Bool _e_keyrouter_check_top_visible_window(E_Client *ec_focus, int arr_idx);
@@ -22,8 +22,7 @@ _e_keyrouter_is_key_grabbed(int key)
    if (krt->HardKeys[key].excl_ptr ||
         krt->HardKeys[key].or_excl_ptr ||
         krt->HardKeys[key].top_ptr ||
-        krt->HardKeys[key].shared_ptr ||
-        krt->HardKeys[key].registered_ptr)
+        krt->HardKeys[key].shared_ptr)
      {
         return EINA_TRUE;
      }
@@ -47,14 +46,23 @@ e_keyrouter_process_key_event(void *event, int type)
         KLDBG("data is exist send to compositor: %p\n", ev->data);
         goto finish;
      }
+   if(krt->playback_daemon_surface)
+     {
+       struct wl_client *wc = wl_resource_get_client(krt->playback_daemon_surface);
+       if(wc)
+          {
+            _e_keyrouter_send_key_event(type, krt->playback_daemon_surface, wc, ev, EINA_FALSE, TIZEN_KEYROUTER_MODE_REGISTERED);
+            KLDBG("Sent key to playback-daemon\n");
+          }
+     }
 
    if (krt->max_tizen_hwkeys < ev->keycode)
      {
         KLWRN("The key(%d) is too larger to process keyrouting: Invalid keycode\n", ev->keycode);
         goto finish;
      }
-
-   if ((ECORE_EVENT_KEY_DOWN == type) && (!_e_keyrouter_is_key_grabbed(ev->keycode)))
+ /* JEON_CHECK: check keycode or is key grabbed */
+   if ((ECORE_EVENT_KEY_DOWN == type) && !krt->HardKeys[ev->keycode].keycode)
      {
         KLDBG("The press key(%d) isn't a grabbable key or has not been grabbed yet !\n", ev->keycode);
         goto finish;
@@ -67,9 +75,11 @@ e_keyrouter_process_key_event(void *event, int type)
      }
 
    //KLDBG("The key(%d) is going to be sent to the proper wl client(s) !\n", ev->keycode);
-
-  if (_e_keyrouter_send_key_events(type, ev))
-    res = EINA_FALSE;
+   /* Call process key combination to lookup for any particular combinaton */
+   e_keyrouter_process_key_combination(ev->timestamp, ev->keycode, type);
+   KLDBG("[%s] keyname: %s, key: %s, keycode: %d\n", (type == ECORE_EVENT_KEY_DOWN) ? "KEY_PRESS" : "KEY_RELEASE", ev->keyname, ev->key, ev->keycode);
+   if (_e_keyrouter_send_key_events(type, ev))
+     res = EINA_FALSE;
 
 finish:
    return res;
@@ -112,6 +122,7 @@ _e_keyrouter_send_key_events_release(int type, Ecore_Event_Key *ev)
           }
      }
    krt->HardKeys[ev->keycode].press_ptr = NULL;
+   krt->isRegisterDelivery = EINA_FALSE;
 
    return ret;
 }
@@ -122,10 +133,33 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
    unsigned int keycode = ev->keycode;
    struct wl_resource *surface_focus = NULL;
    E_Client *ec_focus = NULL;
+   struct wl_resource *delivered_surface = NULL;
    Eina_Bool res = EINA_TRUE;
 
    E_Keyrouter_Key_List_NodePtr key_node_data;
    Eina_List *l = NULL;
+
+   ec_focus = e_client_focused_get();
+   surface_focus = e_keyrouter_util_get_surface_from_eclient(ec_focus);
+
+   if(krt->isPictureOffEnabled == 1)
+     {
+       EINA_LIST_FOREACH(krt->HardKeys[keycode].pic_off_ptr, l, key_node_data)
+          {
+            if (key_node_data)
+                {
+                 res = _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev, key_node_data->focused, TIZEN_KEYROUTER_MODE_REGISTERED);
+                 KLINF("PICTURE OFF Mode : Key %s(%d) ===> Surface (%p) WL_Client (%p)\n",
+                       ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keycode, key_node_data->surface, key_node_data->wc);
+                }
+          }
+       return res;
+     }
+   if(!_e_keyrouter_is_key_grabbed(ev->keycode))
+     {
+       res = _e_keyrouter_send_key_events_focus(type, surface_focus, ev, delivered_surface);
+       return res;
+     }
 
    EINA_LIST_FOREACH(krt->HardKeys[keycode].excl_ptr, l, key_node_data)
      {
@@ -154,9 +188,6 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
              return res;
           }
      }
-
-   ec_focus = e_client_focused_get();
-   surface_focus = e_keyrouter_util_get_surface_from_eclient(ec_focus);
 
    // Top position grab must need a focus surface.
    if (surface_focus)
@@ -190,11 +221,36 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
                   break;
                }
           }
+       goto need_shared;
      }
 
    if (krt->HardKeys[keycode].shared_ptr)
      {
-        res = _e_keyrouter_send_key_event(type, surface_focus, NULL, ev, EINA_TRUE, TIZEN_KEYROUTER_MODE_SHARED);
+need_shared:
+        //res = _e_keyrouter_send_key_event(type, surface_focus, NULL, ev, EINA_TRUE, TIZEN_KEYROUTER_MODE_SHARED);
+        res = _e_keyrouter_send_key_events_focus(type, surface_focus, ev, delivered_surface);
+        EINA_LIST_FOREACH(krt->HardKeys[keycode].shared_ptr, l, key_node_data)
+          {
+             if (key_node_data)
+               {
+                  if( delivered_surface && key_node_data->surface == delivered_surface)
+                    {
+                       // Check for already delivered surface
+                       // do not deliver double events in this case.
+                       continue;
+                    }
+                 else
+                   {
+                      _e_keyrouter_send_key_event(type, key_node_data->surface, key_node_data->wc, ev, key_node_data->focused, TIZEN_KEYROUTER_MODE_SHARED);
+                      KLINF("SHARED Mode : Key %s(%s:%d) ===> Surface (%p) WL_Client (%p) (pid: %d)\n",
+                            ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
+                            key_node_data->surface, key_node_data->wc, e_keyrouter_util_get_pid(key_node_data->wc, key_node_data->surface));
+               }
+           }
+       }
+       return res;
+    }
+#if 0
         KLINF("SHARED [Focus client] : Key %s (%s:%d) ===> Surface (%p) (pid: %d)\n",
                  ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up "), ev->keyname, ev->keycode,
                  surface_focus, e_keyrouter_util_get_pid(NULL, surface_focus));
@@ -234,35 +290,137 @@ _e_keyrouter_send_key_events_press(int type, Ecore_Event_Key *ev)
 
         return res;
      }
-
-   if (_e_keyrouter_send_key_events_register(type, ev))
-     {
-        return EINA_TRUE;
-     }
-
+#endif
    return EINA_FALSE;
 }
 
 static Eina_Bool
-_e_keyrouter_send_key_events_register(int type, Ecore_Event_Key *ev)
+_e_keyrouter_send_key_events_focus(int type, struct wl_resource *surface_focus,  Ecore_Event_Key *ev, struct wl_resource *delivered_surface)
 {
-   unsigned int keycode = ev->keycode;
+   E_Client *ec_top = NULL, *ec_focus = NULL;
+   Eina_Bool below_focus = EINA_FALSE;
+   struct wl_resource *surface = NULL;
+   Eina_List* key_list = NULL;
+   int *key_data = NULL;
+   Eina_List *ll = NULL;
+   int deliver_invisible = 0;
    Eina_Bool res = EINA_TRUE;
 
-   if (!krt->HardKeys[keycode].registered_ptr)
+   ec_top = e_client_top_get();
+   ec_focus = e_client_focused_get();
+
+   // loop over to next window from top of window stack
+   for (; ec_top != NULL; ec_top = e_client_below_get(ec_top))
      {
-        KLDBG("This keycode is not registered\n");
-        return EINA_FALSE;
-     }
+        surface = e_keyrouter_util_get_surface_from_eclient(ec_top);
+        if(surface == NULL)
+          {
+             // Not a valid surface.
+             continue;
+          }
 
-   res = _e_keyrouter_send_key_event(type, krt->HardKeys[keycode].registered_ptr->surface,
-                                     NULL, ev, krt->HardKeys[keycode].registered_ptr->focused,
-                                     TIZEN_KEYROUTER_MODE_REGISTERED);
-   KLINF("REGISTER Mode : Key %s(%s:%d) ===> Surface (%p) (pid: %d)\n",
-            ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
-            krt->HardKeys[keycode].registered_ptr->surface, e_keyrouter_util_get_pid(NULL, krt->HardKeys[keycode].registered_ptr->surface));
+        // Check if window stack reaches to focus window
+        if (ec_top == ec_focus)
+          {
+             KLINF("%p is focus client & surface_focus %p. ==> %p\n", ec_top, surface_focus, surface);
+             below_focus = EINA_TRUE;
+          }
 
-   return res;
+        // Check for FORCE DELIVER to INVISIBLE WINDOW
+        if (deliver_invisible && IsInvisibleGetWindow(surface))
+          {
+             res = _e_keyrouter_send_key_event(type, surface, NULL, ev, EINA_TRUE, TIZEN_KEYROUTER_MODE_REGISTERED);
+             KLINF("FORCE DELIVER : Key %s(%s:%d) ===> Surface (%p) (pid: %d)\n",
+                   ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
+                   surface, e_keyrouter_util_get_pid(NULL, surface));
+             delivered_surface = surface;
+             return res;
+          }
+
+        // Check for visible window first <Consider VISIBILITY>
+        // return if not visible
+        if (ec_top->visibility.obscured == E_VISIBILITY_FULLY_OBSCURED || ec_top->visibility.obscured == E_VISIBILITY_UNKNOWN)
+          {
+             continue;
+          }
+
+        // Set key Event Delivery for INVISIBLE WINDOW
+        if (IsInvisibleSetWindow(surface))
+          {
+             deliver_invisible = 1;
+          }
+
+        if (IsNoneKeyRegisterWindow(surface))
+          {
+             // Registered None property is set for this surface
+             // No event will be delivered to this surface.
+             KLINF("Surface(%p) is a none register window.\n", surface);
+             continue;
+          }
+
+        if (e_keyrouter_is_registered_window(surface))
+          {
+             // get the key list and deliver events if it has registered for that key
+             // Write a function to get the key list for register window.
+             key_list = _e_keyrouter_registered_window_key_list(surface);
+             if (key_list)
+               {
+                  EINA_LIST_FOREACH(key_list, ll, key_data)
+                    {
+                       if(!key_data) continue;
+
+                       if(*key_data == ev->keycode)
+                         {
+                            res = _e_keyrouter_send_key_event(type, surface, NULL, ev, EINA_TRUE, TIZEN_KEYROUTER_MODE_REGISTERED);
+                            KLINF("REGISTER Mode : Key %s(%s:%d) ===> Surface (%p) (pid: %d)\n",
+                                  ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
+                                  surface, e_keyrouter_util_get_pid(NULL, surface));
+                            delivered_surface = surface;
+                            krt->isRegisterDelivery = EINA_TRUE;
+                            return res;
+                         }
+                    }
+               }
+             else
+               {
+                  KLDBG("Key_list is Null for registered surface %p\n", surface);
+               }
+          }
+
+        if (surface != surface_focus)
+          {
+             if (below_focus == EINA_FALSE) continue;
+
+             // Deliver to below Non Registered window
+             else if (!e_keyrouter_is_registered_window(surface))
+               {
+                  res = _e_keyrouter_send_key_event(type, surface, NULL, ev, EINA_TRUE, TIZEN_KEYROUTER_MODE_SHARED);
+                  KLINF("NOT REGISTER : Key %s(%s:%d) ===> Surface (%p) (pid: %d)\n",
+                        ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
+                        surface, e_keyrouter_util_get_pid(NULL, surface));
+                  delivered_surface = surface;
+                  return res;
+               }
+             else continue;
+          }
+        else
+          {
+             // Deliver to Focus if Non Registered window
+             if (!e_keyrouter_is_registered_window(surface))
+               {
+                  res = _e_keyrouter_send_key_event(type, surface, NULL,ev, EINA_TRUE, TIZEN_KEYROUTER_MODE_SHARED);
+                  KLINF("FOCUS : Key %s(%s:%d) ===> Surface (%p) (pid: %d)\n",
+                        ((ECORE_EVENT_KEY_DOWN == type) ? "Down" : "Up"), ev->keyname, ev->keycode,
+                        surface, e_keyrouter_util_get_pid(NULL, surface));
+                  delivered_surface = surface;
+                  return res;
+               }
+             else continue;
+          }
+    }
+
+    KLINF("Couldnt Deliver key:(%s:%d) to any window. Focused Surface: %p\n", ev->keyname, ev->keycode, surface_focus);
+    return res;
 }
 
 static Eina_Bool

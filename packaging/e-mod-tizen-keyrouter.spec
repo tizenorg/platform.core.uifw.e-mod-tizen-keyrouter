@@ -16,8 +16,10 @@ BuildRequires:  pkgconfig(wayland-server)
 BuildRequires:  pkgconfig(tizen-extension-server)
 BuildRequires:  pkgconfig(cynara-client)
 BuildRequires:  pkgconfig(cynara-creds-socket)
+BuildRequires:  pkgconfig(capi-system-device)
 %endif
-BuildRequires:  pkgconfig(dlog)
+BuildRequires:  pkgconfig(dbus-glib-1)
+BuildRequires:  pkgconfig(libtzplatform-config)
 %if "%{?profile}" == "common"
 %else
 BuildRequires:  xkb-tizen-data
@@ -41,7 +43,8 @@ export LDFLAGS+=" -Wl,--hash-style=both -Wl,--as-needed -Wl,--rpath=/usr/lib"
 %if %{with wayland}
 %configure --prefix=/usr \
            --enable-wayland-only \
-           --enable-cynara
+           --enable-cynara \
+           TZ_SYS_RO_APP=%{TZ_SYS_RO_APP}
 %endif
 
 make
@@ -53,6 +56,9 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}/%{TZ_SYS_RO_SHARE}/license
 cp -a %{_builddir}/%{buildsubdir}/COPYING %{buildroot}/%{TZ_SYS_RO_SHARE}/license/%{name}
 
+# for install combination key's configuration
+mkdir -p %{buildroot}%{TZ_SYS_RO_APP}/keyrouter
+cp -af config/key_combinations.ini %{buildroot}%{TZ_SYS_RO_APP}/keyrouter/
 
 # install
 make install DESTDIR=%{buildroot}
@@ -64,3 +70,4 @@ find  %{buildroot}%{_libdir}/enlightenment/modules/%{name} -name *.la | xargs rm
 %defattr(-,root,root,-)
 %{_libdir}/enlightenment/modules/e-mod-tizen-keyrouter
 %{TZ_SYS_RO_SHARE}/license/%{name}
+%attr(754, app, root) %{TZ_SYS_RO_APP}/keyrouter
