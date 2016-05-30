@@ -40,6 +40,8 @@ dnl ========================================================================
 #AC_HEADER_STDC
 AC_CHECK_HEADERS([math.h fcntl.h stdlib.h string.h unistd.h])
 
+COMBINATION_FILE_PATH="$TZ_SYS_RO_APP/keyrouter/key_combinations.ini"
+AC_DEFINE_UNQUOTED(COMBINATION_FILE_PATH, "$COMBINATION_FILE_PATH", [Path to Key Combination File])
 dnl ========================================================================
 # checks for typedefs, structures, and compiler characteristics
 AC_C_CONST
@@ -59,8 +61,7 @@ PKG_PROG_PKG_CONFIG
 dnl ========================================================================
 # checks for pkg-config
 dnl ========================================================================
-PKG_CHECK_MODULES(ENLIGHTENMENT, [enlightenment,
-                                  dlog])
+PKG_CHECK_MODULES(ENLIGHTENMENT, [enlightenment])
 ENLIGHTENMENT_CFLAGS="${ENLIGHTENMENT_CFLAGS} -D_GNU_SOURCE "
 AC_SUBST(ENLIGHTENMENT_CFLAGS)
 AC_SUBST(ENLIGHTENMENT_LIBS)
@@ -113,7 +114,7 @@ dnl ========================================================================
 # checks for wayland only argument
 dnl ========================================================================
 if test "x${have_wayland_only}" = "xyes"; then
-  PKG_CHECK_MODULES(WAYLAND, [wayland-server, tizen-extension-server])
+  PKG_CHECK_MODULES(WAYLAND, [wayland-server, tizen-extension-server, capi-system-device])
 fi
 
 release=$(pkg-config --variable=release enlightenment)

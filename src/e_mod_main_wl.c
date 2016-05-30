@@ -1,6 +1,11 @@
 #define E_COMP_WL
 #include "e_mod_main_wl.h"
 #include <string.h>
+#include <device/power.h>
+#include <device/callback.h>
+#include <device/display.h>
+
+#define KRT_IPD_INPUT_CONFIG          444
 
 E_KeyrouterPtr krt = NULL;
 E_API E_Module_Api e_modapi = { E_MODULE_API_VERSION, "Keyrouter Module of Window Manager" };
@@ -19,7 +24,8 @@ static void _e_keyrouter_wl_surface_cb_destroy(struct wl_listener *l, void *data
 
 static int _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, uint32_t key, uint32_t mode);
 static int _e_keyrouter_keygrab_unset(struct wl_client *client, struct wl_resource *surface, uint32_t key);
-
+static Eina_Bool _e_keyrouter_cb_idler(void *data);
+static void _e_keyrouter_cb_power_change(device_callback_e type, void* value, void* user_data);
 #ifdef ENABLE_CYNARA
 static void _e_keyrouter_util_cynara_log(const char *func_name, int err);
 static Eina_Bool _e_keyrouter_util_do_privilege_check(struct wl_client *client, int socket_fd, uint32_t mode, uint32_t keycode);
@@ -52,9 +58,10 @@ _e_keyrouter_keygrab_set(struct wl_client *client, struct wl_resource *surface, 
    if (!surface)
      {
         /* Regarding topmost mode, a client must request to grab a key with a valid surface. */
-        if (mode == TIZEN_KEYROUTER_MODE_TOPMOST)
+        if (mode == TIZEN_KEYROUTER_MODE_TOPMOST ||
+            mode == TIZEN_KEYROUTER_MODE_REGISTERED)
           {
-             KLWRN("Invalid surface for TOPMOST grab mode ! (key=%d, mode=%d)\n", key, mode);
+             KLWRN("Invalid surface for %d grab mode ! (key=%d)\n", mode, key);
 
              return TIZEN_KEYROUTER_ERROR_INVALID_SURFACE;
           }
@@ -198,9 +205,12 @@ _e_keyrouter_cb_keygrab_set_list(struct wl_client *client, struct wl_resource *r
         /* FIX ME: Which way is effectively to notify invalid pair to client */
         KLWRN("Invalid keycode and grab mode pair. Check arguments in a list\n");
         grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
-        grab_result->request_data.key = 0;
-        grab_result->request_data.mode = 0;
-        grab_result->err = TIZEN_KEYROUTER_ERROR_INVALID_ARRAY;
+        if (grab_result)
+          {
+             grab_result->request_data.key = 0;
+             grab_result->request_data.mode = 0;
+             grab_result->err = TIZEN_KEYROUTER_ERROR_INVALID_ARRAY;
+          }
         goto send_notify;
      }
 
@@ -253,6 +263,252 @@ _e_keyrouter_cb_keygrab_unset_list(struct wl_client *client, struct wl_resource 
    wl_array_release(&grab_result_list);
 }
 
+static void
+_e_keyrouter_cb_get_keyregister_status(struct wl_client *client, struct wl_resource *resource, uint32_t key)
+{
+   (void) client;
+   (void) key;
+
+   Eina_Bool res = EINA_FALSE;
+
+   if (krt->isRegisterDelivery)
+     {
+        res = EINA_TRUE;
+     }
+
+   tizen_keyrouter_send_keyregister_notify(resource, (int)res);
+}
+
+static void
+_e_keyrouter_cb_set_input_config(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, uint32_t config_mode, uint32_t value)
+{
+   Eina_Bool res = EINA_TRUE;
+   KLINF("Given Surface(%p) for mode %d with value = %d \n", surface, config_mode, value);
+
+   if (surface == NULL && config_mode != TIZEN_KEYROUTER_CONFIG_MODE_PICTURE_OFF)
+     {
+        KLWRN("Error Surface is NULL \n");
+        res = EINA_FALSE;
+        goto send_input_config_notify;
+     }
+
+   switch (config_mode)
+     {
+        case TIZEN_KEYROUTER_CONFIG_MODE_INVISIBLE_SET:
+           if (value)
+             {
+                krt->invisible_set_window_list= eina_list_append(krt->invisible_set_window_list, surface);
+             }
+           else
+             {
+                krt->invisible_set_window_list= eina_list_remove(krt->invisible_set_window_list, surface);
+             }
+           break;
+
+        case KRT_IPD_INPUT_CONFIG:
+           krt->playback_daemon_surface = surface;
+           KLINF("Registered playback daemon surface: %p",surface);
+           break;
+
+        case TIZEN_KEYROUTER_CONFIG_MODE_INVISIBLE_GET:
+           if (value)
+             {
+                krt->invisible_get_window_list= eina_list_append(krt->invisible_get_window_list, surface);
+             }
+           else
+             {
+                krt->invisible_get_window_list= eina_list_remove(krt->invisible_get_window_list, surface);
+             }
+           break;
+
+        case TIZEN_KEYROUTER_CONFIG_MODE_NUM_KEY_FOCUS:
+            // to do ;
+            break;
+
+        case TIZEN_KEYROUTER_CONFIG_MODE_PICTURE_OFF:
+            res = e_keyrouter_prepend_to_keylist(surface, surface ? NULL : client, value, TIZEN_KEYROUTER_MODE_PICTURE_OFF, EINA_FALSE);
+            /* As surface/client destroy listener got added in e_keyrouter_prepend_to_keylist() function already */
+            value = 0;
+            break;
+
+        default:
+            KLWRN("Wrong mode requested: %d \n", config_mode);
+            res= EINA_FALSE;
+            goto send_input_config_notify;
+     }
+
+   if (value)
+     {
+        KLDBG("Add a surface(%p) destory listener\n", surface);
+        e_keyrouter_add_surface_destroy_listener(surface);
+     }
+send_input_config_notify:
+   tizen_keyrouter_send_set_input_config_notify(resource, (int)res);
+}
+
+/* tizen_keyrouter check if given surface in register none key list */
+Eina_Bool
+IsNoneKeyRegisterWindow(struct wl_resource *surface)
+{
+   struct wl_resource *surface_ldata = NULL;
+   Eina_List *l = NULL, *l_next = NULL;
+
+   EINA_LIST_FOREACH_SAFE (krt->registered_none_key_window_list, l, l_next, surface_ldata)
+     {
+        if (surface_ldata == surface)
+          {
+             KLDBG("Given surface(%p) is in NoneKeyRegisterWindow \n", surface);
+             return EINA_TRUE;
+          }
+     }
+   return EINA_FALSE;
+}
+
+/* tizen_keyrouter check if given surface in register invisible set list */
+Eina_Bool
+IsInvisibleSetWindow(struct wl_resource *surface)
+{
+   struct wl_resource *surface_ldata = NULL;
+   Eina_List *l = NULL, *l_next = NULL;
+
+   EINA_LIST_FOREACH_SAFE(krt->invisible_set_window_list, l, l_next, surface_ldata)
+     {
+        if (surface_ldata == surface)
+          {
+             return EINA_TRUE;
+          }
+     }
+   return EINA_FALSE;
+}
+
+/* tizen_keyrouter check if given surface in register invisible get list */
+Eina_Bool
+IsInvisibleGetWindow(struct wl_resource *surface)
+{
+   struct wl_resource *surface_ldata = NULL;
+   Eina_List *l = NULL, *l_next = NULL;
+
+   EINA_LIST_FOREACH_SAFE(krt->invisible_get_window_list, l, l_next, surface_ldata)
+     {
+        if (surface_ldata == surface)
+          {
+             return EINA_TRUE;
+          }
+     }
+   return EINA_FALSE;
+}
+
+static void
+_e_keyrouter_cb_set_register_none_key(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, uint32_t data)
+{
+   (void) client;
+
+   // Register None key set/get
+   krt->register_none_key = data;
+   if (krt->register_none_key)
+     {
+        krt->registered_none_key_window_list = eina_list_append(krt->registered_none_key_window_list, surface);
+        if (surface)
+          {
+             e_keyrouter_add_surface_destroy_listener(surface);
+             /* TODO: if failed add surface_destory_listener, remove keygrabs */
+          }
+     }
+   else
+     {
+        krt->registered_none_key_window_list = eina_list_remove(krt->registered_none_key_window_list, surface);
+     }
+
+   KLDBG("Set Registered None Key called on surface (%p) with data (%d)\n", surface, krt->register_none_key);
+   tizen_keyrouter_send_set_register_none_key_notify(resource, NULL, krt->register_none_key);
+}
+
+static void
+_e_keyrouter_cb_keygrab_get_list(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface)
+{
+   E_Keyrouter_Key_List_NodePtr key_node_data = NULL;
+   struct wl_array grab_result_list = {0,};
+   E_Keyrouter_Grab_Result *grab_result = NULL;
+   E_Keyrouter_Registered_Window_Info *rwin_info = NULL;
+   Eina_List *l = NULL, *ll = NULL, *l_next = NULL;
+   int *key_data;
+   int i;
+
+   wl_array_init(&grab_result_list);
+
+   for (i = 0; i < krt->max_tizen_hwkeys; i++)
+     {
+        if (0 == krt->HardKeys[i].keycode) continue;
+
+        EINA_LIST_FOREACH_SAFE(krt->HardKeys[i].excl_ptr, l, l_next, key_node_data)
+          {
+             if (surface == key_node_data->surface)
+               {
+                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
+                  if (grab_result)
+                    {
+                       grab_result->request_data.key = i;
+                       grab_result->request_data.mode = TIZEN_KEYROUTER_MODE_EXCLUSIVE;
+                    }
+               }
+          }
+        EINA_LIST_FOREACH_SAFE(krt->HardKeys[i].or_excl_ptr, l, l_next, key_node_data)
+          {
+             if (surface == key_node_data->surface)
+               {
+                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
+                  if (grab_result)
+                    {
+                       grab_result->request_data.key = i;
+                       grab_result->request_data.mode = TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE;
+                    }
+               }
+          }
+        EINA_LIST_FOREACH_SAFE(krt->HardKeys[i].top_ptr, l, l_next, key_node_data)
+          {
+             if (surface == key_node_data->surface)
+               {
+                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
+                  if (grab_result)
+                    {
+                       grab_result->request_data.key = i;
+                       grab_result->request_data.mode = TIZEN_KEYROUTER_MODE_TOPMOST;
+                    }
+               }
+          }
+        EINA_LIST_FOREACH_SAFE(krt->HardKeys[i].shared_ptr, l, l_next, key_node_data)
+          {
+             if (surface == key_node_data->surface)
+               {
+                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
+                  if (grab_result)
+                    {
+                       grab_result->request_data.key = i;
+                       grab_result->request_data.mode = TIZEN_KEYROUTER_MODE_SHARED;
+                    }
+               }
+          }
+     }
+   // handle register mode here
+   EINA_LIST_FOREACH(krt->registered_window_list, l, rwin_info)
+     {
+        if (rwin_info->surface == surface)
+          {
+             EINA_LIST_FOREACH(rwin_info->keys, ll, key_data)
+               {
+                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
+                  if (grab_result)
+                    {
+                       grab_result->request_data.key = *key_data;
+                       grab_result->request_data.mode = TIZEN_KEYROUTER_MODE_REGISTERED;
+                    }
+               }
+          }
+     }
+
+   tizen_keyrouter_send_getgrab_notify_list(resource, surface, &grab_result_list);
+   wl_array_release(&grab_result_list);
+}
 
 /* Function for registering wl_client destroy listener */
 int
@@ -332,7 +588,11 @@ static const struct tizen_keyrouter_interface _e_keyrouter_implementation = {
    _e_keyrouter_cb_keygrab_unset,
    _e_keyrouter_cb_get_keygrab_status,
    _e_keyrouter_cb_keygrab_set_list,
-   _e_keyrouter_cb_keygrab_unset_list
+   _e_keyrouter_cb_keygrab_unset_list,
+   _e_keyrouter_cb_keygrab_get_list,
+   _e_keyrouter_cb_set_register_none_key,
+   _e_keyrouter_cb_get_keyregister_status,
+   _e_keyrouter_cb_set_input_config
 };
 
 /* tizen_keyrouter global object destroy function */
@@ -373,11 +633,56 @@ _event_filter(void *data, void *loop_data EINA_UNUSED, int type, void *event)
    /* Filter only for key down/up event */
    if (ECORE_EVENT_KEY_DOWN == type || ECORE_EVENT_KEY_UP == type)
      {
+        if (ECORE_EVENT_KEY_DOWN == type)
+          {
+             TRACE_INPUT_BEGIN(event_filter:KEY_PRESS);
+             TRACE_INPUT_END();
+          }
+        else if (ECORE_EVENT_KEY_UP == type)
+          {
+             TRACE_INPUT_BEGIN(event_filter:KEY_RELEASE);
+             TRACE_INPUT_END();
+          }
         return e_keyrouter_process_key_event(event, type);
      }
 
    return EINA_TRUE;
 }
+
+static void
+_e_keyrouter_cb_power_change(device_callback_e type, void* value, void* user_data)
+{
+   if (type != DEVICE_CALLBACK_DISPLAY_STATE)
+     {
+        KLWRN("type is not DISPLAY_STATE");
+        return;
+     }
+
+   display_state_e state = (display_state_e)value;
+   switch (state)
+     {
+        case DISPLAY_STATE_SCREEN_OFF:
+           krt->isPictureOffEnabled = 1;
+           break;
+        case DISPLAY_STATE_NORMAL:
+           krt->isPictureOffEnabled = 0;
+           break;
+        case DISPLAY_STATE_SCREEN_DIM:
+           krt->isPictureOffEnabled = 0;
+           break;
+        default:
+           krt->isPictureOffEnabled = 0;
+           break;
+     }
+   KLDBG("Picture off flag changed to %d \n", krt->isPictureOffEnabled);
+}
+
+static Eina_Bool _e_keyrouter_cb_idler(void *data)
+{
+    device_add_callback(DEVICE_CALLBACK_DISPLAY_STATE,_e_keyrouter_cb_power_change,NULL);
+    return ECORE_CALLBACK_CANCEL;
+}
+
 
 static E_Keyrouter_Config_Data *
 _e_keyrouter_init(E_Module *m)
@@ -411,12 +716,16 @@ _e_keyrouter_init(E_Module *m)
    EINA_SAFETY_ON_NULL_GOTO(kconfig->conf, err);
    krt->conf = kconfig;
 
+   e_keyrouter_key_combination_init();
+
    /* Get keyname and keycode pair from Tizen Key Layout file */
    res = _e_keyrouter_query_tizen_key_table();
    EINA_SAFETY_ON_FALSE_GOTO(res, err);
 
    /* Add filtering mechanism */
    krt->ef_handler = ecore_event_filter_add(NULL, _event_filter, NULL, NULL);
+   //ecore handler add for power callback registration
+   ecore_idle_enterer_add(_e_keyrouter_cb_idler, NULL);
    _e_keyrouter_init_handlers();
 
    krt->global = wl_global_create(e_comp_wl->wl.disp, &tizen_keyrouter_interface, 1, krt, _e_keyrouter_cb_bind);
@@ -633,7 +942,7 @@ _e_keyrouter_wl_client_cb_destroy(struct wl_listener *l, void *data)
 static void
 _e_keyrouter_wl_surface_cb_destroy(struct wl_listener *l, void *data)
 {
-   struct wl_resource *surface = data;
+   struct wl_resource *surface = (struct wl_resource *)data;
 
    KLDBG("Listener(%p) called: surface: %p is died\n", l, surface);
    e_keyrouter_remove_client_from_list(surface, NULL);
@@ -642,6 +951,14 @@ _e_keyrouter_wl_surface_cb_destroy(struct wl_listener *l, void *data)
    l = NULL;
 
    krt->grab_surface_list = eina_list_remove(krt->grab_surface_list, surface);
+   krt->registered_none_key_window_list = eina_list_remove(krt->registered_none_key_window_list, surface);
+   krt->invisible_set_window_list= eina_list_remove(krt->invisible_set_window_list, surface);
+   krt->invisible_get_window_list= eina_list_remove(krt->invisible_get_window_list, surface);
+   if (surface == krt->playback_daemon_surface)
+     {
+        krt->playback_daemon_surface = NULL;
+        KLDBG("playback daemon surface destroyed!");
+     }
 }
 
 #ifdef ENABLE_CYNARA
