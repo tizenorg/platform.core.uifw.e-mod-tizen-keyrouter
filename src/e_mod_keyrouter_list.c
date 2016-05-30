@@ -86,7 +86,9 @@ _e_keyrouter_find_duplicated_client(struct wl_resource *surface, struct wl_clien
       case TIZEN_KEYROUTER_MODE_PRESSED:
          keylist_ptr = krt->HardKeys[key].press_ptr;
          break;
-
+     case TIZEN_KEYROUTER_MODE_PICTURE_OFF:
+         keylist_ptr = krt->HardKeys[key].pic_off_ptr;
+         break;
       default:
          KLWRN("Unknown key(%d) and grab mode(%d)\n", key, mode);
          return TIZEN_KEYROUTER_ERROR_INVALID_MODE;
@@ -185,7 +187,9 @@ e_keyrouter_prepend_to_keylist(struct wl_resource *surface, struct wl_client *wc
       case TIZEN_KEYROUTER_MODE_PRESSED:
          krt->HardKeys[key].press_ptr = eina_list_prepend(krt->HardKeys[key].press_ptr, new_keyptr);
          break;
-
+     case TIZEN_KEYROUTER_MODE_PICTURE_OFF:
+         krt->HardKeys[key].pic_off_ptr = eina_list_prepend(krt->HardKeys[key].pic_off_ptr, new_keyptr);
+         break;
       default:
          KLWRN("Unknown key(%d) and grab mode(%d)\n", key, mode);
          E_FREE(new_keyptr);
@@ -361,14 +365,56 @@ e_keyrouter_remove_client_from_list(struct wl_resource *surface, struct wl_clien
                   KLINF("Remove a Pressed key(%d) by wc(%p)\n", i, wc);
                }
           }
+        EINA_LIST_FOREACH_SAFE(krt->HardKeys[i].pic_off_ptr, l, l_next, key_node_data)
+          {
+             if(!key_node_data) continue;
+             if (surface)
+               {
+                  krt->HardKeys[i].pic_off_ptr = eina_list_remove_list(krt->HardKeys[i].pic_off_ptr, l);
+                  E_FREE(key_node_data);
+               }
+             else if( wc == key_node_data->wc)
+               {
+                  krt->HardKeys[i].pic_off_ptr = eina_list_remove_list(krt->HardKeys[i].pic_off_ptr, l);
+                  E_FREE(key_node_data);
+               }
+          }
      }
 
    _e_keyrouter_remove_registered_surface_in_list(surface);
 }
 
+Eina_Bool
+e_keyrouter_find_key_in_register_list(uint32_t key)
+{
+   E_Keyrouter_Registered_Window_Info* rwin_info = NULL;
+   int *key_data = NULL;
+   Eina_List *l = NULL, *ll = NULL;
+
+   EINA_LIST_FOREACH(krt->registered_window_list, l, rwin_info)
+     {
+        if (!rwin_info) continue;
+        EINA_LIST_FOREACH(rwin_info->keys, ll, key_data)
+          {
+             if(*key_data == key)
+               {
+                  KLDBG("Find %d key by register surface %p\n", key, rwin_info->surface);
+                  return EINA_TRUE;
+               }
+          }
+     }	
+
+   return EINA_FALSE;
+}
+
 int
 e_keyrouter_find_key_in_list(struct wl_resource *surface, struct wl_client *wc, uint32_t key)
 {
+	E_Keyrouter_Registered_Window_Info* rwin_info = NULL;
+	int *key_data = NULL;	
+	Eina_List *l = NULL;
+	Eina_List *ll = NULL;
+	
    int mode = TIZEN_KEYROUTER_MODE_NONE;
    Eina_Bool found = EINA_FALSE;
 
@@ -387,7 +433,23 @@ e_keyrouter_find_key_in_list(struct wl_resource *surface, struct wl_client *wc, 
    mode = TIZEN_KEYROUTER_MODE_SHARED;
    found = _e_keyrouter_find_key_in_list(surface, wc, key, mode);
    if (found) goto finish;
+	
+   EINA_LIST_FOREACH(krt->registered_window_list, l, rwin_info)
+     {
+        if (rwin_info->surface == surface)
+          {
+             EINA_LIST_FOREACH(rwin_info->keys, ll, key_data)
+               {
+                  if(*key_data == key)
+                    {
+                       KLDBG("Find %d key grabbed by (surface: %p, in %s mode\n", key, surface, "TIZEN_KEYROUTER_MODE_REGISTERED");
+                       return TIZEN_KEYROUTER_MODE_REGISTERED;
+                    }
+               }
+          }
+     }
 
+   KLDBG("%d key is not grabbed by (surface: %p, wl_client: %p)\n", key, surface, wc);
    return TIZEN_KEYROUTER_MODE_NONE;
 
 finish:
@@ -511,6 +573,7 @@ e_keyrouter_unset_keyregister(struct wl_resource *surface, struct wl_client *cli
    Eina_List *l, *ll, *ll_next;
    E_Keyrouter_Registered_Window_Info *data;
    int *ddata;
+   Eina_List *key_list = NULL;
 
    _e_keyrouter_clean_register_list();
 
@@ -531,6 +594,15 @@ e_keyrouter_unset_keyregister(struct wl_resource *surface, struct wl_client *cli
                     }
                }
           }
+     }
+
+   // Remove the surface from Registry list if  all registered keys were removed.
+   key_list = _e_keyrouter_registered_window_key_list(surface);
+
+   if(!key_list)
+     {
+        KLDBG("Removing %p surface from register list, as NULL key list \n", surface);
+        _e_keyrouter_remove_registered_surface_in_list(surface);
      }
 
    _e_keyrouter_build_register_list();
@@ -639,6 +711,23 @@ e_keyrouter_is_registered_window(struct wl_resource *surface)
 
    return EINA_FALSE;
 }
+
+Eina_List*
+_e_keyrouter_registered_window_key_list(struct wl_resource *surface)
+{
+   Eina_List *l = NULL;
+   E_Keyrouter_Registered_Window_Info *data = NULL;
+
+   EINA_LIST_FOREACH(krt->registered_window_list, l, data)
+     {
+        if (data->surface == surface)
+          {
+             return data->keys;
+          }
+     }
+   return NULL;
+}
+
 
 void
 e_keyrouter_clear_registered_window(void)

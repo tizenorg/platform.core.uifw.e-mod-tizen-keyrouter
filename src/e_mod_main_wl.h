@@ -52,6 +52,9 @@ typedef struct _E_Keyrouter_Conf_Edd E_Keyrouter_Conf_Edd;
 typedef struct _E_Keyrouter_Config_Data E_Keyrouter_Config_Data;
 
 #define TIZEN_KEYROUTER_MODE_PRESSED        TIZEN_KEYROUTER_MODE_REGISTERED+1
+#define TIZEN_KEYROUTER_MODE_PICTURE_OFF        TIZEN_KEYROUTER_MODE_REGISTERED+2
+
+typedef unsigned long Time;
 
 extern E_KeyrouterPtr krt;
 
@@ -104,6 +107,7 @@ struct _E_Keyrouter_Grabbed_Key
    Eina_List *shared_ptr;
    Eina_List *press_ptr;
    E_Keyrouter_Key_List_Node *registered_ptr;
+   Eina_List *pic_off_ptr;
 };
 
 struct _E_Keyrouter
@@ -123,9 +127,16 @@ struct _E_Keyrouter
    Eina_Bool isWindowStackChanged;
    int numTizenHWKeys;
    int max_tizen_hwkeys;
+   int register_none_key;
+   Eina_List *registered_none_key_window_list;
+   Eina_List *invisible_set_window_list;
+   Eina_List *invisible_get_window_list;
+   struct wl_resource * playback_daemon_surface;
 #ifdef ENABLE_CYNARA
    cynara *p_cynara;
 #endif
+   int isPictureOffEnabled;
+   Eina_Bool isRegisterDelivery;
 };
 
 struct _E_Keyrouter_Grab_Request {
@@ -150,6 +161,7 @@ int e_keyrouter_prepend_to_keylist(struct wl_resource *surface, struct wl_client
 void e_keyrouter_find_and_remove_client_from_list(struct wl_resource *surface, struct wl_client *wc, uint32_t key, uint32_t mode);
 void e_keyrouter_remove_client_from_list(struct wl_resource *surface, struct wl_client *wc);
 int e_keyrouter_find_key_in_list(struct wl_resource *surface, struct wl_client *wc, uint32_t key);
+Eina_Bool e_keyrouter_find_key_in_register_list(uint32_t key);
 
 int e_keyrouter_add_client_destroy_listener(struct wl_client *client);
 int e_keyrouter_add_surface_destroy_listener(struct wl_resource *surface);
@@ -160,11 +172,18 @@ int e_keyrouter_set_keyregister(struct wl_client *client, struct wl_resource *su
 int e_keyrouter_unset_keyregister(struct wl_resource *surface, struct wl_client *client, uint32_t key);
 Eina_Bool e_keyrouter_is_registered_window(struct wl_resource *surface);
 void e_keyrouter_clear_registered_window(void);
+Eina_List* _e_keyrouter_registered_window_key_list(struct wl_resource *surface);
+Eina_Bool IsNoneKeyRegisterWindow(struct wl_resource *surface);
+Eina_Bool IsInvisibleSetWindow(struct wl_resource *surface);
+Eina_Bool IsInvisibleGetWindow(struct wl_resource *surface);
+
 
 struct wl_resource *e_keyrouter_util_get_surface_from_eclient(E_Client *client);
 int e_keyrouter_util_get_pid(struct wl_client *client, struct wl_resource *surface);
 
 void e_keyrouter_conf_init(E_Keyrouter_Config_Data *kconfig);
 void e_keyrouter_conf_deinit(E_Keyrouter_Config_Data *kconfig);
-
+void e_keyrouter_key_combination_init();
+void e_keyrouter_process_key_combination(Time cur_time, int keycode, int state);
+int e_keyrouter_cb_picture_off(const int option, void *data);
 #endif
