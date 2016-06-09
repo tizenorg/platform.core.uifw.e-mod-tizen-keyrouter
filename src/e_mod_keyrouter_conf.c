@@ -37,9 +37,15 @@ e_keyrouter_conf_init(E_Keyrouter_Config_Data *kconfig)
 void
 e_keyrouter_conf_deinit(E_Keyrouter_Config_Data *kconfig)
 {
+   E_Keyrouter_Tizen_HWKey *kdata;
+
    if (kconfig->conf)
      {
-        E_FREE_LIST(kconfig->conf->KeyList, free);
+        EINA_LIST_FREE(kconfig->conf->KeyList, kdata)
+          {
+             eina_stringshare_del(kdata->name);
+             free(kdata);
+          }
         free(kconfig->conf);
      }
 

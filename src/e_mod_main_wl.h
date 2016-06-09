@@ -111,6 +111,7 @@ struct _E_Keyrouter
    struct wl_global *global;
    Ecore_Event_Filter *ef_handler;
    Eina_List *handlers;
+   Eina_List *resources;
 
    E_Keyrouter_Config_Data *conf;
 
