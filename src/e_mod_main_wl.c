@@ -599,7 +599,7 @@ static const struct tizen_keyrouter_interface _e_keyrouter_implementation = {
 static void
 _e_keyrouter_cb_destory(struct wl_resource *resource)
 {
-   /* TODO : destroy resources if exist */
+   krt->resources = eina_list_remove(krt->resources, resource);
 }
 
 /* tizen_keyrouter global object bind function */
@@ -619,6 +619,8 @@ _e_keyrouter_cb_bind(struct wl_client *client, void *data, uint32_t version, uin
         wl_client_post_no_memory(client);
 	 return;
      }
+
+   krt->resources = eina_list_append(krt->resources, resource);
 
    wl_resource_set_implementation(resource, &_e_keyrouter_implementation, krt_instance, _e_keyrouter_cb_destory);
 }
@@ -770,9 +772,53 @@ e_modapi_init(E_Module *m)
 E_API int
 e_modapi_shutdown(E_Module *m)
 {
+   int i;
+   Eina_List *l, *l_next;
    E_Keyrouter_Config_Data *kconfig = m->data;
+   struct wl_resource *resource;
+   struct wl_client *client;
+   struct wl_listener *destroy_listener;
+
    e_keyrouter_conf_deinit(kconfig);
+   E_FREE(kconfig);
+
    _e_keyrouter_deinit_handlers();
+
+   for (i = 0; i < krt->max_tizen_hwkeys+1; i++)
+     {
+        if (krt->HardKeys[i].keyname)
+          eina_stringshare_del(krt->HardKeys[i].keyname);
+     }
+   E_FREE(krt->HardKeys);
+
+   EINA_LIST_FOREACH_SAFE(krt->grab_client_list, l, l_next, client)
+     {
+        destroy_listener = wl_client_get_destroy_listener(client, _e_keyrouter_wl_client_cb_destroy);
+        if (destroy_listener)
+          {
+             wl_list_remove(&destroy_listener->link);
+             E_FREE(destroy_listener);
+          }
+        krt->grab_client_list = eina_list_remove(krt->grab_client_list, client);
+     }
+   EINA_LIST_FOREACH_SAFE(krt->grab_surface_list, l, l_next, resource)
+     {
+        destroy_listener = wl_resource_get_destroy_listener(resource, _e_keyrouter_wl_surface_cb_destroy);
+        if (destroy_listener)
+          {
+             wl_list_remove(&destroy_listener->link);
+             E_FREE(destroy_listener);
+          }
+        krt->grab_surface_list = eina_list_remove(krt->grab_surface_list, client);
+     }
+
+   EINA_LIST_FREE(krt->registered_window_list, resource);
+
+   EINA_LIST_FREE(krt->resources, resource)
+     wl_resource_destroy(resource);
+
+   wl_global_destroy(krt->global);
+   E_FREE(krt);
 
 #ifdef ENABLE_CYNARA
    if (krt->p_cynara) cynara_finish(krt->p_cynara);
