@@ -625,6 +625,210 @@ _e_keyrouter_cb_bind(struct wl_client *client, void *data, uint32_t version, uin
    wl_resource_set_implementation(resource, &_e_keyrouter_implementation, krt_instance, _e_keyrouter_cb_destory);
 }
 
+static void
+_e_keyrouter_keygrab_status_print(FILE *log_fl, Eina_List *list)
+{
+   Eina_List *l;
+   E_Keyrouter_Key_List_NodePtr kdata;
+   int pid;
+   char *cmd;
+
+   EINA_LIST_FOREACH(list, l, kdata)
+     {
+        pid = e_keyrouter_util_get_pid(kdata->wc, kdata->surface);
+        cmd = e_keyrouter_util_cmd_get_from_pid(pid);
+        fprintf(log_fl, "                [surface: %p, client: %p, pid: %d(%s)]\n", kdata->surface, kdata->wc, pid, cmd);
+        if (kdata->surface)
+          {
+             fprintf(log_fl, "                    -- Surface Information --\n");
+             fprintf(log_fl, "                        = client: %p\n", wl_resource_get_client(kdata->surface));
+             fprintf(log_fl, "                        = resource: %s(%d)\n", wl_resource_get_name(kdata->surface), wl_resource_get_id(kdata->surface));
+          }
+        else
+          {
+             fprintf(log_fl, "                    -- Client Information --\n");
+             fprintf(log_fl, "                        = connected fd: %d\n", wl_client_get_fd(kdata->wc));
+          }
+     }
+}
+
+
+static void
+_e_keyrouter_info_print(void *data, const char *log_path)
+{
+   char *keyname, *cmd;
+   int  i, c, pid, *idata;
+   FILE *log_fl;
+   Eina_List *l, *ll;
+   E_Keyrouter_Registered_Window_Info *rdata;
+
+   log_fl = fopen(log_path, "a");
+   if (!log_fl)
+     {
+        KLERR("failed: open file(%s)\n", log_path);
+        return;
+     }
+
+   setvbuf(log_fl, NULL, _IOLBF, 512);
+
+   fprintf(log_fl, "\n===== Keyrouter Information =====\n");
+   fprintf(log_fl, "    ----- Grabbable Keys -----\n");
+   for (i = 8; i < krt->max_tizen_hwkeys; i++)
+     {
+        if (!krt->HardKeys[i].keycode) continue;
+
+        keyname = e_keyrouter_util_keyname_get_from_keycode(i);
+
+        fprintf(log_fl, "         Key [%3d], Keyname: %s\n", i, keyname);
+
+        free(keyname);
+        keyname = NULL;
+     }
+   fprintf(log_fl, "    ----- End -----\n\n");
+
+   fprintf(log_fl, "    ----- Register Window List -----\n");
+   EINA_LIST_FOREACH(krt->registered_window_list, l, rdata)
+     {
+        pid = e_keyrouter_util_get_pid(NULL, rdata->surface);
+        cmd = e_keyrouter_util_cmd_get_from_pid(pid);
+        fprintf(log_fl, "        [ surface: %p, client: %p, pid: %d(%s) ]\n",
+                         rdata->surface, wl_resource_get_client(rdata->surface), pid, cmd);
+        free(cmd);
+        cmd = NULL;
+        c = 0;
+        EINA_LIST_FOREACH(rdata->keys, ll, idata)
+          {
+             keyname = e_keyrouter_util_keyname_get_from_keycode(*idata);
+             if (c == 0)
+               fprintf(log_fl, "            registered key: Key [%3d], Keyname: %s\n", *idata, keyname);
+             else
+               fprintf(log_fl, "                            Key [%3d], Keyname: %s\n", *idata, keyname);
+             c++;
+             free(keyname);
+             keyname = NULL;
+          }
+     }
+   fprintf(log_fl, "    ----- End -----\n\n");
+
+   fclose(log_fl);
+   log_fl = NULL;
+}
+
+static void
+_e_keyrouter_keygrab_print(void *data, const char *log_path)
+{
+   Eina_List *l;
+   E_Keyrouter_Key_List_NodePtr kdata;
+   E_Client *ec_focus;
+   struct wl_resource *surface_focus;
+   struct wl_client *wc_focus;
+   int pid_focus, pid, i;
+   char *cmd_focus, *cmd, *keyname;
+   FILE *log_fl;
+
+   (void) data;
+
+   log_fl = fopen(log_path, "a");
+   if (!log_fl)
+     {
+        KLERR("failed: open file(%s)\n", log_path);
+        return;
+     }
+
+   setvbuf(log_fl, NULL, _IOLBF, 512);
+
+   fprintf(log_fl, "\n===== Keygrab Status =====\n");
+
+   ec_focus = e_client_focused_get();
+   fprintf(log_fl, "    ----- Focus Window Info -----\n");
+   if (ec_focus)
+     {
+        surface_focus = e_keyrouter_util_get_surface_from_eclient(ec_focus);
+        wc_focus = wl_resource_get_client(surface_focus);
+        pid_focus = e_keyrouter_util_get_pid(NULL, surface_focus);
+        cmd_focus = e_keyrouter_util_cmd_get_from_pid(pid_focus);
+
+        fprintf(log_fl, "        Focus Client: E_Client: %p\n", ec_focus);
+        fprintf(log_fl, "                      Surface: %p, Client: %p\n", surface_focus, wc_focus);
+        fprintf(log_fl, "                      pid: %d, cmd: %s\n", pid_focus, cmd_focus);
+        free(cmd_focus);
+     }
+   else
+     {
+        fprintf(log_fl, "        No Focus Client\n");
+     }
+   fprintf(log_fl, "    ----- End -----\n\n");
+
+   fprintf(log_fl, "    ----- Grabbed keys Info -----\n");
+   for (i = 8; i < krt->max_tizen_hwkeys; i++)
+     {
+        if (!krt->HardKeys[i].keycode) continue;
+        if (!krt->HardKeys[i].excl_ptr &&
+            !krt->HardKeys[i].or_excl_ptr &&
+            !krt->HardKeys[i].top_ptr &&
+            !krt->HardKeys[i].shared_ptr &&
+            !krt->HardKeys[i].registered_ptr)
+          continue;
+
+        keyname = e_keyrouter_util_keyname_get_from_keycode(i);
+
+        fprintf(log_fl, "        [ Keycode: %d, Keyname: %s ]\n", i, keyname);
+
+        free(keyname);
+        keyname = NULL;
+
+        if (krt->HardKeys[i].excl_ptr)
+          {
+             fprintf(log_fl, "            == Exclusive Grab ==\n");
+             EINA_LIST_FOREACH(krt->HardKeys[i].excl_ptr, l, kdata)
+               {
+                  pid = e_keyrouter_util_get_pid(kdata->wc, kdata->surface);
+                  cmd = e_keyrouter_util_cmd_get_from_pid(pid);
+                  fprintf(log_fl, "                [surface: %p, client: %p, pid: %d(%s)]\n", kdata->surface, kdata->wc, pid, cmd);
+                  free(cmd);
+                  cmd = NULL;
+                  if (kdata->surface)
+                    {
+                       fprintf(log_fl, "                    -- Surface Information --\n");
+                       fprintf(log_fl, "                        = wl_client: %p\n", wl_resource_get_client(kdata->surface));
+                       fprintf(log_fl, "                        = resource: %s(%d)\n", wl_resource_get_name(kdata->surface), wl_resource_get_id(kdata->surface));
+                    }
+                  else
+                    {
+                       fprintf(log_fl, "                    -- Client Information --\n");
+                       fprintf(log_fl, "                        = connected fd: %d\n", wl_client_get_fd(kdata->wc));
+                    }
+                  break;
+               }
+            }
+
+        if (krt->HardKeys[i].or_excl_ptr)
+          {
+             fprintf(log_fl, "            == Overidable Exclusive Grab ==\n");
+             _e_keyrouter_keygrab_status_print(log_fl, krt->HardKeys[i].or_excl_ptr);
+          }
+
+        if (krt->HardKeys[i].top_ptr)
+          {
+             fprintf(log_fl, "            == Top Position Grab ==\n");
+             _e_keyrouter_keygrab_status_print(log_fl, krt->HardKeys[i].top_ptr);
+          }
+
+        if (krt->HardKeys[i].shared_ptr)
+          {
+             fprintf(log_fl, "            == Shared Grab ==\n");
+             _e_keyrouter_keygrab_status_print(log_fl, krt->HardKeys[i].shared_ptr);
+          }
+
+        fprintf(log_fl, "\n");
+     }
+
+   fprintf(log_fl, "    ----- End -----\n\n");
+
+   fclose(log_fl);
+   log_fl = NULL;
+}
+
 static Eina_Bool
 _event_filter(void *data, void *loop_data EINA_UNUSED, int type, void *event)
 {
@@ -923,6 +1127,9 @@ _e_keyrouter_deinit_handlers(void)
 
    EINA_LIST_FREE(krt->handlers, h)
      ecore_event_handler_del(h);
+
+   e_info_server_hook_set("keyrouter", NULL, NULL);
+   e_info_server_hook_set("keygrab", NULL, NULL);
 }
 
 static void
@@ -930,6 +1137,9 @@ _e_keyrouter_init_handlers(void)
 {
    E_LIST_HANDLER_APPEND(krt->handlers, E_EVENT_CLIENT_STACK, _e_keyrouter_client_cb_stack, NULL);
    E_LIST_HANDLER_APPEND(krt->handlers, E_EVENT_CLIENT_REMOVE, _e_keyrouter_client_cb_remove, NULL);
+
+   e_info_server_hook_set("keyrouter", _e_keyrouter_info_print, NULL);
+   e_info_server_hook_set("keygrab", _e_keyrouter_keygrab_print, NULL);
 }
 
 static Eina_Bool
