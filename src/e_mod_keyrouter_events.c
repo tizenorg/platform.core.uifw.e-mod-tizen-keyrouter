@@ -420,6 +420,11 @@ _e_keyrouter_check_top_visible_window(E_Client *ec_focus, int arr_idx)
              KLDBG("Top Client(%p) is invisible(%d) but focus client\n", ec_top, ec_top->visible);
              return EINA_FALSE;
           }
+        if (!ec_top->visible)
+          {
+             ec_top = e_client_below_get(ec_top);
+             continue;
+          }
 
         /* TODO: Check this client is located inside a display boundary */
 
