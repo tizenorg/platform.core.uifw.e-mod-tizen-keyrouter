@@ -370,8 +370,11 @@ e_keyrouter_remove_client_from_list(struct wl_resource *surface, struct wl_clien
              if (!key_node_data) continue;
              if (surface)
                {
-                  krt->HardKeys[i].pic_off_ptr = eina_list_remove_list(krt->HardKeys[i].pic_off_ptr, l);
-                  E_FREE(key_node_data);
+                  if (surface == key_node_data->surface)
+                    {
+                       krt->HardKeys[i].pic_off_ptr = eina_list_remove_list(krt->HardKeys[i].pic_off_ptr, l);
+                       E_FREE(key_node_data);
+                    }
                }
              else if ( wc == key_node_data->wc)
                {
