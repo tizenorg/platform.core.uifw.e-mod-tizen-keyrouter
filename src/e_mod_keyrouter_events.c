@@ -420,6 +420,11 @@ _e_keyrouter_check_top_visible_window(E_Client *ec_focus, int arr_idx)
              KLDBG("Top Client(%p) is invisible(%d) but focus client\n", ec_top, ec_top->visible);
              return EINA_FALSE;
           }
+        if (!ec_top->visible)
+          {
+             ec_top = e_client_below_get(ec_top);
+             continue;
+          }
 
         /* TODO: Check this client is located inside a display boundary */
 
@@ -430,8 +435,8 @@ _e_keyrouter_check_top_visible_window(E_Client *ec_focus, int arr_idx)
                   if (ec_top == wl_resource_get_user_data(key_node_data->surface))
                     {
                        krt->HardKeys[arr_idx].top_ptr = eina_list_promote_list(krt->HardKeys[arr_idx].top_ptr, l);
-                       KLDBG("Move a client(%p) to first index of list(key: %d)\n",
-                                ec_top, arr_idx);
+                       KLDBG("Move a client(ec: %p, surface: %p) to first index of list(key: %d)\n",
+                                ec_top, key_node_data->surface, arr_idx);
                        return EINA_TRUE;
                     }
                }
