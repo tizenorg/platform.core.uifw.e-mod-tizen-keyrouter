@@ -45,7 +45,7 @@ typedef struct _E_Keyrouter_Key_List_Node* E_Keyrouter_Key_List_NodePtr;
 typedef struct _E_Keyrouter_Tizen_HWKey E_Keyrouter_Tizen_HWKey;
 typedef struct _E_Keyrouter_Grabbed_Key E_Keyrouter_Grabbed_Key;
 typedef struct _E_Keyrouter_Grab_Request E_Keyrouter_Grab_Request;
-typedef struct _E_Keyrouter_Grab_Result E_Keyrouter_Grab_Result;
+typedef struct _E_Keyrouter_Ungrab_Request E_Keyrouter_Ungrab_Request;
 typedef struct _E_Keyrouter_Registered_Window_Info E_Keyrouter_Registered_Window_Info;
 
 typedef struct _E_Keyrouter_Conf_Edd E_Keyrouter_Conf_Edd;
@@ -143,10 +143,11 @@ struct _E_Keyrouter
 struct _E_Keyrouter_Grab_Request {
    int key;
    int mode;
+   int err;
 };
 
-struct _E_Keyrouter_Grab_Result {
-   E_Keyrouter_Grab_Request request_data;
+struct _E_Keyrouter_Ungrab_Request {
+   int key;
    int err;
 };
 
