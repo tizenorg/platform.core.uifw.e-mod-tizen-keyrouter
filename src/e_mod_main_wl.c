@@ -191,57 +191,76 @@ _e_keyrouter_cb_get_keygrab_status(struct wl_client *client, struct wl_resource 
 static void
 _e_keyrouter_cb_keygrab_set_list(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, struct wl_array *grab_list)
 {
+   struct wl_array grab_result_list = {0,};
+   E_Keyrouter_Grab_Result *grab_result = NULL;
    E_Keyrouter_Grab_Request *grab_request = NULL;
    int res = TIZEN_KEYROUTER_ERROR_NONE;
 
    TRACE_INPUT_BEGIN(_e_keyrouter_cb_keygrab_set_list);
 
-   if (0 != (_e_keyrouter_wl_array_length(grab_list) % 3))
+   wl_array_init(&grab_result_list);
+
+   if (0 != (_e_keyrouter_wl_array_length(grab_list) % 2))
      {
         /* FIX ME: Which way is effectively to notify invalid pair to client */
         KLWRN("Invalid keycode and grab mode pair. Check arguments in a list\n");
-        TRACE_INPUT_END();
-        tizen_keyrouter_send_keygrab_notify_list(resource, surface, NULL);
-        return;
+        grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
+        if (grab_result)
+          {
+             grab_result->request_data.key = 0;
+             grab_result->request_data.mode = 0;
+             grab_result->err = TIZEN_KEYROUTER_ERROR_INVALID_ARRAY;
+          }
+        goto send_notify;
      }
 
    wl_array_for_each(grab_request, grab_list)
      {
         KLINF("Grab request using list  (client: %p, surface: %p, pid: %d, key: %d, mode: %d]\n", client, surface, e_keyrouter_util_get_pid(client, surface), grab_request->key, grab_request->mode);
         res = _e_keyrouter_keygrab_set(client, surface, grab_request->key, grab_request->mode);
-        grab_request->err = res;
+        grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
+        if (grab_result)
+          {
+             grab_result->request_data.key = grab_request->key;
+             grab_result->request_data.mode = grab_request->mode;
+             grab_result->err = res;
+          }
      }
 
+send_notify:
    TRACE_INPUT_END();
-   tizen_keyrouter_send_keygrab_notify_list(resource, surface, grab_list);
+   tizen_keyrouter_send_keygrab_notify_list(resource, surface, &grab_result_list);
+   wl_array_release(&grab_result_list);
 }
 
 static void
 _e_keyrouter_cb_keygrab_unset_list(struct wl_client *client, struct wl_resource *resource, struct wl_resource *surface, struct wl_array *ungrab_list)
 {
-   E_Keyrouter_Ungrab_Request *ungrab_request = NULL;
+   struct wl_array grab_result_list = {0,};
+   E_Keyrouter_Grab_Result *grab_result = NULL;
+   int *ungrab_request = NULL;
    int res = TIZEN_KEYROUTER_ERROR_NONE;
 
    TRACE_INPUT_BEGIN(_e_keyrouter_cb_keygrab_unset_list);
 
-   if (0 != (_e_keyrouter_wl_array_length(ungrab_list) % 2))
-     {
-        /* FIX ME: Which way is effectively to notify invalid pair to client */
-        KLWRN("Invalid keycode and error pair. Check arguments in a list\n");
-        TRACE_INPUT_END();
-        tizen_keyrouter_send_keygrab_notify_list(resource, surface, ungrab_list);
-        return;
-     }
+   wl_array_init(&grab_result_list);
 
    wl_array_for_each(ungrab_request, ungrab_list)
      {
-        KLINF("Ungrab request using list  (client: %p, surface: %p, pid: %d, key: %d, res: %d]\n", client, surface, e_keyrouter_util_get_pid(client, surface), ungrab_request->key, res);
-        res = _e_keyrouter_keygrab_unset(client, surface, ungrab_request->key);
-        ungrab_request->err = res;
+        KLINF("Ungrab request using list  (client: %p, surface: %p, pid: %d, key: %d, res: %d]\n", client, surface, e_keyrouter_util_get_pid(client, surface), *ungrab_request, res);
+        res = _e_keyrouter_keygrab_unset(client, surface, *ungrab_request);
+        grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
+        if (grab_result)
+          {
+             grab_result->request_data.key = *ungrab_request;
+             grab_result->request_data.mode = TIZEN_KEYROUTER_MODE_NONE;
+             grab_result->err = res;
+          }
      }
 
    TRACE_INPUT_END();
-   tizen_keyrouter_send_keygrab_notify_list(resource, surface, ungrab_list);
+   tizen_keyrouter_send_keygrab_notify_list(resource, surface, &grab_result_list);
+   wl_array_release(&grab_result_list);
 }
 
 static void
@@ -409,7 +428,7 @@ _e_keyrouter_cb_keygrab_get_list(struct wl_client *client, struct wl_resource *r
 {
    E_Keyrouter_Key_List_NodePtr key_node_data = NULL;
    struct wl_array grab_result_list = {0,};
-   E_Keyrouter_Grab_Request *grab_result = NULL;
+   E_Keyrouter_Grab_Result *grab_result = NULL;
    E_Keyrouter_Registered_Window_Info *rwin_info = NULL;
    Eina_List *l = NULL, *ll = NULL, *l_next = NULL;
    int *key_data;
@@ -425,12 +444,11 @@ _e_keyrouter_cb_keygrab_get_list(struct wl_client *client, struct wl_resource *r
           {
              if (surface == key_node_data->surface)
                {
-                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Request));
+                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
                   if (grab_result)
                     {
-                       grab_result->key = i;
-                       grab_result->mode = TIZEN_KEYROUTER_MODE_EXCLUSIVE;
-                       grab_result->err = TIZEN_KEYROUTER_ERROR_NONE;
+                       grab_result->request_data.key = i;
+                       grab_result->request_data.mode = TIZEN_KEYROUTER_MODE_EXCLUSIVE;
                     }
                }
           }
@@ -438,12 +456,11 @@ _e_keyrouter_cb_keygrab_get_list(struct wl_client *client, struct wl_resource *r
           {
              if (surface == key_node_data->surface)
                {
-                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Request));
+                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
                   if (grab_result)
                     {
-                       grab_result->key = i;
-                       grab_result->mode = TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE;
-                       grab_result->err = TIZEN_KEYROUTER_ERROR_NONE;
+                       grab_result->request_data.key = i;
+                       grab_result->request_data.mode = TIZEN_KEYROUTER_MODE_OVERRIDABLE_EXCLUSIVE;
                     }
                }
           }
@@ -451,12 +468,11 @@ _e_keyrouter_cb_keygrab_get_list(struct wl_client *client, struct wl_resource *r
           {
              if (surface == key_node_data->surface)
                {
-                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Request));
+                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
                   if (grab_result)
                     {
-                       grab_result->key = i;
-                       grab_result->mode = TIZEN_KEYROUTER_MODE_TOPMOST;
-                       grab_result->err = TIZEN_KEYROUTER_ERROR_NONE;
+                       grab_result->request_data.key = i;
+                       grab_result->request_data.mode = TIZEN_KEYROUTER_MODE_TOPMOST;
                     }
                }
           }
@@ -464,12 +480,11 @@ _e_keyrouter_cb_keygrab_get_list(struct wl_client *client, struct wl_resource *r
           {
              if (surface == key_node_data->surface)
                {
-                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Request));
+                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
                   if (grab_result)
                     {
-                       grab_result->key = i;
-                       grab_result->mode = TIZEN_KEYROUTER_MODE_SHARED;
-                       grab_result->err = TIZEN_KEYROUTER_ERROR_NONE;
+                       grab_result->request_data.key = i;
+                       grab_result->request_data.mode = TIZEN_KEYROUTER_MODE_SHARED;
                     }
                }
           }
@@ -481,12 +496,11 @@ _e_keyrouter_cb_keygrab_get_list(struct wl_client *client, struct wl_resource *r
           {
              EINA_LIST_FOREACH(rwin_info->keys, ll, key_data)
                {
-                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Request));
+                  grab_result = wl_array_add(&grab_result_list, sizeof(E_Keyrouter_Grab_Result));
                   if (grab_result)
                     {
-                       grab_result->key = *key_data;
-                       grab_result->mode = TIZEN_KEYROUTER_MODE_REGISTERED;
-                       grab_result->err = TIZEN_KEYROUTER_ERROR_NONE;
+                       grab_result->request_data.key = *key_data;
+                       grab_result->request_data.mode = TIZEN_KEYROUTER_MODE_REGISTERED;
                     }
                }
           }
