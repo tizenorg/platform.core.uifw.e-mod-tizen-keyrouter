@@ -1008,11 +1008,11 @@ e_modapi_shutdown(E_Module *m)
      wl_resource_destroy(resource);
 
    wl_global_destroy(krt->global);
-   E_FREE(krt);
-
 #ifdef ENABLE_CYNARA
    if (krt->p_cynara) cynara_finish(krt->p_cynara);
 #endif
+   E_FREE(krt);
+
    /* TODO: free allocated memory */
 
    return 1;
