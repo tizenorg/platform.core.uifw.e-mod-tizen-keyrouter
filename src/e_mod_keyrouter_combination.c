@@ -127,10 +127,11 @@ _e_keyrouter_parse_ini_config(void* user, const char* section, const char* name,
 {
    int section_number, val;
    size_t needed;
-   char *local_section, *c_num;
+   char *local_section, *c_num, *dup;
    GArray *masterArray, *childArray;
 
-   c_num = _e_keyrouter_substring(strdup(section), 12/*"Combination"*/);
+   dup = strdup(section);
+   c_num = _e_keyrouter_substring(dup, 12/*"Combination"*/);
    if (c_num == NULL)
      {
         KLWRN("\n Unable to read config. substring is null. \n");
@@ -139,6 +140,7 @@ _e_keyrouter_parse_ini_config(void* user, const char* section, const char* name,
 
    section_number = atoi(c_num);
    free(c_num);
+   free(dup);
    if (section_number == 0)
      {
         KLWRN("\n^[[36m Unable to read config. section_number is 0. ^[[0m\n");
