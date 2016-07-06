@@ -1176,8 +1176,8 @@ _e_keyrouter_wl_client_cb_destroy(struct wl_listener *l, void *data)
    KLDBG("Listener(%p) called: wl_client: %p is died\n", l, client);
    e_keyrouter_remove_client_from_list(NULL, client);
 
+   wl_list_remove(&l->link);
    E_FREE(l);
-   l = NULL;
 
    krt->grab_client_list = eina_list_remove(krt->grab_client_list, client);
 }
@@ -1190,8 +1190,8 @@ _e_keyrouter_wl_surface_cb_destroy(struct wl_listener *l, void *data)
    KLDBG("Listener(%p) called: surface: %p is died\n", l, surface);
    e_keyrouter_remove_client_from_list(surface, NULL);
 
+   wl_list_remove(&l->link);
    E_FREE(l);
-   l = NULL;
 
    krt->grab_surface_list = eina_list_remove(krt->grab_surface_list, surface);
    krt->registered_none_key_window_list = eina_list_remove(krt->registered_none_key_window_list, surface);
