@@ -19,7 +19,7 @@
 #ifdef ENABLE_TTRACE
 #include <ttrace.h>
 
-#define TRACE_INPUT_BEGIN(NAME) traceBegin(TTRACE_TAG_INPUT, "INPUT:KRT:"#NAME)
+#define TRACE_INPUT_BEGIN(NAME, ...) traceBegin(TTRACE_TAG_INPUT, "INPUT:KRT:"#NAME, ##__VA_ARGS__)
 #define TRACE_INPUT_END() traceEnd(TTRACE_TAG_INPUT)
 #else
 #define TRACE_INPUT_BEGIN(NAME)

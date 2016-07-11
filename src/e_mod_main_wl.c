@@ -825,14 +825,16 @@ _event_filter(void *data, void *loop_data EINA_UNUSED, int type, void *event)
    /* Filter only for key down/up event */
    if (ECORE_EVENT_KEY_DOWN == type || ECORE_EVENT_KEY_UP == type)
      {
+        Ecore_Event_Key *ev = event;
+
         if (ECORE_EVENT_KEY_DOWN == type)
           {
-             TRACE_INPUT_BEGIN(event_filter:KEY_PRESS);
+             TRACE_INPUT_BEGIN(event_filter:KEY_PRESS(%d), ev->keycode);
              TRACE_INPUT_END();
           }
         else if (ECORE_EVENT_KEY_UP == type)
           {
-             TRACE_INPUT_BEGIN(event_filter:KEY_RELEASE);
+             TRACE_INPUT_BEGIN(event_filter:KEY_RELEASE(%d), ev->keycode);
              TRACE_INPUT_END();
           }
         return e_keyrouter_process_key_event(event, type);
