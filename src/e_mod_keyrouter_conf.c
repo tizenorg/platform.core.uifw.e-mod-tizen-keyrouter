@@ -22,6 +22,7 @@ e_keyrouter_conf_init(E_Keyrouter_Config_Data *kconfig)
 #define D kconfig->conf_edd
    E_CONFIG_VAL(D, T, num_keycode, INT);
    E_CONFIG_VAL(D, T, max_keycode, INT);
+   E_CONFIG_VAL(D, T, pictureoff_disabled, INT);
    E_CONFIG_LIST(D, T, KeyList, kconfig->conf_hwkeys_edd);
 
 #undef T

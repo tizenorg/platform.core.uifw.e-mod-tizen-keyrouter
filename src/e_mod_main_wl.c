@@ -907,6 +907,7 @@ _e_keyrouter_init(E_Module *m)
    e_keyrouter_conf_init(kconfig);
    EINA_SAFETY_ON_NULL_GOTO(kconfig->conf, err);
    krt->conf = kconfig;
+   krt->pictureoff_disabled = !!kconfig->conf->pictureoff_disabled;
 
    e_keyrouter_key_combination_init();
 
@@ -917,7 +918,8 @@ _e_keyrouter_init(E_Module *m)
    /* Add filtering mechanism */
    krt->ef_handler = ecore_event_filter_add(NULL, _event_filter, NULL, NULL);
    //ecore handler add for power callback registration
-   ecore_idle_enterer_add(_e_keyrouter_cb_idler, NULL);
+   if (!krt->pictureoff_disabled)
+     ecore_idle_enterer_add(_e_keyrouter_cb_idler, NULL);
    _e_keyrouter_init_handlers();
 
    krt->global = wl_global_create(e_comp_wl->wl.disp, &tizen_keyrouter_interface, 1, krt, _e_keyrouter_cb_bind);

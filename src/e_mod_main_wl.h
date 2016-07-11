@@ -62,6 +62,7 @@ struct _E_Keyrouter_Conf_Edd
 {
    int num_keycode;
    int max_keycode;
+   int pictureoff_disabled;
    Eina_List *KeyList;
 };
 
@@ -137,6 +138,7 @@ struct _E_Keyrouter
    cynara *p_cynara;
 #endif
    int isPictureOffEnabled;
+   Eina_Bool pictureoff_disabled;
    Eina_Bool isRegisterDelivery;
 };
 
