@@ -55,12 +55,24 @@ Eina_Bool
 e_keyrouter_process_key_event(void *event, int type)
 {
    Eina_Bool res = EINA_TRUE;
+   int ret;
    Ecore_Event_Key *ev = event;
    struct wl_client *wc;
+   Eina_List *l;
+   E_Keyrouter_Module *mdata;
 
    if (!ev) goto finish;
 
    KLDBG("[%s] keyname: %s, key: %s, keycode: %d\n", (type == ECORE_EVENT_KEY_DOWN) ? "KEY_PRESS" : "KEY_RELEASE", ev->keyname, ev->key, ev->keycode);
+
+   EINA_LIST_FOREACH(krt->extra_module_list, l, mdata)
+     {
+        if (mdata->enabled)
+          {
+             ret = mdata->func.hook(type, event);
+             if (!ret) return res;
+          }
+     }
 
    if (ev->data)
      {

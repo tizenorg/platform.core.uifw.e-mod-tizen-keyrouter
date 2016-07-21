@@ -1,0 +1,10 @@
+prefix=@prefix@
+libdir=@libdir@
+includedir=@includedir@/@PACKAGE@
+
+Name: e-mod-tizen-keyrouter
+Description: keyrouter
+Version: @VERSION@
+Libs: -L${libdir}
+Libs.private: -lm
+Cflags: -I${includedir}

@@ -3,6 +3,8 @@
 
 #include <e.h>
 #include <tizen-extension-server-protocol.h>
+#include <e_mod_keyrouter_ext.h>
+
 #ifdef ENABLE_CYNARA
 #include <cynara-session.h>
 #include <cynara-client.h>
@@ -125,6 +127,7 @@ struct _E_Keyrouter
    Eina_List *grab_client_list;
 
    Eina_List *registered_window_list;
+   Eina_List *extra_module_list;
 
    Eina_Bool isWindowStackChanged;
    int numTizenHWKeys;

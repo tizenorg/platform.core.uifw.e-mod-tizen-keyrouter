@@ -140,6 +140,20 @@ if test "x${have_cynara}" = "xyes"; then
 fi
 
 dnl ========================================================================
+# checks for arguments
+dnl ========================================================================
+
+AC_ARG_WITH(extra-module-path,
+		AS_HELP_STRING([--with-extra-module-path=PATH],
+			[extra keyrouter module path]),
+		[ EXTRA_MODULE_PATH="$withval" ],
+		[ EXTRA_MODULE_PATH="" ])
+
+AC_DEFINE_UNQUOTED(EXTRA_MODULE_PATH, ["$EXTRA_MODULE_PATH"], [Extra module path])
+AC_SUBST([EXTRA_MODULE_PATH])
+
+
+dnl ========================================================================
 # output files
 dnl ========================================================================
 
@@ -155,6 +169,8 @@ AC_CONFIG_FILES([
 		 src/Makefile
 		 ])
 
-AC_OUTPUT
+AC_OUTPUT([
+e-mod-tizen-keyrouter.pc
+])
 
 

@@ -30,6 +30,14 @@ BuildRequires:  xkb-tizen-data
 %description
 This package is a the Enlightenment Keyrouter Module for Tizen.
 
+%package devel
+Summary:    Development components for the keyrouter
+Group:      Development/Libraries
+Requires:   %{name} = %{version}
+
+%description devel
+Development files for keyrouter.
+
 %prep
 %setup -q
 
@@ -44,7 +52,8 @@ export LDFLAGS+=" -Wl,--hash-style=both -Wl,--as-needed -Wl,--rpath=/usr/lib"
 %configure --prefix=/usr \
            --enable-wayland-only \
            --enable-cynara \
-           TZ_SYS_RO_APP=%{TZ_SYS_RO_APP}
+           TZ_SYS_RO_APP=%{TZ_SYS_RO_APP} \
+		   --with-extra-module-path="%{_libdir}/enlightenment/modules/extra/"
 %endif
 
 make
@@ -71,3 +80,8 @@ find  %{buildroot}%{_libdir}/enlightenment/modules/%{name} -name *.la | xargs rm
 %{_libdir}/enlightenment/modules/e-mod-tizen-keyrouter
 %{TZ_SYS_RO_SHARE}/license/%{name}
 %attr(754, app, root) %{TZ_SYS_RO_APP}/keyrouter
+
+%files devel
+%defattr(-,root,root,-)
+%{_includedir}/enlightenment/*
+%{_libdir}/pkgconfig/*.pc

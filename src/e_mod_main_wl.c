@@ -5,6 +5,8 @@
 #include <device/callback.h>
 #include <device/display.h>
 
+#include <dirent.h>
+
 #define KRT_IPD_INPUT_CONFIG          444
 
 E_KeyrouterPtr krt = NULL;
@@ -875,6 +877,120 @@ static Eina_Bool _e_keyrouter_cb_idler(void *data)
     return ECORE_CALLBACK_CANCEL;
 }
 
+/* local subsystem functions */
+static void
+_e_keyrouter_module_unload(E_Keyrouter_Module *m)
+{
+   if (m->enabled)
+     {
+        if (m->func.shutdown) m->func.shutdown(m);
+     }
+   if (m->name) eina_stringshare_del(m->name);
+   if (m->dir) eina_stringshare_del(m->dir);
+   m->enabled = EINA_FALSE;
+
+   if (m->handle) dlclose(m->handle);// This comment is written in original code file. DONT dlclose! causes problems with deferred callbacks for free etc. - when their code goes away!
+   E_FREE(m);
+}
+
+static E_Keyrouter_Module *
+_e_keyrouter_module_load(const char *path)
+{
+   E_Keyrouter_Module *m;
+
+   m = E_NEW(E_Keyrouter_Module, 1);
+   EINA_SAFETY_ON_NULL_RETURN_VAL(m, NULL);
+
+   m->handle = dlopen(path, (RTLD_NOW | RTLD_GLOBAL));
+   if (!m->handle)
+     {
+        KLWRN("Failed to open %s: %s\n", path, dlerror());
+        return NULL;
+     }
+
+   m->api = dlsym(m->handle, "e_krtapi");
+   m->func.init = dlsym(m->handle, "e_krtapi_init");
+   m->func.shutdown = dlsym(m->handle, "e_krtapi_shutdown");
+   m->func.hook = dlsym(m->handle, "e_krtapi_hook");
+
+   if ((!m->func.init) || (!m->api))
+     {
+        KLWRN("Failed to load extra module: %s\n", path);
+        _e_keyrouter_module_unload(m);
+
+        return NULL;
+     }
+   if (m->api->version != E_MODULE_API_VERSION)
+     {
+        KLWRN("Failed to load extra module(%s): mismatch API version\n", path);
+        _e_keyrouter_module_unload(m);
+
+        return NULL;
+     }
+
+   return m;
+}
+
+static void
+_e_keyrouter_init_extra_module(void)
+{
+   DIR *dp;
+   struct dirent *entry;
+   char *ext, module_path[1024] = {0, };
+   Eina_List *l;
+   E_Keyrouter_Module *mdata, *m;
+
+   if ((dp = opendir(EXTRA_MODULE_PATH)) == NULL)
+     {
+        KLWRN("Failed to open extra modules folder: %s\n", EXTRA_MODULE_PATH);
+        return;
+     }
+
+   while ((entry = readdir(dp)) != NULL)
+     {
+        ext = strrchr(entry->d_name, '.');
+        if (ext && !strncmp(ext, ".so", sizeof(".so")))
+          {
+             snprintf(module_path, 1024, "%s%s", EXTRA_MODULE_PATH, entry->d_name);
+             m = _e_keyrouter_module_load(module_path);
+             if (m)
+               {
+                  m->name = eina_stringshare_add_length(entry->d_name, strlen(entry->d_name) - 3);
+                  m->dir = eina_stringshare_add(module_path);
+                  krt->extra_module_list = eina_list_append(krt->extra_module_list, m);
+                  KLINF("Success to open module: %s\n", m->name);
+               }
+             memset(module_path, 0, sizeof(module_path));
+          }
+     }
+   closedir(dp);
+
+   EINA_LIST_FOREACH(krt->extra_module_list, l, mdata)
+     {
+        if (!mdata->enabled)
+          {
+             mdata->data = mdata->func.init(mdata);
+             if (mdata->data)
+               {
+                  KLINF("Success to enable extra module: %s\n", mdata->name);
+                  mdata->enabled = EINA_TRUE;
+               }
+          }
+     }
+}
+
+static void
+_e_keyrouter_deinit_extra_module(void)
+{
+   Eina_List *l, *l_next;
+   E_Keyrouter_Module *mdata;
+
+   EINA_LIST_FOREACH_SAFE(krt->extra_module_list, l, l_next, mdata)
+     {
+        _e_keyrouter_module_unload(mdata);
+        krt->extra_module_list = eina_list_remove_list(krt->extra_module_list, l);
+     }
+}
 
 static E_Keyrouter_Config_Data *
 _e_keyrouter_init(E_Module *m)
@@ -928,6 +1044,8 @@ _e_keyrouter_init(E_Module *m)
         KLERR("Failed to create global !\n");
         goto err;
      }
+
+   _e_keyrouter_init_extra_module();
 
 #ifdef ENABLE_CYNARA
    ret = cynara_initialize(&krt->p_cynara, NULL);
@@ -1005,6 +1123,8 @@ e_modapi_shutdown(E_Module *m)
      }
 
    EINA_LIST_FREE(krt->registered_window_list, resource);
+
+   _e_keyrouter_deinit_extra_module();
 
    EINA_LIST_FREE(krt->resources, resource)
      wl_resource_destroy(resource);
