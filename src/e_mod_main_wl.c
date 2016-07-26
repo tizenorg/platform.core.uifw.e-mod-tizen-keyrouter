@@ -5,6 +5,9 @@
 #include <device/callback.h>
 #include <device/display.h>
 
+#include "streamline_annotate.h"
+ANNOTATE_DEFINE;
+
 #define KRT_IPD_INPUT_CONFIG          444
 
 E_KeyrouterPtr krt = NULL;
@@ -841,6 +844,10 @@ _event_filter(void *data, void *loop_data EINA_UNUSED, int type, void *event)
                   TRACE_INPUT_BEGIN(event_filter:KEY_PRESS);
                   TRACE_INPUT_END();
                }
+		    
+             ANNOTATE_SETUP;
+             ANNOTATE_CHANNEL_COLOR(98,ANNOTATE_WHITE,"KEY_PRESS"); 
+             ANNOTATE_CHANNEL_END(98);
 
           }
         else if (ECORE_EVENT_KEY_UP == type)
@@ -857,6 +864,9 @@ _event_filter(void *data, void *loop_data EINA_UNUSED, int type, void *event)
                   TRACE_INPUT_END();
                }
 
+             ANNOTATE_SETUP;
+             ANNOTATE_CHANNEL_COLOR(98,ANNOTATE_WHITE,"KEY_RELEASE"); 
+             ANNOTATE_CHANNEL_END(98);
           }
         return e_keyrouter_process_key_event(event, type);
      }
